@@ -2,9 +2,13 @@
 
 ## User's intended workflow
 
-Build and deploy a VT-focused hackathon project, but begin with brainstorming, research, repository setup, and account preparation. Deloitte × Databricks is the highest-priority sponsor challenge. Use Databricks materially. Paid services are acceptable; no paid resources were created in this planning phase.
+**Latest steering:** data-first evaluation of the HokieCare idea in `C:\Users\sam\Downloads\message.txt`; research only. Both Deloitte × Databricks and Impiricus are primary targets. Read [HEALTHCARE_DATA_FEASIBILITY.md](HEALTHCARE_DATA_FEASIBILITY.md) before implementing. It supersedes earlier recommendations as the current research focus, not as an approved final build scope.
 
-The user rejected the earlier alternatives except HokieAccess and requested broader food-waste, career-fair, Wi-Fi occupancy, and energy ideas. They confirmed that the expo idea means career-fair matching, queues, and opt-in recruiter follow-up. The new recommendation is ExpoFlow + HokieAccess; HokieHarvest + HokieAccess is the sustainability alternative. No final choice has been made. Preserve GIS research. Do not treat planning documents as application implementation.
+Verified local downloads include all 28,700 VDH respiratory aggregate records (700 New River records, 350 weeks), 49,593 external CER appointments, NHS aggregate appointment files, six VT service/appointment pages, VT calendar/report material, NPI provider sample and NASA weather sample. Provenance and profiles are in `research/healthcare/`; raw downloads are ignored. No Databricks import or app implementation exists. Private VT scheduling, availability, swipes and clinical data remain unavailable. Do not infer current VT waits from the 2019 report: the 2024–2025 annual report says waits decreased. VDH's catalog does not specify a reuse license; do not label it CC0.
+
+Build and deploy a VT-focused hackathon project, but begin with brainstorming, research, repository setup, and account preparation. Target Deloitte × Databricks and Impiricus. Use Databricks materially. Paid services are acceptable; no paid resources were created in this planning phase.
+
+Earlier exploration covered food waste, career-fair matching/queues, Wi-Fi occupancy, and energy. ExpoFlow and HokieHarvest were recommendations, not selections. Preserve HokieAccess and GIS research for potential reuse. No final build scope has been selected. Do not treat planning documents as application implementation.
 
 ## Completed
 
@@ -21,7 +25,7 @@ The user rejected the earlier alternatives except HokieAccess and requested broa
 
 ## Next
 
-1. Receive the user's project choice and any sponsor brief/workspace link.
+1. Discuss the researched HokieCare scope and remaining data gaps with the user; obtain any sponsor brief/workspace link. The current request is research, not application implementation.
 2. Recheck remaining event time and build-window instructions. The user's deadline is September 20, 2026, 8:00 a.m. ET; target 7:00 a.m. submission. The old public 10:00 a.m. listing is superseded for planning. Public repo access is required before submission; repository is currently private.
 3. Authenticate the Databricks workspace, Gemini, and chosen host. Account owner handles sign-in/MFA/billing.
 4. Run the selected product's data/auth/deployment gate from EXPANDED_IDEAS.md and BUILD_PLAN.md, then build the first complete flow. No authorized Wi-Fi controller, dining operations, building controls, or external ATS access exists yet.

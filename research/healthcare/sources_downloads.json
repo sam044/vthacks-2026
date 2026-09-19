@@ -1,0 +1,8 @@
+{
+  "nhs_national": "https://files.digital.nhs.uk/F2/DA2E2B/National_Overview.csv",
+  "nhs_regional": "https://files.digital.nhs.uk/C2/A93A29/Appointments_GP_Regional_CSV_Jul_26.zip",
+  "nhs_daily": "https://files.digital.nhs.uk/87/FC8DA7/Appointments_GP_Daily_CSV_Jul_26.zip",
+  "npi_blacksburg": "https://npiregistry.cms.hhs.gov/api/?version=2.1&city=Blacksburg&state=VA&limit=20",
+  "nasa_weather": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M,PRECTOTCORR&community=AG&longitude=-80.4139&latitude=37.2296&start=20250901&end=20250930&format=JSON",
+  "mendeley_files": "https://data.mendeley.com/public-api/datasets/wm6w2fvkfj/files?folder_id=root&version=1"
+}

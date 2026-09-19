@@ -8,6 +8,8 @@ Submit one project per team by Sunday, September 20 at 8:00 AM ET. Every team me
 
 ## Current direction after team feedback
 
+**Latest research focus (September 19):** the user supplied a HokieCare concept and requested deep data research before building. Both Deloitte × Databricks and Impiricus are primary targets. Read [Healthcare data feasibility](HEALTHCARE_DATA_FEASIBILITY.md) for verified downloads and the recommended narrower scope. The earlier recommendations below are retained as alternatives, not a final selection.
+
 Keep HokieAccess and the verified GIS research. The user wants a broader problem with an intuitive company-facing presentation, and has confirmed that the expo concept means career-fair matching, queues, and recruiter follow-up. Earlier HokieBridge, HokieLaunch, and HokiePulse alternatives are no longer active candidates.
 
 The new recommendation is **ExpoFlow + HokieAccess** for the strongest live demonstration and Deloitte career-navigator fit. **HokieHarvest + HokieAccess** is the strongest sustainability alternative. Wi-Fi occupancy and energy optimization remain conditional on data access; there is no verified public VT occupancy feed or permission to control campus equipment. The user has not selected a final product.

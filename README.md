@@ -1,12 +1,12 @@
 # VTHacks 2026
 
-Planning repository for a four-person VTHacks 14 team. Our first priority is the Deloitte × Databricks student experience challenge.
+Planning repository for a four-person VTHacks 14 team. Primary targets are the Deloitte × Databricks student experience challenge and Impiricus HCP engagement challenge.
 
-**Status:** research and repository setup complete; product choice is a recommendation, and application implementation and deployment have not started.
+**Status:** evaluating HokieCare through verified public-data access. Application implementation and deployment have not started. See the [healthcare data feasibility report](docs/HEALTHCARE_DATA_FEASIBILITY.md).
 
 ## Current shortlist
 
-The team wants a broader problem with clear company-facing value. The current recommendation is **ExpoFlow + HokieAccess**: career-fair matching, queue information, and opt-in recruiter follow-up, with accessible campus navigation. **HokieHarvest + HokieAccess**, focused on dining preparation and food waste, is the sustainability alternative. The user has not selected the final direction.
+The current research focus is **HokieCare**: student care navigation and a healthcare-professional planning assistant. Public VT service pages and New River respiratory records are accessible; private VT appointment/capacity records are not secured. Earlier ExpoFlow and HokieHarvest ideas remain background research. The user has not authorized application implementation or selected the final feature scope.
 
 Preserve the existing VT GIS evidence and HokieAccess concept. Databricks data processing, analytics, and a Genie Agent are proposed core components. Campus-wide Wi-Fi data, dining operational records, and building controls are not available to this project at present.
 
@@ -16,6 +16,7 @@ This is an independent hackathon prototype, not an official Virginia Tech servic
 
 ## Planning documents
 
+- [HokieCare data feasibility, verified downloads, and limits](docs/HEALTHCARE_DATA_FEASIBILITY.md)
 - [Ideas and recommendation](docs/PROJECT_PLAN.md)
 - [Expanded food, expo, Wi-Fi, and energy research](docs/EXPANDED_IDEAS.md)
 - [Prize priorities and evidence](docs/PRIZE_STRATEGY.md)

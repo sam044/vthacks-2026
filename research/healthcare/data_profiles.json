@@ -1,0 +1,739 @@
+{
+  "cer_appointments": {
+    "rows": 49593,
+    "columns": [
+      "specialty",
+      "appointment_time",
+      "gender",
+      "appointment_date",
+      "no_show",
+      "no_show_reason",
+      "disability",
+      "date_of_birth",
+      "entry_service_date",
+      "city",
+      "icd",
+      "appointment_month",
+      "appointment_year",
+      "appointment_shift",
+      "age",
+      "under_12_years_old",
+      "over_60_years_old",
+      "patient_needs_companion",
+      "average_temp_day",
+      "average_rain_day",
+      "max_temp_day",
+      "max_rain_day",
+      "rainy_day_before",
+      "storm_day_before",
+      "rain_intensity",
+      "heat_intensity"
+    ],
+    "malformed_rows": 0,
+    "empty_cells_by_column": {
+      "disability": 5137,
+      "date_of_birth": 10321,
+      "entry_service_date": 5155,
+      "city": 5181,
+      "icd": 38876,
+      "age": 10350,
+      "no_show_reason": 47856,
+      "specialty": 7454,
+      "average_temp_day": 1016,
+      "average_rain_day": 1016,
+      "max_temp_day": 1016,
+      "max_rain_day": 1016
+    },
+    "categories": {
+      "no_show": {
+        "yes": 4832,
+        "no": 44761
+      },
+      "specialty": {
+        "physiotherapy": 9074,
+        "psychotherapy": 11675,
+        "speech therapy": 11877,
+        "occupational therapy": 6486,
+        "": 7454,
+        "enf": 712,
+        "assist": 194,
+        "pedagogo": 2064,
+        "sem especialidade": 57
+      },
+      "appointment_year": {
+        "2021": 9008,
+        "2019": 8584,
+        "2018": 9606,
+        "2017": 12564,
+        "2020": 904,
+        "2016": 7985,
+        "2022": 942
+      }
+    },
+    "dates": {
+      "appointment_date": {
+        "min": "2016-06-20",
+        "max": "2022-02-25",
+        "distinct": 1001
+      }
+    }
+  },
+  "nhs_national": {
+    "rows": 53622,
+    "columns": [
+      "APPOINTMENT_MONTH",
+      "APPT_STATUS",
+      "HCP_TYPE",
+      "APPT_MODE",
+      "SERVICE_SETTING",
+      "CONTEXT_TYPE",
+      "NATIONAL_CATEGORY",
+      "APPOINTMENTS"
+    ],
+    "malformed_rows": 0,
+    "empty_cells_by_column": {},
+    "categories": {
+      "APPT_STATUS": {
+        "Attended": 19541,
+        "DNA": 14357,
+        "Unknown": 19724
+      },
+      "HCP_TYPE": {
+        "GP": 21270,
+        "Other Practice staff": 23592,
+        "Unknown": 8760
+      },
+      "APPT_MODE": {
+        "Face-to-Face": 15340,
+        "Home Visit": 8986,
+        "Telephone": 13350,
+        "Unknown": 6874,
+        "Video Conference/Online": 9072
+      }
+    },
+    "dates": {
+      "APPOINTMENT_MONTH": {
+        "min": "2024-02-01",
+        "max": "2026-07-01",
+        "distinct": 30
+      }
+    }
+  },
+  "nhs_daily": {
+    "archive_members": [
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Jul_26.csv",
+        "bytes": 47358028
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Jun_26.csv",
+        "bytes": 45428385
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_May_26.csv",
+        "bytes": 40225904
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Apr_26.csv",
+        "bytes": 41926969
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Mar_26.csv",
+        "bytes": 46017202
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Feb_26.csv",
+        "bytes": 41825997
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Jan_26.csv",
+        "bytes": 44173749
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Dec_25.csv",
+        "bytes": 43109925
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Nov_25.csv",
+        "bytes": 42788075
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Oct_25.csv",
+        "bytes": 49131734
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Sep_25.csv",
+        "bytes": 45071722
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Aug_25.csv",
+        "bytes": 41084569
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Jul_25.csv",
+        "bytes": 46656438
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Jun_25.csv",
+        "bytes": 42808551
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_May_25.csv",
+        "bytes": 41584322
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Apr_25.csv",
+        "bytes": 41370198
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Mar_25.csv",
+        "bytes": 43597062
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Feb_25.csv",
+        "bytes": 41138408
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Jan_25.csv",
+        "bytes": 44983895
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Dec_24.csv",
+        "bytes": 40430434
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Nov_24.csv",
+        "bytes": 44254646
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Oct_24.csv",
+        "bytes": 48912985
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Sep_24.csv",
+        "bytes": 42685306
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Aug_24.csv",
+        "bytes": 42355419
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Jul_24.csv",
+        "bytes": 45820113
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Jun_24.csv",
+        "bytes": 41234029
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_May_24.csv",
+        "bytes": 43228077
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Apr_24.csv",
+        "bytes": 42761966
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Mar_24.csv",
+        "bytes": 41747054
+      },
+      {
+        "name": "SUB_ICB_LOCATION_CSV_Feb_24.csv",
+        "bytes": 42760120
+      },
+      {
+        "name": "APPOINTMENTS_GP_COVERAGE.csv",
+        "bytes": 177619
+      }
+    ],
+    "profiled_members": {
+      "SUB_ICB_LOCATION_CSV_Jul_26.csv": {
+        "rows": 366950,
+        "columns": [
+          "SUB_ICB_LOCATION_CODE",
+          "SUB_ICB_LOCATION_ONS_CODE",
+          "SUB_ICB_LOCATION_NAME",
+          "ICB_ONS_CODE",
+          "REGION_ONS_CODE",
+          "Appointment_Date",
+          "APPT_STATUS",
+          "HCP_TYPE",
+          "APPT_MODE",
+          "TIME_BETWEEN_BOOK_AND_APPT",
+          "COUNT_OF_APPOINTMENTS"
+        ],
+        "malformed_rows": 0,
+        "empty_cells_by_column": {},
+        "categories": {
+          "APPT_STATUS": {
+            "Attended": 157416,
+            "DNA": 80172,
+            "Unknown": 129362
+          },
+          "HCP_TYPE": {
+            "GP": 153249,
+            "Other Practice staff": 169703,
+            "Unknown": 43998
+          },
+          "TIME_BETWEEN_BOOK_AND_APPT": {
+            "1 Day": 49955,
+            "8  to 14 Days": 52809,
+            "22  to 28 Days": 41970,
+            "Same Day": 66635,
+            "2 to 7 Days": 61150,
+            "15  to 21 Days": 46124,
+            "More than 28 Days": 42741,
+            "Unknown / Data Quality": 5566
+          }
+        },
+        "dates": {
+          "Appointment_Date": {
+            "min": "2026-07-01",
+            "max": "2026-07-31",
+            "distinct": 31
+          }
+        }
+      },
+      "SUB_ICB_LOCATION_CSV_Jun_26.csv": {
+        "rows": 351990,
+        "columns": [
+          "SUB_ICB_LOCATION_CODE",
+          "SUB_ICB_LOCATION_ONS_CODE",
+          "SUB_ICB_LOCATION_NAME",
+          "ICB_ONS_CODE",
+          "REGION_ONS_CODE",
+          "Appointment_Date",
+          "APPT_STATUS",
+          "HCP_TYPE",
+          "APPT_MODE",
+          "TIME_BETWEEN_BOOK_AND_APPT",
+          "COUNT_OF_APPOINTMENTS"
+        ],
+        "malformed_rows": 0,
+        "empty_cells_by_column": {},
+        "categories": {
+          "APPT_STATUS": {
+            "DNA": 76685,
+            "Attended": 150656,
+            "Unknown": 124649
+          },
+          "HCP_TYPE": {
+            "Other Practice staff": 162475,
+            "GP": 148141,
+            "Unknown": 41374
+          },
+          "TIME_BETWEEN_BOOK_AND_APPT": {
+            "22  to 28 Days": 40639,
+            "More than 28 Days": 41040,
+            "15  to 21 Days": 44574,
+            "2 to 7 Days": 58658,
+            "8  to 14 Days": 50905,
+            "Same Day": 63911,
+            "1 Day": 46781,
+            "Unknown / Data Quality": 5482
+          }
+        },
+        "dates": {
+          "Appointment_Date": {
+            "min": "2026-06-01",
+            "max": "2026-06-30",
+            "distinct": 30
+          }
+        }
+      }
+    },
+    "coverage": "First two complete CSV members only; remaining members not row-profiled."
+  },
+  "nhs_regional": {
+    "archive_members": [
+      {
+        "name": "Regional_CSV_WYorks.csv",
+        "bytes": 6412279
+      },
+      {
+        "name": "Regional_CSV_WNLondon.csv",
+        "bytes": 2978883
+      },
+      {
+        "name": "Regional_CSV_ThamesValley.csv",
+        "bytes": 4654655
+      },
+      {
+        "name": "Regional_CSV_SurreySussex.csv",
+        "bytes": 5392988
+      },
+      {
+        "name": "Regional_CSV_StaffsStoke.csv",
+        "bytes": 7220807
+      },
+      {
+        "name": "Regional_CSV_Somerset.csv",
+        "bytes": 1136663
+      },
+      {
+        "name": "Regional_CSV_ShropsTelfordWrekin.csv",
+        "bytes": 1426691
+      },
+      {
+        "name": "Regional_CSV_SYorks.csv",
+        "bytes": 5365367
+      },
+      {
+        "name": "Regional_CSV_SWLondon.csv",
+        "bytes": 1314087
+      },
+      {
+        "name": "Regional_CSV_SELondon.csv",
+        "bytes": 1345955
+      },
+      {
+        "name": "Regional_CSV_NottinghamNotts.csv",
+        "bytes": 2727969
+      },
+      {
+        "name": "Regional_CSV_Northamptonshire.csv",
+        "bytes": 1312030
+      },
+      {
+        "name": "Regional_CSV_NorfolkSuffolk.csv",
+        "bytes": 3780439
+      },
+      {
+        "name": "Regional_CSV_NENCumbria.csv",
+        "bytes": 11772699
+      },
+      {
+        "name": "Regional_CSV_NELondon.csv",
+        "bytes": 1432855
+      },
+      {
+        "name": "Regional_CSV_Lincolnshire.csv",
+        "bytes": 1178144
+      },
+      {
+        "name": "Regional_CSV_LeicesterLshire.csv",
+        "bytes": 4345003
+      },
+      {
+        "name": "Regional_CSV_LancsSCumbria.csv",
+        "bytes": 8965026
+      },
+      {
+        "name": "Regional_CSV_KentMedway.csv",
+        "bytes": 1279159
+      },
+      {
+        "name": "Regional_CSV_HumberNYorks.csv",
+        "bytes": 8447949
+      },
+      {
+        "name": "Regional_CSV_HereWorcs.csv",
+        "bytes": 1552753
+      },
+      {
+        "name": "Regional_CSV_HampshireIoW.csv",
+        "bytes": 2868470
+      },
+      {
+        "name": "Regional_CSV_Gloucestershire.csv",
+        "bytes": 1251895
+      },
+      {
+        "name": "Regional_CSV_GManchesterHSCP.csv",
+        "bytes": 11602497
+      },
+      {
+        "name": "Regional_CSV_Essex.csv",
+        "bytes": 6670868
+      },
+      {
+        "name": "Regional_CSV_Dorset.csv",
+        "bytes": 1096833
+      },
+      {
+        "name": "Regional_CSV_Devon.csv",
+        "bytes": 1243805
+      },
+      {
+        "name": "Regional_CSV_DerbyDerbyshire.csv",
+        "bytes": 1438017
+      },
+      {
+        "name": "Regional_CSV_CoventryWarwickshire.csv",
+        "bytes": 1433537
+      },
+      {
+        "name": "Regional_CSV_CornwallIoS.csv",
+        "bytes": 1872505
+      },
+      {
+        "name": "Regional_CSV_CheshireMerseyside.csv",
+        "bytes": 10504763
+      },
+      {
+        "name": "Regional_CSV_CentralEast.csv",
+        "bytes": 4986940
+      },
+      {
+        "name": "Regional_CSV_BristolNSomSGloucs.csv",
+        "bytes": 1906919
+      },
+      {
+        "name": "Regional_CSV_BlackCountry.csv",
+        "bytes": 1513898
+      },
+      {
+        "name": "Regional_CSV_BirminghamSolihull.csv",
+        "bytes": 1547112
+      },
+      {
+        "name": "Regional_CSV_BathNESomSwindonWilts.csv",
+        "bytes": 1771785
+      }
+    ],
+    "profiled_members": {
+      "Regional_CSV_WYorks.csv": {
+        "rows": 34634,
+        "columns": [
+          "SUB_ICB_LOCATION_CODE",
+          "SUB_ICB_LOCATION_ONS_CODE",
+          "SUB_ICB_LOCATION_NAME",
+          "ICB_ONS_CODE",
+          "ICB_NAME",
+          "REGION_ONS_CODE",
+          "REGION_NAME",
+          "APPOINTMENT_MONTH",
+          "APPT_STATUS",
+          "HCP_TYPE",
+          "APPT_MODE",
+          "TIME_BETWEEN_BOOK_AND_APPT",
+          "COUNT_OF_APPOINTMENTS"
+        ],
+        "malformed_rows": 0,
+        "empty_cells_by_column": {},
+        "categories": {
+          "APPT_STATUS": {
+            "Attended": 12885,
+            "DNA": 9743,
+            "Unknown": 12006
+          },
+          "HCP_TYPE": {
+            "GP": 14689,
+            "Other Practice staff": 15883,
+            "Unknown": 4062
+          },
+          "TIME_BETWEEN_BOOK_AND_APPT": {
+            "1 Day": 4706,
+            "15  to 21 Days": 4572,
+            "2 to 7 Days": 4928,
+            "22  to 28 Days": 4480,
+            "8  to 14 Days": 4763,
+            "More than 28 Days": 4485,
+            "Same Day": 4902,
+            "Unknown / Data Quality": 1798
+          }
+        },
+        "dates": {
+          "APPOINTMENT_MONTH": {
+            "min": "2024-02-01",
+            "max": "2026-07-01",
+            "distinct": 30
+          }
+        }
+      },
+      "Regional_CSV_WNLondon.csv": {
+        "rows": 16309,
+        "columns": [
+          "SUB_ICB_LOCATION_CODE",
+          "SUB_ICB_LOCATION_ONS_CODE",
+          "SUB_ICB_LOCATION_NAME",
+          "ICB_ONS_CODE",
+          "ICB_NAME",
+          "REGION_ONS_CODE",
+          "REGION_NAME",
+          "APPOINTMENT_MONTH",
+          "APPT_STATUS",
+          "HCP_TYPE",
+          "APPT_MODE",
+          "TIME_BETWEEN_BOOK_AND_APPT",
+          "COUNT_OF_APPOINTMENTS"
+        ],
+        "malformed_rows": 0,
+        "empty_cells_by_column": {},
+        "categories": {
+          "APPT_STATUS": {
+            "Attended": 5947,
+            "DNA": 4101,
+            "Unknown": 6261
+          },
+          "HCP_TYPE": {
+            "GP": 6376,
+            "Other Practice staff": 6406,
+            "Unknown": 3527
+          },
+          "TIME_BETWEEN_BOOK_AND_APPT": {
+            "1 Day": 2294,
+            "15  to 21 Days": 1991,
+            "2 to 7 Days": 2280,
+            "22  to 28 Days": 1918,
+            "8  to 14 Days": 2102,
+            "More than 28 Days": 1863,
+            "Same Day": 2448,
+            "Unknown / Data Quality": 1413
+          }
+        },
+        "dates": {
+          "APPOINTMENT_MONTH": {
+            "min": "2024-02-01",
+            "max": "2026-07-01",
+            "distinct": 30
+          }
+        }
+      }
+    },
+    "coverage": "First two complete CSV members only; remaining members not row-profiled."
+  },
+  "vdh_respiratory": {
+    "api_reported_total": 28700,
+    "complete_download": true,
+    "columns": [
+      "_id",
+      "Report Date",
+      "Week Ending Date",
+      "Health Region",
+      "Health District",
+      "Facility Type",
+      "County FIPS",
+      "Year",
+      "Week",
+      "Percent of ED Visits Covid",
+      "Percent of ED Visits Influenza",
+      "Percent of ED Visits RSV",
+      "Percent of ED Visits Combined",
+      "Diagnosed Covid Count",
+      "Diagnosed Influenza Count",
+      "Diagnosed RSV Count",
+      "Combined Respiratory Viruses Count"
+    ],
+    "all": {
+      "rows": 28700,
+      "first_week": "2020-01-04",
+      "last_week": "2026-09-12",
+      "distinct_weeks": 350,
+      "facilities": {
+        "Emergency Department": 14350,
+        "Urgent Care": 14350
+      },
+      "suppressed_cells": 21293,
+      "report_dates": [
+        "Sep 15 2026  9:00AM"
+      ]
+    },
+    "district_labels": [
+      "Alexandria",
+      "Alleghany",
+      "Arlington",
+      "Blue Ridge",
+      "Central Region",
+      "Central Shenandoah",
+      "Central Virginia",
+      "Chesapeake",
+      "Chesterfield",
+      "Chickahominy",
+      "Crater",
+      "Cumberland Plateau",
+      "Eastern Region",
+      "Eastern Shore",
+      "Fairfax",
+      "Hampton",
+      "Henrico",
+      "Lenowisco",
+      "Lord Fairfax",
+      "Loudoun",
+      "Mount Rogers",
+      "New River",
+      "Norfolk",
+      "Northern Region",
+      "Northwest Region",
+      "Out of State",
+      "Peninsula",
+      "Piedmont",
+      "Pittsylvania-Danville",
+      "Portsmouth",
+      "Prince William",
+      "Rappahannock",
+      "Rappahannock Rapidan",
+      "Richmond",
+      "Roanoke",
+      "Southside",
+      "Southwest Region",
+      "Three Rivers",
+      "Virginia Beach",
+      "West Piedmont",
+      "Western Tidewater"
+    ],
+    "new_river": {
+      "rows": 700,
+      "first_week": "2020-01-04",
+      "last_week": "2026-09-12",
+      "distinct_weeks": 350,
+      "facilities": {
+        "Emergency Department": 350,
+        "Urgent Care": 350
+      },
+      "suppressed_cells": 600,
+      "report_dates": [
+        "Sep 15 2026  9:00AM"
+      ]
+    }
+  },
+  "npi_blacksburg": {
+    "query_limit": 20,
+    "returned": 20,
+    "fields": [
+      "addresses",
+      "basic",
+      "created_epoch",
+      "endpoints",
+      "enumeration_type",
+      "identifiers",
+      "last_updated_epoch",
+      "number",
+      "other_names",
+      "practiceLocations",
+      "taxonomies"
+    ],
+    "is_complete_directory": false
+  },
+  "nasa_weather": {
+    "header": {
+      "title": "NASA/POWER Source Native Resolution Daily Data",
+      "api": {
+        "version": "v2.10.0",
+        "name": "POWER Daily API"
+      },
+      "sources": [
+        "MERRA2"
+      ],
+      "fill_value": -999.0,
+      "time_standard": "LST",
+      "start": "20250901",
+      "end": "20250930"
+    },
+    "parameters": {
+      "T2M": {
+        "units": "C",
+        "longname": "Temperature at 2 Meters"
+      },
+      "PRECTOTCORR": {
+        "units": "mm/day",
+        "longname": "Precipitation Corrected"
+      }
+    },
+    "values_per_parameter": {
+      "T2M": 30,
+      "PRECTOTCORR": 30
+    },
+    "missing_values": 0
+  }
+}
