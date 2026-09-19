@@ -7,6 +7,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import "./appointments.css";
+import { SharedCalendar, BookingReview, prepareReview, easternTime, type InventorySlot, type Review } from "./calendar";
 
 type Center = {
   id: string;
@@ -22,6 +23,8 @@ type Appointment = Slot & {
   slot_id: string;
   status: string;
   center_name: string;
+  service_id: string;
+  center_id: string;
 };
 type PortalSlot = {
   id: string;
@@ -122,19 +125,6 @@ const timeOnly = (value: string) =>
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(value));
-function nextDay() {
-  const today = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/New_York",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-  const day = new Date(`${today}T12:00:00Z`);
-  do {
-    day.setUTCDate(day.getUTCDate() + 1);
-  } while ([0, 6].includes(day.getUTCDay()));
-  return day.toISOString().slice(0, 10);
-}
 function downloadCalendar(a: Appointment) {
   const stamp = (x: string) =>
     new Date(x)
@@ -150,8 +140,8 @@ function downloadCalendar(a: Appointment) {
     `DTSTAMP:${stamp(new Date().toISOString())}`,
     `DTSTART:${stamp(a.starts)}`,
     `DTEND:${stamp(a.ends)}`,
-    "SUMMARY:DEMO - Cook Counseling appointment",
-    "DESCRIPTION:Fictional HokieCare demo. Not booked with Cook.",
+    `SUMMARY:DEMO - ${a.center_name}` ,
+    "DESCRIPTION:Fictional HokieCare demo. Not booked with the provider.",
     "STATUS:TENTATIVE",
     "END:VEVENT",
     "END:VCALENDAR",
@@ -175,12 +165,7 @@ export function AppointmentHub({
     initialCenter === "none" ? "schiffert" : initialCenter,
   );
   const [records, setRecords] = useState<Appointment[]>([]);
-  const [day, setDay] = useState(nextDay);
-  const [slots, setSlots] = useState<Slot[]>([]);
-  const [selection, setSelection] = useState<{
-    slot: Slot;
-    request_id: string;
-  } | null>(null);
+  const [rescheduling, setRescheduling] = useState<Appointment | null>(null);
   const [cancelId, setCancelId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
@@ -200,6 +185,7 @@ export function AppointmentHub({
         .appointments,
     );
   }
+  useEffect(() => { const changed=()=>void refresh().catch(()=>{}); window.addEventListener("hokiecare-booking-changed",changed); return()=>window.removeEventListener("hokiecare-booking-changed",changed); }, []);
   async function initialize() {
     await session();
     setCenters(
@@ -277,7 +263,7 @@ export function AppointmentHub({
             aria-pressed={centerId === c.id}
             onClick={() => {
               setCenterId(c.id);
-              setSelection(null);
+              setRescheduling(null);
               setError("");
               setNotice("");
             }}
@@ -328,108 +314,8 @@ export function AppointmentHub({
             >
               Official access details <ArrowUpRight size={15} />
             </a>
-            {center.kind === "demo" && (
-              <>
-                <label className="booking-date">
-                  Choose a demo date{" "}
-                  <input
-                    type="date"
-                    value={day}
-                    onChange={(e) => {
-                      setDay(e.target.value);
-                      setSlots([]);
-                      setSelection(null);
-                    }}
-                  />
-                </label>
-                <button
-                  className="booking-primary"
-                  disabled={busy || !day}
-                  onClick={() =>
-                    void action(async () => {
-                      const result = await api<{ slots: Slot[] }>(
-                        "/api/booking/demo-times",
-                        "POST",
-                        { day },
-                      );
-                      setSlots(result.slots);
-                      setSelection(null);
-                      if (!result.slots.length)
-                        setNotice(
-                          "All demo times are reserved for this date. Choose another weekday.",
-                        );
-                    })
-                  }
-                >
-                  Load fictional times
-                </button>
-                <p className="booking-small">
-                  Weekdays in the next 30 days · All times Eastern · 45 minutes
-                </p>
-                <div className="time-grid">
-                  {slots.map((s) => (
-                    <button
-                      key={s.id}
-                      aria-pressed={selection?.slot.id === s.id}
-                      disabled={busy}
-                      onClick={() =>
-                        setSelection({
-                          slot: s,
-                          request_id: crypto.randomUUID(),
-                        })
-                      }
-                    >
-                      {timeOnly(s.starts)}
-                    </button>
-                  ))}
-                </div>
-                {selection && (
-                  <div className="booking-review">
-                    <h3>Review demo appointment</h3>
-                    <p>
-                      Cook Counseling Center
-                      <br />
-                      {fmt(selection.slot.starts)}
-                    </p>
-                    <p>
-                      This saves a fictional reservation. Cook will not receive
-                      it.
-                    </p>
-                    <button
-                      className="booking-primary"
-                      disabled={busy}
-                      onClick={() =>
-                        void action(async () => {
-                          const saved = await api<Appointment>(
-                            "/api/booking/appointments",
-                            "POST",
-                            {
-                              slot_id: selection.slot.id,
-                              request_id: selection.request_id,
-                            },
-                          );
-                          setRecords((old) =>
-                            [
-                              ...old.filter((a) => a.id !== saved.id),
-                              saved,
-                            ].sort((a, b) => a.starts.localeCompare(b.starts)),
-                          );
-                          setSlots((old) =>
-                            old.filter((s) => s.id !== selection.slot.id),
-                          );
-                          setSelection(null);
-                          setNotice(
-                            "Demo appointment saved. Your agenda is updated.",
-                          );
-                        })
-                      }
-                    >
-                      Confirm demo appointment
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
+            <SharedCalendar centerId={centerId} records={records} onSaved={() => void refresh()}
+              reschedule={rescheduling} onStopReschedule={() => setRescheduling(null)} />
             {center.kind === "portal" && (
               <>
                 <ol className="companion-steps">
@@ -608,6 +494,7 @@ export function AppointmentHub({
                       <button onClick={() => downloadCalendar(a)}>
                         Export calendar
                       </button>
+                      <button disabled={busy} onClick={() => {setCenterId(a.center_id);setRescheduling(a)}}>Reschedule demo</button>
                       <button disabled={busy} onClick={() => setCancelId(a.id)}>
                         Cancel demo
                       </button>
@@ -626,8 +513,8 @@ export function AppointmentHub({
                               "POST",
                             );
                             setCancelId(null);
+                            window.dispatchEvent(new Event("hokiecare-booking-changed"));
                             await refresh();
-                            setSlots([]);
                             setNotice(
                               "Demo reservation cancelled. The time is available again.",
                             );
@@ -655,9 +542,10 @@ export function AppointmentHub({
                   void action(async () => {
                     await api("/api/booking/session", "DELETE");
                     setRecords([]);
-                    setSlots([]);
-                    setSelection(null);
-                    await session();
+                          await session();
+                    sessionStorage.removeItem("hokiecare-pending-review");
+                    sessionStorage.removeItem("hokiecare-review-id");
+                    window.dispatchEvent(new Event("hokiecare-booking-changed"));
                     setNotice(
                       "Your demo records were deleted. A new empty session is ready.",
                     );
@@ -681,6 +569,7 @@ export function AppointmentHub({
 
 type Answer = {
   answer: string;
+  slots?: InventorySlot[];
   action: Navigation | null;
   model: string;
   tool: string;
@@ -694,19 +583,29 @@ export function CareAssistant({
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [answer, setAnswer] = useState<Answer | null>(null);
+  const [review, setReview] = useState<Review | null>(null);
+  const [turns, setTurns] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const input = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
-    if (open) input.current?.focus();
+    if (open) {
+      input.current?.focus();
+      void session().then(async()=>{
+        setAnswer(await api<Answer>("/api/assistant/booking"));
+        const id=sessionStorage.getItem("hokiecare-review-id");
+        if(id) {try {const saved=await api<Review>(`/api/booking/proposals/${id}`); if(saved.expires_at*1000>Date.now())setReview(saved);} catch {sessionStorage.removeItem("hokiecare-review-id")}}
+      }).catch(e=>setError(e.message));
+    }
   }, [open]);
   async function send() {
     setBusy(true);
     setError("");
-    setAnswer(null);
+    setReview(null);
+    if(answer)setTurns(old=>[...old.slice(-5),answer.answer]);
     try {
       await session();
-      setAnswer(await api<Answer>("/api/assistant", "POST", { message: text }));
+      setAnswer(await api<Answer>("/api/assistant/booking", "POST", { message: text }));
       setText("");
     } catch (e) {
       setError((e as Error).message);
@@ -727,17 +626,16 @@ export function CareAssistant({
       {open && (
         <section
           className="assistant-panel"
-          aria-label="HokieCare navigation assistant"
+          aria-label="HokieCare booking assistant"
         >
-          <h2>Where can I help you go?</h2>
+          <h2>Let’s find a time.</h2>
           <p>
             Ask about services, appointments, or using HokieCare. Keep questions
             general—don’t enter names, credentials, or medical details.
           </p>
           <p className="booking-small">
             Powered by Databricks AI. Your question is sent there for
-            processing; HokieCare does not save chat history. This is navigation
-            help, not medical advice.
+            processing. Only scheduling preferences persist for your 24-hour demo session; raw chat is not saved. This is not medical advice.
           </p>
           <form
             onSubmit={(e) => {
@@ -752,7 +650,7 @@ export function CareAssistant({
               value={text}
               onChange={(e) => setText(e.target.value)}
               maxLength={600}
-              placeholder="Help me try the Cook appointment demo"
+              placeholder="Book a Cook demo next Tuesday after 2"
               required
             />
             <button className="booking-primary" disabled={busy || !text.trim()}>
@@ -766,7 +664,10 @@ export function CareAssistant({
           <div aria-live="polite">
             {answer && (
               <>
+                {turns.map((turn,i)=><p className="previous-turn" key={i}>{turn}</p>)}
                 <p>{answer.answer}</p>
+                <div className="time-grid">{answer.slots?.map(slot=><button key={slot.id} disabled={busy} onClick={async()=>{setBusy(true);setError("");try{setReview(await prepareReview(slot))}catch(e){setError((e as Error).message)}finally{setBusy(false)}}}>{easternTime(slot.starts)}<small>Review demo time</small></button>)}</div>
+                {review&&<BookingReview review={review} onDismiss={()=>{setReview(null);sessionStorage.removeItem("hokiecare-pending-review");sessionStorage.removeItem("hokiecare-review-id")}} onSaved={()=>{setReview(null);sessionStorage.removeItem("hokiecare-review-id");setAnswer({...answer,answer:"Demo appointment saved in your private agenda. No provider was contacted.",slots:[],action:{view:"appointments",category:"all",center_id:review.slot.center_id}})}}/>}
                 {answer.action && (
                   <button
                     className="booking-secondary"

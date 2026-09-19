@@ -4,6 +4,8 @@
 !backend/
 !backend/hokiecare/
 !backend/hokiecare/*.py
+!backend/hokiecare/schedules.json
+!backend/hokiecare/lakebase_schema.sql
 !frontend/
 !frontend/package.json
 !frontend/package-lock.json
