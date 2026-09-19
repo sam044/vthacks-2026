@@ -12,9 +12,10 @@ The recommendation is HokieAccess, with HokieBridge as the lower-risk alternativ
 - Researched current event rules, VT problems/data, Databricks constraints, ANS, and hosting.
 - Verified GitHub identity `sam044` through both the connector and existing Git credentials.
 - Created private repository `https://github.com/sam044/vthacks-2026`.
-- Sent write invitations to `S-Gollu`, `cjf123x`, and `andyshah17`.
+- Sent write invitations to `S-Gollu`, `cjf123x`, and `andyshah17`; subsequently verified all three as collaborators with write access.
 - Prepared planning, source, account, workflow, and build/deployment documents.
 - Queried public VT GIS metadata/counts successfully; no routing implementation exists.
+- Committed and pushed the planning files to `main`; verified remote branch and local Markdown links.
 
 ## Next
 

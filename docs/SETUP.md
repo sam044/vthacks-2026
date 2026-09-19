@@ -6,7 +6,7 @@ The agent will implement, test, configure, and deploy the project once the requi
 
 | Service | Your action | Agent's next step |
 | --- | --- | --- |
-| GitHub | Teammates accept invitations to [sam044/vthacks-2026](https://github.com/sam044/vthacks-2026) | Authentication already verified; maintain code and collaboration setup |
+| GitHub | All three teammates already have verified write access to [sam044/vthacks-2026](https://github.com/sam044/vthacks-2026) | Authentication already verified; maintain code and collaboration setup |
 | Databricks | Prefer the Deloitte/Databricks sponsor workspace. Otherwise create [Free Edition](https://www.databricks.com/learn/free-edition). Share the workspace URL, not a password. | Configure local OAuth, create a small table, and test SQL access from the app environment |
 | Google AI Studio | Sign into [AI Studio](https://aistudio.google.com/apikey) and create a project/API key | Store the key in ignored local configuration and later hosting secrets; verify one model/tool call |
 | Vultr | Create/sign into [Vultr](https://www.vultr.com/), claim available event credits, and complete any required billing verification | Configure API/SSH access, provision a small server, and deploy the container with HTTPS |

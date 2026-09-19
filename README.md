@@ -27,10 +27,10 @@ This is an independent hackathon prototype, not an official Virginia Tech servic
 | GitHub account | Repository access |
 | --- | --- |
 | sam044 | Owner |
-| S-Gollu | Write invitation sent |
-| cjf123x | Write invitation sent |
-| andyshah17 | Write invitation sent |
+| S-Gollu | Write access verified |
+| cjf123x | Write access verified |
+| andyshah17 | Write access verified |
 
-Teammates must accept their invitations. Everyone also needs to join the Devpost submission as a contributor.
+All three teammates now appear as collaborators with write access. Everyone also needs to join the Devpost submission as a contributor.
 
 No API keys, billing information, student records, or account credentials belong in this repository. `.env.example` contains placeholders for the proposed architecture, not an implemented application configuration.
