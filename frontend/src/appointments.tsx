@@ -72,7 +72,11 @@ export function session() {
     });
   return sessionStart;
 }
-function companion(command: string, slot?: PortalSlot): Promise<Companion> {
+function companion(
+  command: string,
+  slot?: PortalSlot,
+  timeout = 10000,
+): Promise<Companion> {
   return new Promise((resolve, reject) => {
     const id = crypto.randomUUID();
     const timer = window.setTimeout(() => {
@@ -82,7 +86,7 @@ function companion(command: string, slot?: PortalSlot): Promise<Companion> {
           "Companion not detected. Install it in this browser, then reload HokieCare.",
         ),
       );
-    }, 10000);
+    }, timeout);
     function receive(event: MessageEvent) {
       if (
         event.source !== window ||
@@ -183,6 +187,9 @@ export function AppointmentHub({
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [portal, setPortal] = useState<Companion>({});
+  const [connection, setConnection] = useState<
+    "checking" | "connected" | "unavailable"
+  >("checking");
   const [portalSelection, setPortalSelection] = useState<PortalSlot | null>(
     null,
   );
@@ -217,6 +224,23 @@ export function AppointmentHub({
     void action(initialize);
   }, []);
   useEffect(() => {
+    let active = true;
+    companion("ping", undefined, 1500).then(
+      (result) => {
+        if (active)
+          setConnection(
+            result.state === "installed" ? "connected" : "unavailable",
+          );
+      },
+      () => {
+        if (active) setConnection("unavailable");
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, []);
+  useEffect(() => {
     setCenterId(initialCenter === "none" ? "schiffert" : initialCenter);
   }, [initialCenter]);
   async function portalAction(command: string, slot?: PortalSlot) {
@@ -226,6 +250,15 @@ export function AppointmentHub({
     setNotice(
       result.message || "Companion is installed. Open the portal to begin.",
     );
+  }
+  async function checkCompanion() {
+    setConnection("checking");
+    try {
+      const result = await companion("ping", undefined, 1500);
+      setConnection(result.state === "installed" ? "connected" : "unavailable");
+    } catch {
+      setConnection("unavailable");
+    }
   }
   return (
     <section className="booking-page">
@@ -406,33 +439,63 @@ export function AppointmentHub({
                     appointments.
                   </li>
                   <li>
-                    Read times here and select one. Finish booking in the
-                    portal.
+                    Select a time and finish booking in the official portal.
                   </li>
                 </ol>
                 <div className="booking-actions">
-                  <button
+                  <a
                     className="booking-primary"
-                    disabled={busy}
-                    onClick={() => void action(() => portalAction("open"))}
+                    href={center.booking_url!}
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
                     Open VT portal
-                  </button>
-                  <button
-                    className="booking-secondary"
-                    disabled={busy}
-                    onClick={() => void action(() => portalAction("read"))}
-                  >
-                    Read portal times
-                  </button>
+                    <ArrowUpRight size={16} />
+                  </a>
                 </div>
                 <p className="booking-small">
-                  VT login opens in a companion window. Your credentials and
-                  screening answers stay with VT. Live times remain in this
-                  browser and are not saved to the demo database.
+                  Opens the official portal in a new tab. No extension is
+                  needed. Your credentials and screening answers stay with VT.
                 </p>
                 <details className="companion-install">
-                  <summary>Install the companion / connection help</summary>
+                  <summary>Optional: view portal times in HokieCare</summary>
+                  <p>
+                    The companion adds the ability to read and select displayed
+                    times here. It requires our Chrome/Edge extension in the
+                    same browser as HokieCare. You can book directly through
+                    Open VT portal without it.
+                  </p>
+                  <p role="status">
+                    {connection === "checking"
+                      ? "Checking for the optional companion…"
+                      : connection === "connected"
+                        ? "Companion connected. Open its window to pair it with this page."
+                        : "Optional companion not detected. Direct portal booking is available above."}
+                  </p>
+                  {connection === "connected" && (
+                    <div className="booking-actions">
+                      <button
+                        className="booking-secondary"
+                        disabled={busy}
+                        onClick={() => void action(() => portalAction("open"))}
+                      >
+                        Open companion window
+                      </button>
+                      <button
+                        className="booking-secondary"
+                        disabled={busy}
+                        onClick={() => void action(() => portalAction("read"))}
+                      >
+                        Read portal times
+                      </button>
+                    </div>
+                  )}
+                  <p>
+                    After opening the companion window, sign in, complete
+                    screening, and search there. Then return here to read times.
+                    Final booking stays in the portal. Live times stay in
+                    browser memory and are not saved to the demo database.
+                  </p>
                   <p>
                     Developer preview for Chrome or Edge.{" "}
                     <a href="/hokiecare-companion.zip" download>
@@ -448,20 +511,11 @@ export function AppointmentHub({
                   </p>
                   <button
                     className="booking-secondary"
-                    disabled={busy}
-                    onClick={() => void action(() => portalAction("ping"))}
+                    disabled={connection === "checking"}
+                    onClick={() => void checkCompanion()}
                   >
                     Check connection
                   </button>
-                  <p>
-                    <a
-                      href={center.booking_url!}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Open the official portal directly ↗
-                    </a>
-                  </p>
                 </details>
                 {portal.fetched_at && (
                   <p className="booking-small">
