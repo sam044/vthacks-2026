@@ -1,5 +1,33 @@
 # Continuation notes
 
+## Current milestone: appointments and Schiffert companion
+
+The user explicitly authorized a browser companion and focused authenticated Schiffert test, plus a fully internal Cook demo. This supersedes the planning-only / no-login scope below. Read [booking implementation](BOOKING_IMPLEMENTATION.md) and [Schiffert feasibility](SCHIFFERT_FEASIBILITY.md).
+
+- Implemented on `codex/hokiecare-booking-companion`: five-center hub, persistent Cook demo bookings, cancellation, agenda/ICS export, and Databricks tool-driven navigation assistant. Read those documents for exact delivered versus deferred scope.
+- User completed VT login/Duo and screening themselves. A live availability search returned actual provider times. No real slot was booked or submitted. The new extension is a developer preview; installed-extension end-to-end behavior and final provider confirmation remain unverified.
+- Dedicated Railway `/data` volume created. Hosted Databricks principal received additive `workspace-access` entitlement; real inference and gold read passed, bronze SELECT stayed denied. No new secrets were printed or committed.
+- Local validation: 20 backend tests, 3 sanitized companion tests, TypeScript/Vite build, and browser demo reservation passed. Real Databricks response routed a Cook request to the appointment hub. Deployment verification will be recorded below after CI/deployment completes.
+
+The following planning sections are historical. They do not override the current user-authorized implementation.
+
+## Latest direction: a unified appointment hub
+
+- The user asked for a more tailored plan around Schiffert, Cook, TimelyCare, Carilion, and Hokie Wellness, with scheduling and records kept in HokieCare. Read [APPOINTMENT_HUB_PLAN.md](APPOINTMENT_HUB_PLAN.md) first for the updated booking design. This turn delivered planning/research only.
+- Build both student and scheduler sides: empty appointment/slot tables, deliberate synthetic slot publication, requests/proposals/acceptance, calendar/list, cancellation and rescheduling. Named-center scenarios must visibly say they are demonstrations and not connected to actual providers. Saving a request locally cannot replace a real provider's booking process.
+- Persistence now matters: proposed SQLite on a Railway volume for the single-replica synthetic demo supersedes process-memory slots. No volume/database has been provisioned. Keep Databricks as the public-data/agent platform; Atlas is an optional replacement for the transactional store if its prize is restored.
+- Research corrections: TimelyCare includes human scheduled counseling and TalkNow, alongside a distinct AI product whose VT availability is unverified. Carilion uses MyChart direct scheduling and request workflows; the supplied VT link is a health-system overview. Hokie Wellness has separate consultation and interest-form routes, not a generic medical scheduler. All source links and integration limits are in the new plan.
+- Actual provider connections, raw student health data, VT sign-in, and real appointments remain outside the current public demo. No credential entry, external forms/messages, booking actions, or application deployment occurred. Preserve the existing Requirements block and submission buffer.
+
+## Latest planning update: prototype evolution
+
+- The user requested planning against the current repo, `message2.txt`, and the Impiricus / Deloitte × Databricks briefs. The [prototype evolution plan](PROTOTYPE_EVOLUTION_PLAN.md) is the current next-build order. This update changes documentation only; no new application functionality is implemented.
+- Build the frontend agent with real Databricks model/tool calls and allowlisted UI actions, then a sourced HCP question-to-draft-to-export flow. Add explicit demo scheduling with atomic reservations and ownership checks after those work. Genie, external no-show modeling, and district forecasting are conditional enhancements.
+- The attachment is reference material, not verified evidence of current waits, unused VT appointments, disconnected clinical records, or an implemented privacy boundary. Real campus scheduling needs an authorized provider connection. Keep public facts, district surveillance, external benchmarks, and synthetic slots distinct.
+- The latest request omits MongoDB from its two required tracks. Atlas is optional in this plan, with a meaningful reservation-storage design if that target returns.
+- Fresh public HTTP verification passed September 19 at 07:19 UTC for deployed `c3ffade14cb69396288dcf5efee9b39076b23af4`: six services, 700 trend observations, 64 suppressed counts, readiness, filters, invalid-input rejection, frontend and security header. No new browser or model inference validation occurred in this planning turn.
+- Preserve the Requirements block. Target submission September 20 at 07:00 EDT ahead of the 08:00 deadline. The plan includes feature freezes, test gates, a four-minute demo, and a separate five-minute Impiricus pitch outline. Source publication remains a separate authorized submission action.
+
 ## Current implementation state (supersedes planning status below)
 
 - User explicitly authorized implementing and deploying the first data-backed app, and expects frequent tested GitHub pushes.

@@ -2,24 +2,23 @@
 
 Build one convincing product with a clear Databricks contribution. Add sponsor integrations only when they improve its main demo. Eligibility and simultaneous awards remain subject to the organizers; these are target tracks, not secured entries.
 
-**Latest priority update:** Deloitte × Databricks and **Impiricus** are both primary targets. HokieCare now has an [implementation plan](IMPLEMENTATION_PLAN.md) based on [verified public data](HEALTHCARE_DATA_FEASIBILITY.md). A student navigator addresses campus life, while an HCP-facing local-health briefing/resource workflow provides a plausible Impiricus fit. This is a proposed fit, not sponsor-confirmed eligibility. The user supplied Impiricus's working-tool or five-minute-pitch option and $3,000/$2,000/$1,000 prizes; the general four-minute judging requirement remains separate.
+**Appointment refinement:** the [unified hub plan](APPOINTMENT_HUB_PLAN.md) adds a complete student/scheduler workflow to the professional story. Demonstrate synthetic slot publication, a student's request, a staff proposal, acceptance, and both calendars updating. This is a working coordination prototype; no actual clinic adoption, booking integration, or wait reduction is claimed.
 
-Earlier alternatives: ExpoFlow targets Deloitte's career-navigator category; HokieHarvest targets smart campus/campus life. Keep HokieAccess available as a supporting feature. See [expanded research](EXPANDED_IDEAS.md) for those options; the access-oriented examples below describe the retained module. Genie is a proposed Databricks agent, subject to a live workspace check. Peraton was not a core target for the career-fair alternative.
+**Latest priority update:** Deloitte × Databricks and **Impiricus** are both primary targets. The [prototype evolution plan](PROTOTYPE_EVOLUTION_PLAN.md) now maps the actual deployed prototype and `message2.txt` to the next build. Add the frontend tool-using agent first, strengthen the professional question/draft/export flow, then demonstrate scheduling with explicitly synthetic slots. A sourced directory and trend view are already deployed; model inference, scheduling, forecasting, and user-role authorization are not. This is a proposed sponsor fit, not sponsor-confirmed eligibility. The user's Impiricus working-tool or five-minute-pitch option is separate from the event's four-minute presentation slot.
+
+Earlier alternatives: ExpoFlow targets Deloitte's career-navigator category; HokieHarvest targets smart campus/campus life. Keep HokieAccess research available for later reuse. See [expanded research](EXPANDED_IDEAS.md). A curated Genie Agent is optional after the frontend agent works; the existing backend can supply bounded tools directly.
 
 | Priority | Track | Concrete evidence to show |
 | --- | --- | --- |
-| Required | Deloitte × Databricks | Real tables, a transformation job/notebook, a successful application query against Databricks, a tool-using student agent, and a useful impact dashboard |
-| Required target | Impiricus | A useful healthcare-professional engagement workflow or the sponsor's five-minute pitch; demonstrate more than a patient-facing chatbot |
-| Core | Best Ut Prosim | A specific access barrier addressed, a sourced solution, and user feedback if obtained |
-| Core | Best DEI | Mobility-aware inputs, usable keyboard flow, readable contrast, and honest handling of unknown access conditions |
-| Core | Best UI/UX | A polished mobile trip flow and a clear map-to-explanation relationship |
-| Core integration | Gemini API | Actual model calls to interpret requests and explain retrieved data; show tool results and citations |
-| Hosting choice | Vultr | Public HTTPS deployment running on Vultr; include deployment evidence |
-| Conditional | ElevenLabs | Optional spoken summary of the same grounded trip plan, with equivalent visible text |
-| Conditional | GoDaddy ANS | Actual agent registration, discovery, identity verification, and communication through the resolved endpoint |
-| Conditional | Cloudforce HokieAI Side Kick | A small standalone experience related to the main project, published through the sponsor's required flow and shown live |
-| Sponsor confirmation | Peraton | Determine whether access/service continuity qualifies; do not represent a campus prototype as validated emergency infrastructure |
-| Optional | GoDaddy Registry domain | Use an eligible registered domain and confirm the track's registration/submission conditions |
+| Primary | Deloitte × Databricks | Student request → actual model/tool call → Databricks result → visible page/filter action → cited next step |
+| Primary | Impiricus | Professional question → sourced local context → editable brief → deliberate export; show the HCP's task and benefit |
+| Secondary | Best Ut Prosim | An observed student navigation task, official next step, and feedback if obtained |
+| Secondary | Best UI/UX | Mobile and keyboard assistant/card workflow, accessible chart/table, understandable failure and demo states |
+| Conditional | Best DEI | Demonstrated accessible interactions and relevant service constraints; eligibility and a persuasive inclusion use case still need review |
+| Optional if restored | MongoDB Atlas | Durable synthetic slot/reservation workflow with actual Atlas reads/writes, conflict handling, and restart persistence |
+| Outside current scope | Gemini API, Vultr, voice, ANS, Cloudforce, Peraton, domains | No qualifying integration is claimed. Keep Railway and the Databricks model path; revisit only if the primary demo is complete |
+
+These are recommended judging evidence, not invented additional sponsor requirements. The public event lists technical execution, innovation, impact/usefulness, and presentation/completeness. The evolution plan gives measurable release gates and a demo for each. Do not claim operational savings, a VT no-show model, or current live appointments from external data or a simulation.
 
 The user supplied the detailed Deloitte, GoDaddy, Cloudforce, Peraton, Procedura, Nessie, and Impiricus descriptions. The public [Devpost listing](https://vthacks-14.devpost.com/) still has TBD text for several of these; obtain sponsor handouts from the participant Discord or booth. Avoid applying VTHacks 13's older Deloitte prompt to this event.
 

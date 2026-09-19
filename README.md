@@ -4,13 +4,15 @@ HokieCare repository for a four-person VTHacks 14 team. Primary targets are the 
 
 **Live demo: [HokieCare](https://vthacks-2026-production.up.railway.app)**
 
+**New milestone:** [Appointment hub and AI navigation](docs/BOOKING_IMPLEMENTATION.md) adds Cook demo reservations, an agenda/calendar export, and a Databricks tool-driven assistant. The [Schiffert companion preview](companion/README.md) follows a successful authenticated availability test; it selects displayed times and leaves final booking with the user in the official portal. It does not yet import confirmed real bookings.
+
 **Status:** the first Databricks-backed application is deployed and verified on Railway. Six VT care resources and 700 New River observations are served by FastAPI to a React frontend. Public HTTPS, data readiness, filters and source suppression passed live checks. Read [deployment evidence](docs/DEPLOYMENT_VALIDATION.md), [run/deploy instructions](docs/OPERATIONS.md), and the [implementation plan](docs/IMPLEMENTATION_PLAN.md).
 
 ## Current product
 
 **HokieCare** combines a filterable student care directory with a healthcare-professional trend and editable resource-card workflow. Real public data is imported into Databricks Unity Catalog and queried by the app. Private VT appointment/capacity records are not available. Earlier ExpoFlow and HokieHarvest ideas remain background research.
 
-The existing VT GIS evidence and HokieAccess concept are preserved. Databricks ingestion and SQL reads work; conversational generation, a curated Genie Agent, and forecasting remain next milestones. The current resource card is a sourced template, not AI-generated output. Campus-wide Wi-Fi data, dining operational records, and building controls are unavailable.
+The existing VT GIS evidence and HokieAccess concept are preserved. Databricks ingestion, SQL reads, and bounded AI navigation work; HCP AI generation, a curated Genie Agent, and forecasting remain next milestones. The current resource card is a sourced template, not AI-generated output. Campus-wide Wi-Fi data, dining operational records, and building controls are unavailable.
 
 **Submission requirements:** September 20, 8:00 a.m. ET; public source repository; working demo/presentation links; four-minute presentation; full team present for judging. The user's full requirements are preserved in the project plan. Repository visibility must be made public before submission; it is currently private.
 
@@ -18,6 +20,8 @@ This is an independent hackathon prototype, not an official Virginia Tech servic
 
 ## Planning documents
 
+- [Latest appointment hub plan: five centers, student calendar, and scheduler workspace](docs/APPOINTMENT_HUB_PLAN.md)
+- [Next-build plan: frontend agent, HCP workflow, scheduling sandbox, and award strategy](docs/PROTOTYPE_EVOLUTION_PLAN.md)
 - [Run, test, deploy and operate the app](docs/OPERATIONS.md)
 - [Current implementation order and architecture](docs/IMPLEMENTATION_PLAN.md)
 - [Verified Databricks workspace and skill setup](docs/DATABRICKS_SETUP.md)

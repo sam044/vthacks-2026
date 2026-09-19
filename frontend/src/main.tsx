@@ -32,6 +32,7 @@ import {
   YAxis,
 } from "recharts";
 import "./styles.css";
+import { AppointmentHub, CareAssistant, type Navigation } from "./appointments";
 
 type Meta = {
   mode: "live" | "cached";
@@ -248,8 +249,9 @@ function ServiceCard({ service }: { service: Service }) {
   );
 }
 
-function FindCare() {
-  const [category, setCategory] = useState("all");
+function FindCare({ initialCategory = "all" }: { initialCategory?: string }) {
+  const [category, setCategory] = useState(initialCategory);
+  useEffect(() => setCategory(initialCategory), [initialCategory]);
   const [modality, setModality] = useState("all");
   const query = useApi<Services>(
     `/api/services?category=${category}&modality=${modality}`,
@@ -722,7 +724,12 @@ function HealthTrends() {
 }
 
 function App() {
-  const [view, setView] = useState<"care" | "trends">("care");
+  const [view, setView] = useState<"care" | "trends" | "appointments">("care");
+  const [destination, setDestination] = useState<Navigation>({
+    view: "care",
+    category: "all",
+    center_id: "schiffert",
+  });
   return (
     <>
       <a className="skip-link" href="#main">
@@ -747,6 +754,14 @@ function App() {
           </a>
           <nav aria-label="Main navigation">
             <button
+              className={view === "appointments" ? "selected" : ""}
+              aria-current={view === "appointments" ? "page" : undefined}
+              onClick={() => setView("appointments")}
+            >
+              <CalendarDays size={16} />
+              Appointments
+            </button>
+            <button
               className={view === "care" ? "selected" : ""}
               aria-current={view === "care" ? "page" : undefined}
               onClick={() => setView("care")}
@@ -768,7 +783,21 @@ function App() {
           </span>
         </div>
       </header>
-      <main id="main">{view === "care" ? <FindCare /> : <HealthTrends />}</main>
+      <main id="main">
+        {view === "care" ? (
+          <FindCare initialCategory={destination.category} />
+        ) : view === "appointments" ? (
+          <AppointmentHub initialCenter={destination.center_id} />
+        ) : (
+          <HealthTrends />
+        )}
+      </main>
+      <CareAssistant
+        navigate={(action) => {
+          setDestination(action);
+          setView(action.view);
+        }}
+      />
       <footer>
         <a className="footer-brand" href="#" onClick={() => setView("care")}>
           <Heart size={17} />

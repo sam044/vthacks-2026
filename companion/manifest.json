@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "HokieCare Schiffert Companion",
+  "version": "0.1.0",
+  "description": "Read and select displayed Schiffert times after you sign in. Final booking stays in the portal.",
+  "permissions": ["scripting", "storage"],
+  "host_permissions": ["https://hokies.healthcenter.vt.edu/*"],
+  "background": {"service_worker": "background.js", "type": "module"},
+  "content_scripts": [{
+    "matches": ["https://vthacks-2026-production.up.railway.app/*", "http://127.0.0.1:8000/*"],
+    "js": ["bridge.js"],
+    "all_frames": false
+  }]
+}

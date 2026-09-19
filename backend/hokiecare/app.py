@@ -1,4 +1,4 @@
-"""Read-only public API. No student accounts, narratives, or medical records."""
+"""Public data, bounded navigation assistance, and synthetic appointment records."""
 from collections import deque
 from copy import deepcopy
 from datetime import date, datetime, timezone
@@ -14,8 +14,12 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from .db import client, execute
+from .booking import router as booking_router
+from .assistant import router as assistant_router
 
 app = FastAPI(title="HokieCare", version="0.1.0", docs_url=None, openapi_url="/api/openapi.json", redoc_url=None)
+app.include_router(booking_router)
+app.include_router(assistant_router)
 logger = logging.getLogger("hokiecare")
 CACHE_SECONDS = 300
 cache = {}
@@ -34,7 +38,7 @@ def db_client():
 async def security_headers(request: Request, call_next):
     # One process-wide bound avoids trusting caller-controlled forwarding headers.
     # Query cache + concurrency bound separately limit warehouse work.
-    if request.url.path in ("/api/services", "/api/trends", "/api/ready"):
+    if request.url.path in ("/api/services", "/api/trends", "/api/ready") or request.url.path.startswith(("/api/booking", "/api/assistant")):
         now = time.monotonic()
         with rate_lock:
             while requests_window and requests_window[0] < now - 60:
@@ -139,6 +143,14 @@ def trends(facility: Literal['Emergency Department', 'Urgent Care'] = 'Emergency
 static = Path(os.environ.get('HOKIECARE_STATIC_DIR', str(Path(__file__).resolve().parents[2] / 'frontend/dist')))
 if (static / 'assets').is_dir():
     app.mount('/assets', StaticFiles(directory=static / 'assets'), name='assets')
+
+
+@app.get('/hokiecare-companion.zip', include_in_schema=False)
+def companion_download():
+    path = static / 'hokiecare-companion.zip'
+    if not path.is_file():
+        raise HTTPException(404, 'Companion package is unavailable. Rebuild the frontend download.')
+    return FileResponse(path, media_type='application/zip', filename='hokiecare-companion.zip')
 
 
 @app.get('/', include_in_schema=False)
