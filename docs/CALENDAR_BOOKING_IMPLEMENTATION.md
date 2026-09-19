@@ -17,7 +17,7 @@ Dedicated project: `projects/hokiecare-booking`, production branch, primary endp
 
 The workspace rejected changing auto-suspend with `Auto-suspend timeout cannot be modified for this workspace tier.` The endpoint reports min/max 1 CU and a 86400-second suspension timeout. Do not claim a five-minute scale-to-zero configuration; account limits/costs remain workspace-dependent.
 
-Python psycopg uses verified TLS certificates, a five-connection maximum pool, idle recycling, a fresh OAuth database token before forty minutes, connection checks and bounded connection/SQL/lock waits. The demo serializes writes with one project advisory transaction lock; PostgreSQL triggers additionally check resource and owner interval conflicts. This is intentionally a small-demo capacity design, not a high-throughput scheduler. SQLite retains equivalent interval triggers and versioned schema migration as an explicit fallback.
+The container sets HOME to `/home/hokiecare` after a hosted check exposed libpq probing an inaccessible `/root` client-certificate path under UID 10001. Python psycopg uses verified TLS certificates, a five-connection maximum pool, idle recycling, a fresh OAuth database token before forty minutes, connection checks and bounded connection/SQL/lock waits. The demo serializes writes with one project advisory transaction lock; PostgreSQL triggers additionally check resource and owner interval conflicts. This is intentionally a small-demo capacity design, not a high-throughput scheduler. SQLite retains equivalent interval triggers and versioned schema migration as an explicit fallback.
 
 Operator sequence:
 
@@ -31,7 +31,7 @@ Operator sequence:
 
 Local automated checks cover concurrency, distinct-resource capacity, owner overlap, idempotency, cross-owner access rejection, review expiry, atomic reschedule, v1 migration preserving IDs, deletion/outbox/restart persistence, break exceptions, DST gaps/folds, unknown real inventory, bounded ranges and structured conversation continuation. Companion parser checks remain unchanged.
 
-`scripts/verify_calendar.py URL --ai` exercises two independent cookie sessions against actual storage, anonymous SSE replay, reservation conflict, retry, owner isolation, reschedule, cancellation, a real Databricks tool call with deterministic next-Tuesday resolution, and confirmation through the same backend. Its synthetic records are cleaned up. Local Lakebase/M2M execution passed; hosted deployment evidence is recorded in HANDOFF after cutover.
+`scripts/verify_calendar.py URL --ai` exercises two independent cookie sessions against actual storage, anonymous SSE replay, reservation conflict, retry, owner isolation, reschedule, cancellation, a real Databricks tool call with deterministic next-Tuesday resolution, and confirmation through the same backend. Its synthetic records are cleaned up. Local and hosted Lakebase/M2M execution passed; hosted cutover and deployment evidence are recorded in HANDOFF.
 
 Browser checks exercise the month/day timetable, review, stored agenda, shared busy rows and assistant slot/review controls. Read HANDOFF for the final hosted check.
 

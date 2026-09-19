@@ -1,5 +1,7 @@
 # Databricks setup: verified state and next actions
 
+**Lakebase update:** The user explicitly selected creation of `hokiecare-booking` in the existing `sam` workspace. Its production branch / primary endpoint and project-owned `hokiecare` Postgres schema are initialized. Developer and hosted-principal TLS write/read/transaction checks passed; SQLite migration preserved records and left a volume backup. The workspace rejects changing auto-suspend (currently 86400 seconds, 1 CU). See [booking operations](CALENDAR_BOOKING_IMPLEMENTATION.md) and [hosted validation](HANDOFF.md).
+
 **Navigation-agent update:** `hokiecare-railway` now also has `workspace-access`, required for Foundation Model API invocation. Actual OAuth M2M inference returned a tool call from `databricks-qwen3-next-80b-a3b-instruct`; subsequent gold read returned six services and bronze SELECT remained denied. The frontend assistant uses this model plus the gold directory. See [current implementation](BOOKING_IMPLEMENTATION.md); older statements below that all inference is unimplemented are superseded. Profile `sam` remains the selected developer workspace.
 
 ## Implementation update: September 19, 2026
