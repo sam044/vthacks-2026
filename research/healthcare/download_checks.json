@@ -1,0 +1,68 @@
+[
+  {
+    "source_id": "nhs_national",
+    "requested_url": "https://files.digital.nhs.uk/F2/DA2E2B/National_Overview.csv",
+    "retrieved_at": "2026-09-19T05:46:33.718325+00:00",
+    "status": 200,
+    "final_url": "https://files.digital.nhs.uk/F2/DA2E2B/National_Overview.csv",
+    "content_type": "text/csv",
+    "bytes": 6148441,
+    "sha256": "0cc9fdb68c225d782d7d5bfb10a5a1255756ecae0c2fd54ce0c076963c6cd058",
+    "local_path": "data/raw/healthcare/nhs_national.bin"
+  },
+  {
+    "source_id": "nhs_regional",
+    "requested_url": "https://files.digital.nhs.uk/C2/A93A29/Appointments_GP_Regional_CSV_Jul_26.zip",
+    "retrieved_at": "2026-09-19T05:46:33.718325+00:00",
+    "status": 200,
+    "final_url": "https://files.digital.nhs.uk/C2/A93A29/Appointments_GP_Regional_CSV_Jul_26.zip",
+    "content_type": "application/zip",
+    "bytes": 4445895,
+    "sha256": "506fa30ffcab2724641f7d30af625291efdea464df99667c066d8cbb8424bdee",
+    "local_path": "data/raw/healthcare/nhs_regional.bin"
+  },
+  {
+    "source_id": "nhs_daily",
+    "requested_url": "https://files.digital.nhs.uk/87/FC8DA7/Appointments_GP_Daily_CSV_Jul_26.zip",
+    "retrieved_at": "2026-09-19T05:46:33.718325+00:00",
+    "status": 200,
+    "final_url": "https://files.digital.nhs.uk/87/FC8DA7/Appointments_GP_Daily_CSV_Jul_26.zip",
+    "content_type": "application/zip",
+    "bytes": 54901278,
+    "sha256": "7ff88300547bbed2a5af93942166a2c09c64a22dc68e3d48b06e32f752117960",
+    "local_path": "data/raw/healthcare/nhs_daily.bin"
+  },
+  {
+    "source_id": "npi_blacksburg",
+    "requested_url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&city=Blacksburg&state=VA&limit=20",
+    "retrieved_at": "2026-09-19T05:46:33.718325+00:00",
+    "status": 200,
+    "final_url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&city=Blacksburg&state=VA&limit=20",
+    "content_type": "application/json",
+    "bytes": 24248,
+    "sha256": "91746c09fd4f157d3585746e380d3f584d09b6fa29048a9957d35495a831cf6c",
+    "local_path": "data/raw/healthcare/npi_blacksburg.json"
+  },
+  {
+    "source_id": "nasa_weather",
+    "requested_url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M,PRECTOTCORR&community=AG&longitude=-80.4139&latitude=37.2296&start=20250901&end=20250930&format=JSON",
+    "retrieved_at": "2026-09-19T05:46:33.858154+00:00",
+    "status": 200,
+    "final_url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M,PRECTOTCORR&community=AG&longitude=-80.4139&latitude=37.2296&start=20250901&end=20250930&format=JSON",
+    "content_type": "application/json",
+    "bytes": 1527,
+    "sha256": "74674faa3d5b47c3ea648138bfef4e6aeffad87f01e1cf9221863c39f0aaa3ab",
+    "local_path": "data/raw/healthcare/nasa_weather.json"
+  },
+  {
+    "source_id": "mendeley_files",
+    "requested_url": "https://data.mendeley.com/public-api/datasets/wm6w2fvkfj/files?folder_id=root&version=1",
+    "retrieved_at": "2026-09-19T05:46:34.250697+00:00",
+    "status": 200,
+    "final_url": "https://data.mendeley.com/public-api/datasets/wm6w2fvkfj/files?folder_id=root&version=1",
+    "content_type": "application/json; charset=utf-8",
+    "bytes": 725,
+    "sha256": "53f5ae95d4e9ae45d82f604bb05b71fa4e23c89b283fe81cddb3aa2a1bbf4aa4",
+    "local_path": "data/raw/healthcare/mendeley_files.json"
+  }
+]

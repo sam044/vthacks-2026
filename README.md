@@ -1,14 +1,14 @@
 # VTHacks 2026
 
-Planning repository for a four-person VTHacks 14 team. Our first priority is the Deloitte × Databricks student experience challenge.
+HokieCare repository for a four-person VTHacks 14 team. Primary targets are the Deloitte × Databricks student experience challenge and Impiricus HCP engagement challenge.
 
-**Status:** research and repository setup complete; product choice is a recommendation, and application implementation and deployment have not started.
+**Status:** the first Databricks-backed application is implemented and locally verified. Six VT care resources and 700 New River observations are served by FastAPI to a React frontend. The Docker image and Railway configuration are ready for deployment verification. Read [run/deploy instructions](docs/OPERATIONS.md) and the [implementation plan](docs/IMPLEMENTATION_PLAN.md).
 
-## Current shortlist
+## Current product
 
-The team wants a broader problem with clear company-facing value. The current recommendation is **ExpoFlow + HokieAccess**: career-fair matching, queue information, and opt-in recruiter follow-up, with accessible campus navigation. **HokieHarvest + HokieAccess**, focused on dining preparation and food waste, is the sustainability alternative. The user has not selected the final direction.
+**HokieCare** combines a filterable student care directory with a healthcare-professional trend and editable resource-card workflow. Real public data is imported into Databricks Unity Catalog and queried by the app. Private VT appointment/capacity records are not available. Earlier ExpoFlow and HokieHarvest ideas remain background research.
 
-Preserve the existing VT GIS evidence and HokieAccess concept. Databricks data processing, analytics, and a Genie Agent are proposed core components. Campus-wide Wi-Fi data, dining operational records, and building controls are not available to this project at present.
+The existing VT GIS evidence and HokieAccess concept are preserved. Databricks ingestion and SQL reads work; conversational generation, a curated Genie Agent, and forecasting remain next milestones. The current resource card is a sourced template, not AI-generated output. Campus-wide Wi-Fi data, dining operational records, and building controls are unavailable.
 
 **Submission requirements:** September 20, 8:00 a.m. ET; public source repository; working demo/presentation links; four-minute presentation; full team present for judging. The user's full requirements are preserved in the project plan. Repository visibility must be made public before submission; it is currently private.
 
@@ -16,11 +16,15 @@ This is an independent hackathon prototype, not an official Virginia Tech servic
 
 ## Planning documents
 
+- [Run, test, deploy and operate the app](docs/OPERATIONS.md)
+- [Current implementation order and architecture](docs/IMPLEMENTATION_PLAN.md)
+- [Verified Databricks workspace and skill setup](docs/DATABRICKS_SETUP.md)
+- [HokieCare data feasibility, verified downloads, and limits](docs/HEALTHCARE_DATA_FEASIBILITY.md)
 - [Ideas and recommendation](docs/PROJECT_PLAN.md)
 - [Expanded food, expo, Wi-Fi, and energy research](docs/EXPANDED_IDEAS.md)
 - [Prize priorities and evidence](docs/PRIZE_STRATEGY.md)
 - [Accounts and access](docs/SETUP.md)
-- [Build and deployment plan](docs/BUILD_PLAN.md)
+- [Earlier HokieAccess module build reference](docs/BUILD_PLAN.md)
 - [Research sources and verified data](docs/RESEARCH.md)
 - [Team workflow](CONTRIBUTING.md)
 - [Continuation notes](docs/HANDOFF.md)
@@ -36,4 +40,4 @@ This is an independent hackathon prototype, not an official Virginia Tech servic
 
 All three teammates now appear as collaborators with write access. Everyone also needs to join the Devpost submission as a contributor.
 
-No API keys, billing information, student records, or account credentials belong in this repository. `.env.example` contains placeholders for the proposed architecture, not an implemented application configuration.
+No API keys, billing information, student records, or account credentials belong in this repository. `.env.example` documents local and hosted environment variables. The public container uses a dedicated Databricks OAuth service principal; no developer OAuth cache is deployed.

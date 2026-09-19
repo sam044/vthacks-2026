@@ -1,0 +1,41 @@
+[
+  {
+    "source_id": "vdh_respiratory",
+    "requested_url": "https://data.virginia.gov/dataset/c03a69e8-be1c-4fc1-bf83-36f7e136525c/resource/4f94deaa-a8fb-431c-bd73-e5705418f81a/download/t_resp_weekly_fips_zeropadded_allvisits.csv",
+    "retrieved_at": "2026-09-19T05:48:32.899469+00:00",
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "source_id": "vdh_dictionary",
+    "requested_url": "https://data.virginia.gov/api/3/action/datastore_search?resource_id=4f94deaa-a8fb-431c-bd73-e5705418f81a&limit=1",
+    "retrieved_at": "2026-09-19T05:48:32.902659+00:00",
+    "status": 200,
+    "final_url": "https://data.virginia.gov/api/3/action/datastore_search?resource_id=4f94deaa-a8fb-431c-bd73-e5705418f81a&limit=1",
+    "content_type": "application/json;charset=utf-8",
+    "bytes": 3441,
+    "sha256": "94594ace3655bb0eb35436674d56c134e169c013ba985b1901a8dd4145de2d8d",
+    "local_path": "data/raw/healthcare/vdh_dictionary.json"
+  },
+  {
+    "source_id": "vdh_records",
+    "requested_url": "https://data.virginia.gov/api/3/action/datastore_search?resource_id=4f94deaa-a8fb-431c-bd73-e5705418f81a&limit=32000",
+    "retrieved_at": "2026-09-19T05:48:32.903528+00:00",
+    "status": 200,
+    "final_url": "https://data.virginia.gov/api/3/action/datastore_search?resource_id=4f94deaa-a8fb-431c-bd73-e5705418f81a&limit=32000",
+    "content_type": "application/json;charset=utf-8",
+    "bytes": 14410430,
+    "sha256": "7c681c4a6cc19c11723d077d788dadba9a9df8e836d1e28ce66341e6eab9a84d",
+    "local_path": "data/raw/healthcare/vdh_records.json"
+  },
+  {
+    "source_id": "vt_annual2025",
+    "requested_url": "https://vtechworks.lib.vt.edu/server/api/core/bitstreams/f204a60c-b63b-4644-b76a-f8cd5692bef0/content",
+    "retrieved_at": "2026-09-19T05:48:32.903528+00:00",
+    "status": 200,
+    "final_url": "https://vtechworks.lib.vt.edu/server/api/core/bitstreams/f204a60c-b63b-4644-b76a-f8cd5692bef0/content",
+    "content_type": "application/pdf;charset=UTF-8",
+    "bytes": 1542114,
+    "sha256": "8e8079f4b88870cfe1d7fb9388c3504bcbca71d747e99f194299457220ac30b4",
+    "local_path": "data/raw/healthcare/vt_annual2025.bin"
+  }
+]

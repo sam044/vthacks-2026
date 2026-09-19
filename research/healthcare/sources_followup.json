@@ -1,0 +1,9 @@
+{
+  "cer_appointments": "https://data.mendeley.com/public-files/datasets/wm6w2fvkfj/files/19bc39c8-479d-4dfb-9bca-787022ca3a8b/file_downloaded",
+  "vdh_metadata": "https://data.virginia.gov/api/3/action/package_show?id=detailed-emergency-department-visits-public-use-dataset",
+  "vt_timelycare": "https://ucc.vt.edu/timelycare.html",
+  "vt_cook_appointments": "https://ucc.vt.edu/appointment.html",
+  "vt_ssd": "https://ssd.vt.edu/",
+  "vt_wellness": "https://hokiewellness.vt.edu/",
+  "vdh_page": "https://www.vdh.virginia.gov/epidemiology/respiratory-diseases-in-virginia/data/emergency-visits-for-respiratory-illness/"
+}

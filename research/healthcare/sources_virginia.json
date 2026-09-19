@@ -1,0 +1,6 @@
+{
+  "vdh_respiratory": "https://data.virginia.gov/dataset/c03a69e8-be1c-4fc1-bf83-36f7e136525c/resource/4f94deaa-a8fb-431c-bd73-e5705418f81a/download/t_resp_weekly_fips_zeropadded_allvisits.csv",
+  "vdh_dictionary": "https://data.virginia.gov/api/3/action/datastore_search?resource_id=4f94deaa-a8fb-431c-bd73-e5705418f81a&limit=1",
+  "vdh_records": "https://data.virginia.gov/api/3/action/datastore_search?resource_id=4f94deaa-a8fb-431c-bd73-e5705418f81a&limit=32000",
+  "vt_annual2025": "https://vtechworks.lib.vt.edu/server/api/core/bitstreams/f204a60c-b63b-4644-b76a-f8cd5692bef0/content"
+}

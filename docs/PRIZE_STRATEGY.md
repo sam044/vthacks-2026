@@ -2,11 +2,14 @@
 
 Build one convincing product with a clear Databricks contribution. Add sponsor integrations only when they improve its main demo. Eligibility and simultaneous awards remain subject to the organizers; these are target tracks, not secured entries.
 
-Following team feedback, ExpoFlow targets Deloitte's career-navigator category; HokieHarvest targets smart campus/campus life. Keep HokieAccess as a supporting feature. See [expanded research](EXPANDED_IDEAS.md) for the current options; the access-oriented examples below describe the retained module. Genie is the proposed built-in Databricks agent, subject to a live workspace check. Peraton is not a core target for the career-fair product.
+**Latest priority update:** Deloitte × Databricks and **Impiricus** are both primary targets. HokieCare now has an [implementation plan](IMPLEMENTATION_PLAN.md) based on [verified public data](HEALTHCARE_DATA_FEASIBILITY.md). A student navigator addresses campus life, while an HCP-facing local-health briefing/resource workflow provides a plausible Impiricus fit. This is a proposed fit, not sponsor-confirmed eligibility. The user supplied Impiricus's working-tool or five-minute-pitch option and $3,000/$2,000/$1,000 prizes; the general four-minute judging requirement remains separate.
+
+Earlier alternatives: ExpoFlow targets Deloitte's career-navigator category; HokieHarvest targets smart campus/campus life. Keep HokieAccess available as a supporting feature. See [expanded research](EXPANDED_IDEAS.md) for those options; the access-oriented examples below describe the retained module. Genie is a proposed Databricks agent, subject to a live workspace check. Peraton was not a core target for the career-fair alternative.
 
 | Priority | Track | Concrete evidence to show |
 | --- | --- | --- |
 | Required | Deloitte × Databricks | Real tables, a transformation job/notebook, a successful application query against Databricks, a tool-using student agent, and a useful impact dashboard |
+| Required target | Impiricus | A useful healthcare-professional engagement workflow or the sponsor's five-minute pitch; demonstrate more than a patient-facing chatbot |
 | Core | Best Ut Prosim | A specific access barrier addressed, a sourced solution, and user feedback if obtained |
 | Core | Best DEI | Mobility-aware inputs, usable keyboard flow, readable contrast, and honest handling of unknown access conditions |
 | Core | Best UI/UX | A polished mobile trip flow and a clear map-to-explanation relationship |
@@ -30,7 +33,6 @@ GoDaddy documents domain validation, certificates, and DNS as part of registrati
 
 - **Capital One Nessie:** natural only if selecting the basic-needs/budgeting idea; all accounts and transactions would be sandbox data.
 - **Procedura:** photo-to-map-ready 3D reconstruction is a different central deliverable and too large an add-on.
-- **Impiricus:** healthcare-professional engagement needs a different user and workflow.
 - **Tiger Data / MongoDB:** a second database needs a real workload; Databricks already serves the main challenge.
 - **Solana / Presage:** no necessary role in the recommended MVP.
 - **CoStar / Galois:** user attachment says TBD; no invented requirements or prize mapping.

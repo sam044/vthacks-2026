@@ -8,3 +8,7 @@
 *.tsx text eol=lf
 *.sh text eol=lf
 *.ps1 text eol=crlf
+
+# Preserve exact upstream bytes for the pinned Databricks skill hashes.
+.agents/skills/** -text
+.agents/skills/** linguist-vendored
