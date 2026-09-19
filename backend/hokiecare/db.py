@@ -2,12 +2,13 @@
 import os
 import time
 from databricks.sdk import WorkspaceClient
+from databricks.sdk.core import Config
 from databricks.sdk.service.sql import StatementState, StatementParameterListItem
 
 
 def client():
-    return WorkspaceClient(profile=os.environ.get("DATABRICKS_CONFIG_PROFILE"),
-                           http_timeout_seconds=15, retry_timeout_seconds=20)
+    return WorkspaceClient(config=Config(profile=os.environ.get("DATABRICKS_CONFIG_PROFILE"),
+                           http_timeout_seconds=15, retry_timeout_seconds=20))
 
 
 def execute(w, sql, parameters=None, *, timeout=45, warehouse=None):

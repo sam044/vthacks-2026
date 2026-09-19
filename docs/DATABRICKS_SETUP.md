@@ -1,5 +1,13 @@
 # Databricks setup: verified state and next actions
 
+## Implementation update: September 19, 2026
+
+The first import/query milestone is complete. `workspace.hokiecare` now contains a managed source Volume, immutable hash-addressed bronze/normalized Delta snapshots, and two gold views. Actual SQL checks returned 28,700 source records, 700 New River rows (350 weeks), six service records, and 64 suppressed combined counts. See `research/healthcare/databricks_import.json` and [operations](OPERATIONS.md).
+
+A dedicated `hokiecare-railway` principal can query both views through OAuth M2M, with CAN_USE on the existing warehouse and SELECT on those views. Its 30-day secret is configured in Railway server variables and an ignored recovery file. No user OAuth cache is deployed. Genie One successfully explored the trend view during development; a curated application Genie agent and model inference are still unimplemented. All 31 installed skills are now exposed in Codex's skill catalog.
+
+The remainder of this file records the earlier planning-stage checks; its statements about absent data/resources describe that earlier point in time.
+
 Checked September 19, 2026. The user explicitly selected the existing `sam` profile for HokieCare. That selection persists; do not ask again unless the destination changes.
 
 ## Verified locally
