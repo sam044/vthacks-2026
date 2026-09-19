@@ -1,0 +1,41 @@
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+.secrets/
+secrets/
+*.pem
+*.key
+.databrickscfg
+.databricks/
+.ssh/
+
+# Generated files and dependencies
+node_modules/
+dist/
+build/
+.next/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage/
+*.log
+*.tsbuildinfo
+
+# Local datasets, uploads, and runtime state
+data/raw/
+data/private/
+uploads/
+runtime/
+*.sqlite
+*.sqlite3
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
