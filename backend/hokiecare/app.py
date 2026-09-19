@@ -15,7 +15,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from .db import client, execute
 
-app = FastAPI(title="HokieCare", version="0.1.0", docs_url="/api/docs", openapi_url="/api/openapi.json", redoc_url=None)
+app = FastAPI(title="HokieCare", version="0.1.0", docs_url=None, openapi_url="/api/openapi.json", redoc_url=None)
 logger = logging.getLogger("hokiecare")
 CACHE_SECONDS = 300
 cache = {}

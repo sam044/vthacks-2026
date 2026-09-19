@@ -63,7 +63,8 @@ def test_no_week_over_week_claim_across_gap(client, monkeypatch):
 
 
 def test_expired_cache_does_not_hide_outage(client, monkeypatch):
-    api.cache['services'] = (0, [{'name': 'stale'}], {})
+    import time
+    api.cache['services'] = (time.monotonic() - api.CACHE_SECONDS - 1, [{'name': 'stale'}], {})
     monkeypatch.setattr(api, 'execute', lambda *a: (_ for _ in ()).throw(RuntimeError('credentials')))
     assert client.get('/api/services').status_code == 503
 
