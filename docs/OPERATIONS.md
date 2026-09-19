@@ -1,5 +1,7 @@
 # Run and deploy HokieCare
 
+**Current booking runtime:** See [shared-calendar operations](CALENDAR_BOOKING_IMPLEMENTATION.md) for Lakebase OAuth/TLS, migration, rollback restrictions and verification. `scripts/verify_calendar.py URL --ai` checks actual conversational booking and two-session transactions. The older SQLite-only and navigation-only descriptions below refer to the prior release. The existing HCP template and public lakehouse read flow remain supported.
+
 The first release serves a VT service directory and New River respiratory charts from Databricks SQL. The editable HCP resource card is a deterministic draft, not model-generated advice. Agent/model/Genie integration is a later milestone.
 
 ## Local development
