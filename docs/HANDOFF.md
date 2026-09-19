@@ -1,12 +1,12 @@
 # Continuation notes
 
-## Chat-first UI milestone — September 19
+## Standalone keyed hashing — September 19
 
-Implemented the requested two-section design: Care Assistant is the landing workspace, with the logo/motto above a large composer, and Health Intelligence remains separate. Chat, contextual directory, calendar and agenda now share scheduling selection and a single review. On mobile the panel becomes a keyboard-accessible sheet; switching sections preserves in-memory conversation and drafts. No model, booking API, database schema or mock-data import changed. See [design and implementation evidence](CHAT_FIRST_UI.md).
-
-Local verification passed the production frontend build, 45 Python tests, seven frontend/companion tests, actual Databricks data reads and model responses, manual/conversational booking review, save/reschedule/cancel, and desktop/mobile UI checks. Fixed an existing public-data timeout bug found during those checks: successfully loaded results no longer become timeout errors after 70 seconds. The existing briefing draft remains editable; the browser tool's download-event capture timed out, so downloaded-file contents were not verified in this pass.
-
-PR [#13](https://github.com/sam044/vthacks-2026/pull/13) merged at `8acf2cf06614d8baffc4a496cbd5c8a9c5e506a5` after both Linux CI runs passed. Railway deployment `d1e53bac-542b-44a7-80e4-183d8ddad6c3` succeeded. At 21:14 UTC, hosted verification returned that exact SHA, six services, 700 regional observations and 64 preserved suppressed counts. Hosted calendar verification passed actual Lakebase transactions, owner isolation, replay/idempotency, reschedule/cancel and real Databricks conversational booking; its temporary test sessions were cleaned up. The hosted browser displayed the new landing screen. Mock-data creation remains the next separately requested task. The original Requirements block is untouched and repository visibility remains private.
+Branch `codex/encrypt-user-data` adds a backend-only HMAC-SHA-256 module and 20
+passing tests, with a CI step. No frontend, FastAPI, database write path, or deployed
+behavior changes. Read [the hashing handover](USER_DATA_HASHING_HANDOFF.md) and
+[module documentation](../backend/README.md) before integrating it. It is Node.js;
+the existing Python backend does not call it yet. No secrets were provisioned.
 
 ## Grounded assistant interaction update — September 19
 
