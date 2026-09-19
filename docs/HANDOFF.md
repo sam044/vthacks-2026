@@ -1,5 +1,15 @@
 # Continuation notes
 
+## Grounded assistant interaction update — September 19
+
+The user asked to fix the existing Databricks chatbot, with generated answers grounded in project data, conversational follow-ups, and automatic internal navigation. No Gemini or new model/provider was added.
+
+- The active assistant reads the six service records from the existing Databricks gold view, plans a validated action, retrieves fresh calendar results when needed, and calls the same Qwen endpoint to generate its answer. Replies are no longer fixed help/service templates. A bounded repair call handles detected unsupported contacts, cross-provider portal claims, modality overclaims and calendar-date mismatches; it fails visibly if verification still fails. This is not a guarantee against every unsupported natural-language claim.
+- Normal user/assistant turns stay in React page memory and up to ten turns are sent with each request. Raw chat/model prose is not persisted in the application database or browser storage. Databricks receives that context for inference. Only scheduling fields and previously offered slot IDs persist, with existing owner/version checks. Start over clears structured task state and invalidates in-flight responses.
+- The app follows allowlisted navigation automatically without closing chat. Calendar navigation carries provider/demo mode, service and date. Provider access buttons appear before the calendar. Natural-language selection such as "take the earliest one" is matched to previously offered IDs and fresh inventory, then opens a real expiring review; confirmation still requires the review button.
+- Local validation: 45 Python tests, TypeScript/Vite production build, and a 17-turn real Databricks evaluation covering medical navigation, comparison/follow-ups, ambiguity, demo date changes/selection, TalkNow, missing cost data, unrelated questions, and injection/medical-advice boundaries. Initial evaluation failures exposed real issues and were corrected before release. Browser checks verified chat visibility, automatic Schiffert navigation, comparisons, and conversational demo review. Use `scripts/evaluate_assistant.py URL --output runtime/assistant-eval.json` to repeat the authored cases; no appointments are submitted by that script. Read the replies as well as the machine checks.
+- No live provider feed or real booking submission was added. Existing shared calendar, Lakebase transactions, and public analytics remain the authorities. Production deployment and verification are recorded in the task's final report.
+
 ## Shared calendar and Databricks booking demo — delivered September 19
 
 The user asked to implement NEXT_SESSION_PROMPT and BOOKING_AGENT_NEXT_SESSION_DESIGN, approved creating the dedicated Lakebase project, and chose **“Not installed; finish demo first”** for the Schiffert companion. The demo milestone is implemented; real-provider final submission/private sync remains deferred. See [detailed implementation and runbook](CALENDAR_BOOKING_IMPLEMENTATION.md).

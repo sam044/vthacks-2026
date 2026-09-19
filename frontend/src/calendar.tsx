@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { api, session } from './appointments';
+import { api, session, type Navigation } from './appointments';
 
 export type InventorySlot = {id:string; starts:string; ends:string; service_id:string; center_id:string; version:number; state:string};
 type Service = {id:string;center_id:string;name:string;hours_note:string;source_url:string;duration_minutes:number;weekly:Record<string,string[][]>};
@@ -44,7 +44,7 @@ export async function prepareReview(slot:InventorySlot,appointmentId?:string) {
   return review;
 }
 
-export function SharedCalendar({centerId,records,onSaved,reschedule,onStopReschedule}:{centerId:string;records:{slot_id:string;status:string}[];onSaved:()=>void;reschedule?:{id:string;service_id:string}|null;onStopReschedule:()=>void}) {
+export function SharedCalendar({centerId,records,onSaved,reschedule,onStopReschedule,destination}:{destination?:Navigation;centerId:string;records:{slot_id:string;status:string}[];onSaved:()=>void;reschedule?:{id:string;service_id:string}|null;onStopReschedule:()=>void}) {
   const [services,setServices]=useState<Service[]>([]),[serviceId,setServiceId]=useState('');
   const [mode,setMode]=useState(centerId==='cook'?'demo':'provider');
   const [month,setMonth]=useState(easternDate().slice(0,7)),[day,setDay]=useState(easternDate());
@@ -52,7 +52,7 @@ export function SharedCalendar({centerId,records,onSaved,reschedule,onStopResche
   const [live,setLive]=useState(false),[review,setReview]=useState<Review|null>(null);
   const generation=useRef(0);
   useEffect(()=>{void api<{services:Service[]}>('/api/booking/catalog').then(x=>setServices(x.services)).catch(e=>setError(e.message))},[]);
-  useEffect(()=>{setServiceId(reschedule?.service_id||services.find(s=>s.center_id===centerId)?.id||'');setMode(reschedule||centerId==='cook'?'demo':'provider');setReview(null)},[centerId,services,reschedule]);
+  useEffect(()=>{setServiceId(reschedule?.service_id||services.find(s=>s.id===destination?.service_id&&s.center_id===centerId)?.id||services.find(s=>s.center_id===centerId)?.id||'');setMode(reschedule?'demo':destination?.mode||(centerId==='cook'?'demo':'provider'));if(destination?.day){setDay(destination.day);setMonth(destination.day.slice(0,7))}setReview(null)},[centerId,services,reschedule,destination]);
   const load=useCallback(async()=>{
     if(!serviceId)return;
     const id=++generation.current;

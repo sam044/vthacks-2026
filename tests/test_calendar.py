@@ -142,7 +142,11 @@ def test_conversation_persists_only_preferences_and_requires_review(clients,monk
     intents=iter([{'action':'availability','service_id':'cook-counseling','mode':'demo'},
                   {'action':'availability','day':str(next_day()),'after':'14:00'}])
     def invoke(*args,**kwargs):
-        return {'choices':[{'message':{'tool_calls':[{'function':{'name':'scheduling_preferences','arguments':json.dumps(next(intents))}}]}}]}
+        name=kwargs['body']['tools'][0]['function']['name']
+        payload=next(intents) if name=='scheduling_preferences' else {'answer':'What date would you like? Review an available fictional time below.', 'source_ids':['cook']}
+        return {'choices':[{'message':{'tool_calls':[{'function':{'name':name,'arguments':json.dumps(payload)}}]}}]}
+    from pathlib import Path
+    monkeypatch.setattr(api,'services',lambda:{'services':json.loads(Path('data/contracts/services.json').read_text()),'data':{'provider':'test'}})
     monkeypatch.setattr(api,'db_client',lambda:SimpleNamespace(api_client=SimpleNamespace(do=invoke)))
     a=clients[0]
     r=a.post('/api/assistant/booking',headers=H,json={'message':'Cook demo'})
