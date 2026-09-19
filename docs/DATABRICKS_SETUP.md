@@ -1,5 +1,7 @@
 # Databricks setup: verified state and next actions
 
+**Navigation-agent update:** `hokiecare-railway` now also has `workspace-access`, required for Foundation Model API invocation. Actual OAuth M2M inference returned a tool call from `databricks-qwen3-next-80b-a3b-instruct`; subsequent gold read returned six services and bronze SELECT remained denied. The frontend assistant uses this model plus the gold directory. See [current implementation](BOOKING_IMPLEMENTATION.md); older statements below that all inference is unimplemented are superseded. Profile `sam` remains the selected developer workspace.
+
 ## Implementation update: September 19, 2026
 
 The first import/query milestone is complete. `workspace.hokiecare` now contains a managed source Volume, immutable hash-addressed bronze/normalized Delta snapshots, and two gold views. Actual SQL checks returned 28,700 source records, 700 New River rows (350 weeks), six service records, and 64 suppressed combined counts. See `research/healthcare/databricks_import.json` and [operations](OPERATIONS.md).

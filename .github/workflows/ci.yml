@@ -20,7 +20,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: pip install -r requirements-dev.in
       - run: python -m pytest -q
-      - run: npm ci && npm run build
+      - run: python scripts/package_companion.py
+      - run: npm ci && node --test companion.test.mjs && npm run build
         working-directory: frontend
       - run: docker build -t hokiecare:ci .
       - name: Container health and frontend
@@ -33,3 +34,6 @@ jobs:
           curl --fail http://127.0.0.1:8000/api/health
           curl --fail http://127.0.0.1:8000/ | grep 'HokieCare'
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/services)" = "503"
+          curl --fail -X POST -H 'X-HokieCare-Action: 1' http://127.0.0.1:8000/api/booking/session
+          docker exec hokiecare-ci sh -c 'grep "Uid:" /proc/1/status | grep 10001'
+          curl --fail http://127.0.0.1:8000/hokiecare-companion.zip -o /tmp/companion.zip

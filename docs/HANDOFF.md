@@ -1,5 +1,16 @@
 # Continuation notes
 
+## Current milestone: appointments and Schiffert companion
+
+The user explicitly authorized a browser companion and focused authenticated Schiffert test, plus a fully internal Cook demo. This supersedes the planning-only / no-login scope below. Read [booking implementation](BOOKING_IMPLEMENTATION.md) and [Schiffert feasibility](SCHIFFERT_FEASIBILITY.md).
+
+- Implemented on `codex/hokiecare-booking-companion`: five-center hub, persistent Cook demo bookings, cancellation, agenda/ICS export, and Databricks tool-driven navigation assistant. Read those documents for exact delivered versus deferred scope.
+- User completed VT login/Duo and screening themselves. A live availability search returned actual provider times. No real slot was booked or submitted. The new extension is a developer preview; installed-extension end-to-end behavior and final provider confirmation remain unverified.
+- Dedicated Railway `/data` volume created. Hosted Databricks principal received additive `workspace-access` entitlement; real inference and gold read passed, bronze SELECT stayed denied. No new secrets were printed or committed.
+- Local validation: 20 backend tests, 3 sanitized companion tests, TypeScript/Vite build, and browser demo reservation passed. Real Databricks response routed a Cook request to the appointment hub. Deployment verification will be recorded below after CI/deployment completes.
+
+The following planning sections are historical. They do not override the current user-authorized implementation.
+
 ## Latest direction: a unified appointment hub
 
 - The user asked for a more tailored plan around Schiffert, Cook, TimelyCare, Carilion, and Hokie Wellness, with scheduling and records kept in HokieCare. Read [APPOINTMENT_HUB_PLAN.md](APPOINTMENT_HUB_PLAN.md) first for the updated booking design. This turn delivered planning/research only.

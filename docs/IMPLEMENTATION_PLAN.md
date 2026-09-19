@@ -1,5 +1,7 @@
 # HokieCare implementation plan
 
+**Current implementation:** [Appointment/navigation milestone](BOOKING_IMPLEMENTATION.md) and [authenticated Schiffert feasibility](SCHIFFERT_FEASIBILITY.md) supersede the older planning-only appointment status below. Cook demo persistence and the Databricks navigation agent are implemented; Schiffert availability was observed live, while final booking remains user-controlled and unverified for automation.
+
 **Latest appointment direction:** [Unified appointment hub](APPOINTMENT_HUB_PLAN.md) specifies the five-center experience, empty request/reservation store, student calendar, and scheduler queue. Use it for scheduling scope, persistence, connection capabilities, and delivery order; use the evolution plan for the broader agent and award strategy. No new booking feature is implemented by these planning updates.
 
 **Next-build update (September 19):** [Prototype evolution and award strategy](PROTOTYPE_EVOLUTION_PLAN.md) is the current delivery plan based on the working repository, `message2.txt`, and the user's revised sponsor requirements. Prioritize a frontend tool-using agent and the HCP workflow, then a clearly labeled scheduling sandbox. Genie and forecasting are conditional enhancements. The original architecture below remains a reference; later historical statements about missing imports/deployment are superseded by the implementation update and handoff.
