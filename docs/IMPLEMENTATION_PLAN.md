@@ -1,5 +1,7 @@
 # HokieCare implementation plan
 
+**Next-build update (September 19):** [Prototype evolution and award strategy](PROTOTYPE_EVOLUTION_PLAN.md) is the current delivery plan based on the working repository, `message2.txt`, and the user's revised sponsor requirements. Prioritize a frontend tool-using agent and the HCP workflow, then a clearly labeled scheduling sandbox. Genie and forecasting are conditional enhancements. The original architecture below remains a reference; later historical statements about missing imports/deployment are superseded by the implementation update and handoff.
+
 **Implementation update (September 19):** the first core import and public browser/API read flow are deployed and verified on Railway. [Deployment evidence](DEPLOYMENT_VALIDATION.md), [operations](OPERATIONS.md) and [handoff](HANDOFF.md) track actual delivery. The original roadmap below remains the design reference; the first-release API uses fixed bounded SQL and validates/filters parameters over small results. It does not accept arbitrary SQL. AI generation/curated Genie/forecasting remain later milestones.
 
 Updated September 19, 2026. The user has authorized beginning the build, starting with this architecture, setup, and implementation plan. Deloitte × Databricks and Impiricus remain the primary prize targets. [Submission requirements](PROJECT_PLAN.md#requirements) remain authoritative: September 20, 8:00 a.m. ET, with a 7:00 a.m. submission target.

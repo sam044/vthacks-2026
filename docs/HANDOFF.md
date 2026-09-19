@@ -1,5 +1,14 @@
 # Continuation notes
 
+## Latest planning update: prototype evolution
+
+- The user requested planning against the current repo, `message2.txt`, and the Impiricus / Deloitte × Databricks briefs. The [prototype evolution plan](PROTOTYPE_EVOLUTION_PLAN.md) is the current next-build order. This update changes documentation only; no new application functionality is implemented.
+- Build the frontend agent with real Databricks model/tool calls and allowlisted UI actions, then a sourced HCP question-to-draft-to-export flow. Add explicit demo scheduling with atomic reservations and ownership checks after those work. Genie, external no-show modeling, and district forecasting are conditional enhancements.
+- The attachment is reference material, not verified evidence of current waits, unused VT appointments, disconnected clinical records, or an implemented privacy boundary. Real campus scheduling needs an authorized provider connection. Keep public facts, district surveillance, external benchmarks, and synthetic slots distinct.
+- The latest request omits MongoDB from its two required tracks. Atlas is optional in this plan, with a meaningful reservation-storage design if that target returns.
+- Fresh public HTTP verification passed September 19 at 07:19 UTC for deployed `c3ffade14cb69396288dcf5efee9b39076b23af4`: six services, 700 trend observations, 64 suppressed counts, readiness, filters, invalid-input rejection, frontend and security header. No new browser or model inference validation occurred in this planning turn.
+- Preserve the Requirements block. Target submission September 20 at 07:00 EDT ahead of the 08:00 deadline. The plan includes feature freezes, test gates, a four-minute demo, and a separate five-minute Impiricus pitch outline. Source publication remains a separate authorized submission action.
+
 ## Current implementation state (supersedes planning status below)
 
 - User explicitly authorized implementing and deploying the first data-backed app, and expects frequent tested GitHub pushes.
