@@ -240,73 +240,7 @@
   display: block;
   margin-top: 4px;
 }
-.assistant-wrap {
-  position: fixed;
-  right: 24px;
-  bottom: 22px;
-  z-index: 30;
-  display: flex;
-  flex-direction: column-reverse;
-  align-items: flex-end;
-  gap: 12px;
-}
-.assistant-toggle {
-  background: var(--maroon);
-  color: white;
-  padding: 14px 20px;
-  border-radius: 40px;
-  box-shadow: 0 5px 20px #302f2c22;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  font-size: 13px;
-  font-weight: 650;
-}
-.assistant-panel {
-  width: 400px;
-  max-width: calc(100vw - 32px);
-  max-height: 75vh;
-  overflow: auto;
-  padding: 24px;
-  background: #fffefa;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  box-shadow: 0 15px 60px #302f2c33;
-}
-.assistant-panel h2 {
-  font-size: 21px;
-  font-weight: 650;
-}
-.assistant-panel p {
-  font-size: 13px;
-  line-height: 1.6;
-  margin: 12px 0;
-}
-.assistant-panel .booking-small {
-  font-size: 11px;
-}
-.assistant-panel label {
-  font-size: 12px;
-}
-.assistant-panel textarea {
-  width: 100%;
-  border: 1px solid var(--border);
-  padding: 12px;
-  border-radius: 9px;
-  min-height: 90px;
-  margin: 8px 0;
-  font-size: 13px;
-  resize: vertical;
-}
-.assistant-panel details {
-  font-size: 11px;
-  margin-top: 15px;
-}
-.assistant-panel .booking-source {
-  display: block;
-  margin: 10px 0;
-}
-.booking-page input:focus-visible {
+.appointment-panel input:focus-visible {
   outline: 3px solid #c98346;
   outline-offset: 3px;
 }
@@ -322,10 +256,6 @@
   }
   .center-tabs button {
     min-width: 130px;
-  }
-  .assistant-wrap {
-    right: 16px;
-    bottom: 16px;
   }
   .header-inner {
     height: auto;
@@ -344,40 +274,116 @@
     padding: 10px 9px;
   }
 }
-.shared-calendar {margin-top:24px; border-top:1px solid #d7e4df; padding-top:20px}
-.calendar-toolbar {display:flex;align-items:center;gap:12px;justify-content:space-between;margin:18px 0}
-.calendar-toolbar h3 {margin:0;font-size:1.05rem}
-.calendar-toolbar button,.shared-calendar .booking-actions button {border:1px solid #bacfc6;border-radius:8px;background:#fff;color:#173e32;padding:8px 12px;cursor:pointer}
-.shared-calendar button[aria-pressed=true] {outline:2px solid #19604b;background:#e0f0e8}
-.calendar-grid {display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
-.calendar-weekday {font-size:.75rem;text-align:center;color:#53695f;padding:5px 0}
-.calendar-day {min-height:65px;display:flex;flex-direction:column;align-items:center;gap:7px;background:#f4faf7;border:1px solid #d7e5df;border-radius:9px;color:#234d3d;padding:8px 1px;cursor:pointer}
-.calendar-day small {font-size:.62rem}
-.calendar-day.closed,.calendar-day.outside_window {background:#f1f2f1;color:#717b76}
-.calendar-day.not_connected {background:#f8f8f5;color:#68716b}
-.calendar-day[aria-current=date] strong {background:#872b47;color:white;border-radius:50%;padding:2px 5px}
-.time-grid button {display:flex;flex-direction:column;gap:4px;align-items:center}
-.time-grid button small {font-size:.65rem}
-.time-grid button.busy {background:#eee;color:#69716d;text-decoration:none;opacity:.8}
-.booking-date select {max-width:100%;padding:10px;border:1px solid #bacfc6;border-radius:8px;background:#fff}
-.previous-turn {border-left:2px solid #cedbd4;padding-left:10px;color:#627169;font-size:.82rem}
-.assistant-panel {max-height:80vh;overflow:auto}
-@media(max-width:600px){.calendar-day{min-height:57px}.calendar-toolbar{gap:6px}.calendar-toolbar button{padding:7px}.calendar-day small{font-size:.55rem}}
-
-/* Conversation stays open while the underlying app follows validated navigation. */
-.assistant-panel {width:min(440px,calc(100vw - 32px));max-height:85dvh;overflow:auto}
-.chat-heading {display:flex;align-items:center;justify-content:space-between;gap:12px}
-.chat-heading .booking-secondary {padding:6px 10px;font-size:.75rem}
-.chat-transcript {max-height:38dvh;overflow-y:auto;overscroll-behavior:contain;margin:12px 0;padding-right:5px}
-.chat-turn {padding:10px 12px;border-radius:12px;margin:10px 0;background:#f4f2f7}
-.chat-turn.chat-user {background:#e8effa;margin-left:28px}
-.chat-turn.chat-assistant {margin-right:12px}
-.chat-speaker {font-size:.72rem;font-weight:700;color:#514365}
-.chat-turn p {white-space:pre-wrap;margin:5px 0;line-height:1.5}
-.chat-examples {display:grid;gap:7px}
-.chat-examples button {text-align:left;border:1px solid #ded6e5;border-radius:8px;background:white;padding:9px 11px;color:#4e345e;cursor:pointer}
-.chat-source {margin:8px 0;font-size:.8rem}
-.chat-source a {color:#653354;text-decoration:underline}
-.chat-slots {max-height:180px;overflow:auto;margin-bottom:10px}
-.chat-privacy {margin-top:12px!important;font-size:.68rem!important}
-.assistant-panel textarea {min-height:64px}
+.shared-calendar {
+  margin-top: 24px;
+  border-top: 1px solid #d7e4df;
+  padding-top: 20px;
+}
+.calendar-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  margin: 18px 0;
+}
+.calendar-toolbar h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.calendar-toolbar button,
+.shared-calendar .booking-actions button {
+  border: 1px solid #bacfc6;
+  border-radius: 8px;
+  background: #fff;
+  color: #173e32;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.shared-calendar button[aria-pressed="true"] {
+  outline: 2px solid #19604b;
+  background: #e0f0e8;
+}
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+}
+.calendar-weekday {
+  font-size: 0.75rem;
+  text-align: center;
+  color: #53695f;
+  padding: 5px 0;
+}
+.calendar-day {
+  min-height: 65px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  background: #f4faf7;
+  border: 1px solid #d7e5df;
+  border-radius: 9px;
+  color: #234d3d;
+  padding: 8px 1px;
+  cursor: pointer;
+}
+.calendar-day small {
+  font-size: 0.62rem;
+}
+.calendar-day.closed,
+.calendar-day.outside_window {
+  background: #f1f2f1;
+  color: #717b76;
+}
+.calendar-day.not_connected {
+  background: #f8f8f5;
+  color: #68716b;
+}
+.calendar-day[aria-current="date"] strong {
+  background: #872b47;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 5px;
+}
+.time-grid button {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+.time-grid button small {
+  font-size: 0.65rem;
+}
+.time-grid button.busy {
+  background: #eee;
+  color: #69716d;
+  text-decoration: none;
+  opacity: 0.8;
+}
+.booking-date select {
+  max-width: 100%;
+  padding: 10px;
+  border: 1px solid #bacfc6;
+  border-radius: 8px;
+  background: #fff;
+}
+.previous-turn {
+  border-left: 2px solid #cedbd4;
+  padding-left: 10px;
+  color: #627169;
+  font-size: 0.82rem;
+}
+@media (max-width: 600px) {
+  .calendar-day {
+    min-height: 57px;
+  }
+  .calendar-toolbar {
+    gap: 6px;
+  }
+  .calendar-toolbar button {
+    padding: 7px;
+  }
+  .calendar-day small {
+    font-size: 0.55rem;
+  }
+}
