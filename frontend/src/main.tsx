@@ -33,7 +33,7 @@ import {
 import "./styles.css";
 import { useApi } from "./use-public-data";
 import { CareWorkspace } from "./care-workspace";
-import { Brand } from "./care-assistant";
+import { Brand } from "./brand";
 import "./care-workspace.css";
 
 type Meta = {

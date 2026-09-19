@@ -1,5 +1,12 @@
 # Continuation notes
 
+## Guided intake and populated academic calendar — September 19
+
+The Care Assistant now uses a required scrollable intake form, one Databricks-grounded booking proposal, and an explicit confirmation. The existing Lakebase project contains 262 academic date rows, 12,488 active hourly slots with 30-minute visits/buffers, and 4,394 seeded fictional reservations. All six existing appointment records were preserved. User names remain owner-only, raw request text is not stored by the application, and visitor bookings now remain until 30 days after the appointment. See [implementation, data manifest and operations](GUIDED_INTAKE.md).
+
+Local validation: 67 backend tests, nine frontend/companion checks and the production build passed. Actual Databricks inference + Lakebase intake/confirm/private-name/retention/calendar/cancel checks passed, along with the two-session conflict, idempotency, SSE, reschedule and cancellation checks. The hosted principal verified the materialized dataset over TLS. Browser checks exercised a real AI proposal and confirmed booking, retained form input, and Health Intelligence data. Production application release verification follows below once deployed.
+
+
 ## Chat-first UI milestone — September 19
 
 Implemented the requested two-section design: Care Assistant is the landing workspace, with the logo/motto above a large composer, and Health Intelligence remains separate. Chat, contextual directory, calendar and agenda now share scheduling selection and a single review. On mobile the panel becomes a keyboard-accessible sheet; switching sections preserves in-memory conversation and drafts. No model, booking API, database schema or mock-data import changed. See [design and implementation evidence](CHAT_FIRST_UI.md).

@@ -43,12 +43,12 @@ def confirm(u,p):return u.post('/api/booking/proposals/'+p['id']+'/confirm',head
 def test_overlapping_candidates_two_users_and_private_projection(clients):
     a,b=clients
     slots=inventory(a)['slots']
-    reviews=[prepare(a,slots[0]).json(),prepare(b,slots[1]).json()]
+    reviews=[prepare(a,slots[0]).json(),prepare(b,slots[0]).json()]
     with ThreadPoolExecutor(2) as pool:
         results=list(pool.map(lambda item:confirm(*item),zip(clients,reviews)))
     assert sorted(r.status_code for r in results)==[200,409]
     shared=inventory(b)
-    assert sum(s['state']=='busy' for s in shared['slots'])>=3
+    assert sum(s['state']=='busy' for s in shared['slots'])==1
     assert all(not any(k in s for k in ['owner','booking_id','confirmation','appointment_id']) for s in shared['slots'])
     with booking.database() as db:
         assert db.execute('SELECT COUNT(*) FROM outbox_events').fetchone()[0]==1
@@ -64,7 +64,7 @@ def test_idempotent_proposals_confirmation_expiry_and_owner(clients):
     assert confirm(a,p).json()['id']==booked['id']
     assert len(a.get('/api/booking/appointments').json()['appointments'])==1
     p2=prepare(b,s[-1],key='different-review-1234').json()
-    with booking.database() as db:db.execute('UPDATE proposals SET expires=0 WHERE id=?',(p2['id'],))
+    with booking.database() as db:db.execute('UPDATE proposals SET expires=? WHERE id=?',(__import__('time').time()-1,p2['id']))
     assert confirm(b,p2).status_code==409
 
 
@@ -75,10 +75,10 @@ def test_atomic_reschedule_preserves_original_when_taken(clients):
     assert confirm(b,prepare(b,s[-1]).json()).status_code==200
     assert confirm(a,move).status_code==409
     assert a.get('/api/booking/appointments').json()['appointments'][0]['slot_id']==original['slot_id']
-    successful=prepare(a,s[10],key='move-request-234567',appointment=original['id']).json()
+    successful=prepare(a,s[2],key='move-request-234567',appointment=original['id']).json()
     result=confirm(a,successful)
     assert result.status_code==200 and result.json()['id']==original['id']
-    assert confirm(a,successful).json()['slot_id']==s[10]['id']
+    assert confirm(a,successful).json()['slot_id']==s[2]['id']
     assert inventory(b)['slots'][0]['state']=='available'
 
 
@@ -111,9 +111,9 @@ def test_provider_unknown_talknow_not_scheduled_and_range_bounds(clients):
 def test_breaks_horizon_hours_and_dst():
     now=datetime(2026,9,19,tzinfo=timezone.utc)
     assert not scheduling.candidates('cook-counseling',date(2026,11,23),now)
-    assert scheduling.candidates('timelycare-counseling',date(2026,11,23),now)
+    assert not scheduling.candidates('timelycare-counseling',date(2026,11,23),now)
     assert not scheduling.candidates('cook-counseling',date(2026,12,18),now)
-    assert scheduling.candidates('carilion-primary',date(2026,12,18),now)
+    assert not scheduling.candidates('carilion-primary',date(2026,12,18),now)
     summer=scheduling.candidates('cook-counseling',date(2026,10,5),now)[0]
     winter=scheduling.candidates('cook-counseling',date(2026,11,2),now)[0]
     assert summer['starts'].endswith('12:00:00+00:00')

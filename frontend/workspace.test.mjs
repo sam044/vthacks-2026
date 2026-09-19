@@ -34,11 +34,12 @@ execFileSync(
       "booking-state.tsx",
       "calendar.tsx",
       "use-public-data.ts",
+      "intake-validation.ts",
     ].map((name) => join(project, "src", name)),
   ],
   { cwd: project, stdio: "pipe" },
 );
-for (const name of ["api", "booking-state", "calendar", "use-public-data"]) {
+for (const name of ["api", "booking-state", "calendar", "use-public-data", "intake-validation"]) {
   const source = await readFile(join(compiled, name + ".js"), "utf8");
   const result = source.replace(
     /from (["'])(\.\/[^"']+)\1/g,
@@ -244,10 +245,10 @@ test("one shared review, duplicate confirmation guard, and immediate agenda refr
   const app = await setup();
   try {
     await act(async () => {
-      await app.state.selectSlot(slot);
+      app.state.adoptReview({...review,intake:true});
     });
     assert.equal(app.state.review.id, review.id);
-    assert.equal(app.state.panel, "calendar");
+    assert.equal(app.state.panel, null);
     assert.equal(app.state.selection.day, "2026-09-22");
     await act(async () => {
       await Promise.all([app.state.confirm(), app.state.confirm()]);
@@ -269,7 +270,7 @@ test("uncertain confirmation preserves the same review for a safe retry", async 
   const app = await setup({ failConfirmation: true });
   try {
     await act(async () => {
-      await app.state.selectSlot(slot);
+      app.state.adoptReview({...review,intake:true});
     });
     await act(async () => {
       await app.state.confirm();
@@ -332,4 +333,27 @@ test("calendar streams and polling stop when hidden, resume with the selected da
   } finally {
     await app.cleanup();
   }
+});
+
+const {emptyIntake,intakeErrors,needsCounseling}=await import(pathToFileURL(join(compiled,"intake-validation.mjs")).href);
+test("intake requires every answer and a full-hour window before submission",()=>{
+  const empty=emptyIntake();assert.equal(Object.keys(intakeErrors(empty)).length,11);
+  const valid={...empty,booking_name:"Student",support:"physical",description:"Routine visit",center:"auto",modality:"in-person",
+    first_date:"2026-10-01",last_date:"2026-10-02",weekdays:[0,1],after:"09:00",before:"17:00",student:"yes",acknowledged:true};
+  assert.deepEqual(intakeErrors(valid),{});
+  assert.ok(intakeErrors({...valid,booking_name:"   "}).booking_name);
+  assert.ok(intakeErrors({...valid,after:"16:30"}).hours);
+  assert.ok(intakeErrors({...valid,weekdays:[]}).weekdays);
+  assert.ok(intakeErrors({...valid,support:"counseling"}).counseling);
+  assert.ok(needsCounseling({...valid,center:"timelycare"}));
+  assert.deepEqual(intakeErrors({...valid,support:"counseling",counseling:"none"}),{});
+});
+test("manual slot selection prefills intake instead of bypassing its required fields",async()=>{
+  const app=await setup();let prefilling;
+  globalThis.CustomEvent=window.CustomEvent;
+  const listen=e=>{prefilling=e.detail};window.addEventListener("hokiecare-intake-prefill",listen);
+  try{await act(async()=>{await app.state.selectSlot(slot)});
+    assert.equal(prefilling.id,slot.id);assert.equal(app.state.review,null);assert.equal(app.state.panel,null);
+    assert.equal(app.requests.filter(r=>r.path==="/api/booking/proposals").length,0);
+  }finally{window.removeEventListener("hokiecare-intake-prefill",listen);await app.cleanup();}
 });

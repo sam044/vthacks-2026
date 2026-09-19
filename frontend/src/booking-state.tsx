@@ -9,6 +9,7 @@ import {
 } from "react";
 import {
   api,
+  ApiError,
   session,
   prepareReview,
   easternDate,
@@ -27,7 +28,7 @@ function useBookingState(active: boolean) {
     view: "appointments",
     category: "all",
     center_id: "schiffert",
-    mode: "provider",
+    mode: "demo",
     day: easternDate(),
   });
   const [centers, setCenters] = useState<Center[]>([]),
@@ -39,6 +40,7 @@ function useBookingState(active: boolean) {
     [saved, setSaved] = useState<Review | null>(null);
   const [rescheduling, setRescheduling] = useState<Appointment | null>(null),
     [busy, setBusy] = useState(false);
+  const [canReplaceReview, setCanReplaceReview] = useState(false);
   const revision = useRef(0),
     locked = useRef(false),
     loaded = useRef(false),
@@ -75,7 +77,7 @@ function useBookingState(active: boolean) {
               day: easternDate(restored.slot.starts),
               mode: "demo",
             }));
-            setPanel("calendar");
+            setPanel(restored.intake ? null : "calendar");
           } catch {
             sessionStorage.removeItem("hokiecare-review-id");
           }
@@ -99,11 +101,12 @@ function useBookingState(active: boolean) {
   const dismissReview = useCallback(() => {
     if (locked.current) return;
     revision.current++;
+    if(review) void api(`/api/booking/proposals/${review.id}`, "DELETE").catch(() => setError("Could not dismiss the old review. It will expire automatically."));
     setReview(null);
     setError("");
     sessionStorage.removeItem("hokiecare-review-id");
     sessionStorage.removeItem("hokiecare-pending-review");
-  }, []);
+  }, [review]);
   const changeSelection = useCallback(
     (next: Partial<Navigation>) => {
       if (locked.current) return;
@@ -131,6 +134,11 @@ function useBookingState(active: boolean) {
   );
   async function selectSlot(slot: InventorySlot, appointmentId?: string) {
     if (locked.current) return;
+    if (!appointmentId) {
+      dismissReview();setSaved(null);setPanel(null);
+      window.dispatchEvent(new CustomEvent("hokiecare-intake-prefill", {detail:slot}));
+      return;
+    }
     locked.current = true;
     setBusy(true);
     setError("");
@@ -156,6 +164,12 @@ function useBookingState(active: boolean) {
       setBusy(false);
     }
   }
+  function adoptReview(next: Review) {
+    setCanReplaceReview(false);
+    setReview(next);setError("");setSaved(null);setRescheduling(null);setPanel(null);
+    setSelection(s=>({...s,center_id:next.slot.center_id,service_id:next.slot.service_id,day:easternDate(next.slot.starts),mode:"demo"}));
+    sessionStorage.setItem("hokiecare-review-id",next.id);
+  }
   async function confirm() {
     if (!review || locked.current) return;
     locked.current = true;
@@ -171,6 +185,7 @@ function useBookingState(active: boolean) {
       sessionStorage.removeItem("hokiecare-pending-review");
       window.dispatchEvent(new Event("hokiecare-booking-changed"));
     } catch (e) {
+      setCanReplaceReview(e instanceof ApiError && (e.status === 409 || e.status === 404));
       setError((e as Error).message);
     } finally {
       locked.current = false;
@@ -207,6 +222,8 @@ function useBookingState(active: boolean) {
     review,
     dismissReview,
     selectSlot,
+    adoptReview,
+    canReplaceReview,
     confirm,
     busy,
     saved,

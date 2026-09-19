@@ -29,6 +29,8 @@ def migrate_sqlite(db):
     with _migration_lock:
         version = db.execute('PRAGMA user_version').fetchone()[0]
         if version >= 4:
+            from .dataset import migrate_sqlite as migrate_intake
+            migrate_intake(db)
             return
         # DDL is transactional; legacy IDs/times and sessions remain intact.
         db.execute('PRAGMA foreign_keys=OFF')
@@ -80,6 +82,8 @@ def migrate_sqlite(db):
         db.execute('PRAGMA user_version=4')
         db.commit()
         db.execute('PRAGMA foreign_keys=ON')
+        from .dataset import migrate_sqlite as migrate_intake
+        migrate_intake(db)
 
 
 class Record(dict):
@@ -95,6 +99,12 @@ def record_factory(cursor):
 class PostgresConnection:
     """Small DB-API boundary for our parameterized repository queries."""
     def __init__(self,conn): self.conn=conn
+
+    def executemany(self,sql,parameters):
+        if 'INSERT OR IGNORE' in sql:
+            sql=sql.replace('INSERT OR IGNORE','INSERT')+' ON CONFLICT DO NOTHING'
+        with self.conn.cursor() as cursor:
+            cursor.executemany(sql.replace('?','%s'),parameters)
 
     def execute(self,sql,parameters=()):
         import psycopg

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, X, CalendarDays, Compass } from "lucide-react";
 import { BookingProvider, useBooking } from "./booking-state";
-import { CareAssistant } from "./care-assistant";
+import { CareIntake } from "./care-intake";
 import { AppointmentPanel } from "./appointments";
 
 function WorkspaceBody({
@@ -49,7 +49,7 @@ function WorkspaceBody({
         !returnFocus.current.closest("[hidden]")
       )
         returnFocus.current.focus();
-      else document.getElementById("care-question")?.focus();
+      else document.getElementById("booking_name")?.focus();
     });
   }
   useEffect(() => {
@@ -87,7 +87,7 @@ function WorkspaceBody({
   return (
     <div className={"care-workspace " + (b.panel ? "panel-open" : "")}>
       <div className="chat-column" inert={compact && !!b.panel && active}>
-        <CareAssistant visible={active && (!compact || !b.panel)} />
+        <CareIntake visible={active && (!compact || !b.panel)} />
       </div>
       <aside
         ref={panelRef}
@@ -111,10 +111,10 @@ function WorkspaceBody({
           <button
             ref={closeRef}
             onClick={close}
-            aria-label="Back to conversation"
+            aria-label="Back to request"
           >
             <ArrowLeft className="mobile-back" size={18} />
-            <span className="mobile-back">Back to conversation</span>
+            <span className="mobile-back">Back to request</span>
             <X className="desktop-close" size={20} />
           </button>
         </div>

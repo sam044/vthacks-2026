@@ -356,7 +356,7 @@ export function AppointmentPanel({ active }: { active: boolean }) {
           {b.error} <button onClick={() => void b.initialize()}>Refresh</button>
         </p>
       )}
-      <BookingReview />
+      {b.review?.operation === "reschedule" && <BookingReview />}
       <div hidden={b.tab !== "calendar"}>
         <label className="booking-date">
           Care center
@@ -367,7 +367,7 @@ export function AppointmentPanel({ active }: { active: boolean }) {
               b.changeSelection({
                 center_id: e.target.value,
                 service_id: undefined,
-                mode: e.target.value === "cook" ? "demo" : "provider",
+                mode: "demo",
               });
               b.setRescheduling(null);
             }}
@@ -384,8 +384,8 @@ export function AppointmentPanel({ active }: { active: boolean }) {
       </div>
       <div className="agenda" hidden={b.tab !== "agenda"}>
         <p className="booking-small">
-          Sample reservations for this browser session. Records expire after 24
-          hours.
+          Private sample reservations for this browser. Records remain until 30
+          days after the visit. Clearing cookies loses access.
         </p>
         {error && (
           <p role="alert" className="booking-error">
@@ -435,7 +435,7 @@ export function AppointmentPanel({ active }: { active: boolean }) {
                 {fullTime(a.starts)} – {easternTime(a.ends)} Eastern
               </p>
               <p className="booking-small">
-                {a.center_name} · Not booked with the provider
+                {a.booking_name && <>{a.booking_name} · </>}{a.center_name} · Not booked with the provider
               </p>
               {a.status === "reserved" && (
                 <div className="booking-actions">

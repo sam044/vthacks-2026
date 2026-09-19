@@ -55,7 +55,7 @@ def relative_day(message, today):
 
 
 def task(db, owner):
-    row = db.execute('SELECT state,version FROM agent_tasks WHERE owner=?', (owner,)).fetchone()
+    row = db.execute('SELECT state,version FROM agent_tasks WHERE owner=? AND (expires IS NULL OR expires>?)', (owner,time.time())).fetchone()
     return (json.loads(row['state']), row['version']) if row else ({}, 0)
 
 
@@ -301,6 +301,7 @@ Only say an internal panel opened if internal_navigation is present. Never claim
             if current != version: raise HTTPException(409, 'Your conversation changed. Please retry this message.')
             db.execute('''INSERT INTO agent_tasks(owner,state,version) VALUES (?,?,?)
                 ON CONFLICT(owner) DO UPDATE SET state=excluded.state,version=excluded.version''', (owner, json.dumps(state), version + 1))
+        with b.database() as db: db.execute('UPDATE agent_tasks SET expires=? WHERE owner=?',(time.time()+86400,owner))
         return {'answer': reply.answer, 'preferences': public_preferences(state), **inventory,
                 'sources': [{'id': r['id'], 'name': r['name'], 'url': r['source_url'], 'access': r['access']} for r in sources],
                 'action': action, 'selected_slot': selected_slot, 'model': model,

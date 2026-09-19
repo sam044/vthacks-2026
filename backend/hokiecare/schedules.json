@@ -1,9 +1,9 @@
 {
-  "version": 2,
+  "version": 3,
   "timezone": "America/New_York",
-  "effective_from": "2026-09-19",
-  "effective_to": "2027-09-01",
-  "horizon_days": 180,
+  "effective_from": "2026-08-24",
+  "effective_to": "2027-05-13",
+  "horizon_days": 366,
   "services": [
     {
       "id": "cook-counseling",
@@ -12,9 +12,9 @@
       "campus": true,
       "resource_id": "cook-counseling-demo-resource",
       "capacity": 1,
-      "duration_minutes": 45,
-      "grid_minutes": 15,
-      "buffer_minutes": 0,
+      "duration_minutes": 30,
+      "grid_minutes": 60,
+      "buffer_minutes": 30,
       "weekly": {
         "0": [
           [
@@ -49,7 +49,7 @@
       },
       "source_url": "https://ucc.vt.edu/about/hours_location.html",
       "checked_date": "2026-09-19",
-      "hours_note": "Published regular hours constrain fictional inventory; 45-minute duration and capacity are demo assumptions."
+      "hours_note": "Published regular hours constrain fictional inventory; 30-minute duration and capacity are demo assumptions."
     },
     {
       "id": "schiffert-medical",
@@ -58,9 +58,9 @@
       "campus": true,
       "resource_id": "schiffert-medical-demo-resource",
       "capacity": 1,
-      "duration_minutes": 45,
-      "grid_minutes": 15,
-      "buffer_minutes": 0,
+      "duration_minutes": 30,
+      "grid_minutes": 60,
+      "buffer_minutes": 30,
       "weekly": {
         "0": [
           [
@@ -95,7 +95,7 @@
       },
       "source_url": "https://healthcenter.vt.edu/faq.html",
       "checked_date": "2026-09-19",
-      "hours_note": "Published regular hours constrain fictional inventory; 45-minute duration and capacity are demo assumptions."
+      "hours_note": "Published regular hours constrain fictional inventory; 30-minute duration and capacity are demo assumptions."
     },
     {
       "id": "schiffert-gynecology",
@@ -104,9 +104,9 @@
       "campus": true,
       "resource_id": "schiffert-gynecology-demo-resource",
       "capacity": 1,
-      "duration_minutes": 45,
-      "grid_minutes": 15,
-      "buffer_minutes": 0,
+      "duration_minutes": 30,
+      "grid_minutes": 60,
+      "buffer_minutes": 30,
       "weekly": {
         "0": [
           [
@@ -141,7 +141,7 @@
       },
       "source_url": "https://healthcenter.vt.edu/appointments.html",
       "checked_date": "2026-09-19",
-      "hours_note": "Weekday 9\u20135 hours, duration, and capacity are demo assumptions; real availability is unknown."
+      "hours_note": "Weekday 9\u20135 hours, 30-minute duration, 30-minute buffer, and capacity are demo assumptions; real availability is unknown."
     },
     {
       "id": "schiffert-allergy",
@@ -150,9 +150,9 @@
       "campus": true,
       "resource_id": "schiffert-allergy-demo-resource",
       "capacity": 1,
-      "duration_minutes": 45,
-      "grid_minutes": 15,
-      "buffer_minutes": 0,
+      "duration_minutes": 30,
+      "grid_minutes": 60,
+      "buffer_minutes": 30,
       "weekly": {
         "0": [
           [
@@ -187,7 +187,7 @@
       },
       "source_url": "https://healthcenter.vt.edu/appointments.html",
       "checked_date": "2026-09-19",
-      "hours_note": "Weekday 9\u20135 hours, duration, and capacity are demo assumptions; real availability is unknown."
+      "hours_note": "Weekday 9\u20135 hours, 30-minute duration, 30-minute buffer, and capacity are demo assumptions; real availability is unknown."
     },
     {
       "id": "timelycare-counseling",
@@ -196,9 +196,9 @@
       "campus": false,
       "resource_id": "timelycare-counseling-demo-resource",
       "capacity": 1,
-      "duration_minutes": 45,
-      "grid_minutes": 15,
-      "buffer_minutes": 0,
+      "duration_minutes": 30,
+      "grid_minutes": 60,
+      "buffer_minutes": 30,
       "weekly": {
         "0": [
           [
@@ -233,7 +233,7 @@
       },
       "source_url": "https://ucc.vt.edu/timelycare.html",
       "checked_date": "2026-09-19",
-      "hours_note": "Weekday 9\u20135 hours, duration, and capacity are demo assumptions; real availability is unknown."
+      "hours_note": "Weekday 9\u20135 hours, 30-minute duration, 30-minute buffer, and capacity are demo assumptions; real availability is unknown."
     },
     {
       "id": "timelycare-coaching",
@@ -242,9 +242,9 @@
       "campus": false,
       "resource_id": "timelycare-coaching-demo-resource",
       "capacity": 1,
-      "duration_minutes": 45,
-      "grid_minutes": 15,
-      "buffer_minutes": 0,
+      "duration_minutes": 30,
+      "grid_minutes": 60,
+      "buffer_minutes": 30,
       "weekly": {
         "0": [
           [
@@ -279,7 +279,7 @@
       },
       "source_url": "https://ucc.vt.edu/timelycare.html",
       "checked_date": "2026-09-19",
-      "hours_note": "Weekday 9\u20135 hours, duration, and capacity are demo assumptions; real availability is unknown."
+      "hours_note": "Weekday 9\u20135 hours, 30-minute duration, 30-minute buffer, and capacity are demo assumptions; real availability is unknown."
     },
     {
       "id": "carilion-primary",
@@ -288,9 +288,9 @@
       "campus": false,
       "resource_id": "carilion-primary-demo-resource",
       "capacity": 1,
-      "duration_minutes": 45,
-      "grid_minutes": 15,
-      "buffer_minutes": 0,
+      "duration_minutes": 30,
+      "grid_minutes": 60,
+      "buffer_minutes": 30,
       "weekly": {
         "0": [
           [
@@ -325,7 +325,7 @@
       },
       "source_url": "https://www.carilionclinic.org/mychart",
       "checked_date": "2026-09-19",
-      "hours_note": "Weekday 9\u20135 hours, duration, and capacity are demo assumptions; real availability is unknown."
+      "hours_note": "Weekday 9\u20135 hours, 30-minute duration, 30-minute buffer, and capacity are demo assumptions; real availability is unknown."
     },
     {
       "id": "wellness-financial",
@@ -334,9 +334,9 @@
       "campus": true,
       "resource_id": "wellness-financial-demo-resource",
       "capacity": 1,
-      "duration_minutes": 45,
-      "grid_minutes": 15,
-      "buffer_minutes": 0,
+      "duration_minutes": 30,
+      "grid_minutes": 60,
+      "buffer_minutes": 30,
       "weekly": {
         "0": [
           [
@@ -371,7 +371,7 @@
       },
       "source_url": "https://hokiewellness.vt.edu/students/our_services/consultations.html",
       "checked_date": "2026-09-19",
-      "hours_note": "Weekday 9\u20135 hours, duration, and capacity are demo assumptions; real availability is unknown."
+      "hours_note": "Weekday 9\u20135 hours, 30-minute duration, 30-minute buffer, and capacity are demo assumptions; real availability is unknown."
     },
     {
       "id": "wellness-basics",
@@ -380,9 +380,9 @@
       "campus": true,
       "resource_id": "wellness-basics-demo-resource",
       "capacity": 1,
-      "duration_minutes": 45,
-      "grid_minutes": 15,
-      "buffer_minutes": 0,
+      "duration_minutes": 30,
+      "grid_minutes": 60,
+      "buffer_minutes": 30,
       "weekly": {
         "0": [
           [
@@ -417,7 +417,7 @@
       },
       "source_url": "https://hokiewellness.vt.edu/students/our_services/consultations.html",
       "checked_date": "2026-09-19",
-      "hours_note": "Weekday 9\u20135 hours, duration, and capacity are demo assumptions; real availability is unknown."
+      "hours_note": "Weekday 9\u20135 hours, 30-minute duration, 30-minute buffer, and capacity are demo assumptions; real availability is unknown."
     },
     {
       "id": "wellness-recovery",
@@ -426,9 +426,9 @@
       "campus": true,
       "resource_id": "wellness-recovery-demo-resource",
       "capacity": 1,
-      "duration_minutes": 45,
-      "grid_minutes": 15,
-      "buffer_minutes": 0,
+      "duration_minutes": 30,
+      "grid_minutes": 60,
+      "buffer_minutes": 30,
       "weekly": {
         "0": [
           [
@@ -463,51 +463,104 @@
       },
       "source_url": "https://hokiewellness.vt.edu/students/our_services/consultations.html",
       "checked_date": "2026-09-19",
-      "hours_note": "Weekday 9\u20135 hours, duration, and capacity are demo assumptions; real availability is unknown."
+      "hours_note": "Weekday 9\u20135 hours, 30-minute duration, 30-minute buffer, and capacity are demo assumptions; real availability is unknown."
     }
   ],
   "exceptions": [
+    {
+      "from": "2026-09-07",
+      "to": "2026-09-08",
+      "label": "Academic holiday \u2014 sample schedule paused",
+      "basis": "Labor Day",
+      "source_url": "https://www.registrar.vt.edu/dates-deadlines/academic-calendar.html",
+      "services": [
+        "cook-counseling",
+        "schiffert-medical",
+        "schiffert-gynecology",
+        "schiffert-allergy",
+        "timelycare-counseling",
+        "timelycare-coaching",
+        "carilion-primary",
+        "wellness-financial",
+        "wellness-basics",
+        "wellness-recovery"
+      ]
+    },
     {
       "from": "2026-10-09",
       "to": "2026-10-10",
       "label": "Campus break \u2014 demo schedule paused",
       "basis": "Academic fall break; offices open",
-      "source_url": "https://www.registrar.vt.edu/dates-deadlines/academic-calendar.html"
+      "source_url": "https://www.registrar.vt.edu/dates-deadlines/academic-calendar.html",
+      "services": [
+        "cook-counseling",
+        "schiffert-medical",
+        "schiffert-gynecology",
+        "schiffert-allergy",
+        "timelycare-counseling",
+        "timelycare-coaching",
+        "carilion-primary",
+        "wellness-financial",
+        "wellness-basics",
+        "wellness-recovery"
+      ]
     },
     {
       "from": "2026-11-21",
       "to": "2026-11-30",
       "label": "Campus break \u2014 demo schedule paused",
       "basis": "Academic Thanksgiving break",
-      "source_url": "https://www.registrar.vt.edu/dates-deadlines/academic-calendar.html"
+      "source_url": "https://www.registrar.vt.edu/dates-deadlines/academic-calendar.html",
+      "services": [
+        "cook-counseling",
+        "schiffert-medical",
+        "schiffert-gynecology",
+        "schiffert-allergy",
+        "timelycare-counseling",
+        "timelycare-coaching",
+        "carilion-primary",
+        "wellness-financial",
+        "wellness-basics",
+        "wellness-recovery"
+      ]
     },
     {
       "from": "2026-12-17",
       "to": "2027-01-19",
       "label": "Campus break \u2014 demo schedule paused",
       "basis": "Assumed winter demo pause, not an official clinic closure",
-      "source_url": "https://www.registrar.vt.edu/dates-deadlines/academic-calendar.html"
+      "source_url": "https://www.registrar.vt.edu/dates-deadlines/academic-calendar.html",
+      "services": [
+        "cook-counseling",
+        "schiffert-medical",
+        "schiffert-gynecology",
+        "schiffert-allergy",
+        "timelycare-counseling",
+        "timelycare-coaching",
+        "carilion-primary",
+        "wellness-financial",
+        "wellness-basics",
+        "wellness-recovery"
+      ]
     },
     {
       "from": "2027-03-06",
       "to": "2027-03-15",
       "label": "Campus break \u2014 demo schedule paused",
       "basis": "Academic spring break; offices open",
-      "source_url": "https://www.registrar.vt.edu/dates-deadlines/academic-calendar.html"
-    },
-    {
-      "from": "2027-05-31",
-      "to": "2027-06-01",
-      "label": "Campus holiday \u2014 demo schedule paused",
-      "basis": "Memorial Day; university offices closed",
-      "source_url": "https://www.registrar.vt.edu/dates-deadlines/academic-calendar.html"
-    },
-    {
-      "from": "2027-06-18",
-      "to": "2027-06-19",
-      "label": "Campus holiday \u2014 demo schedule paused",
-      "basis": "Juneteenth observed; university offices closed",
-      "source_url": "https://www.registrar.vt.edu/dates-deadlines/academic-calendar.html"
+      "source_url": "https://www.registrar.vt.edu/dates-deadlines/academic-calendar.html",
+      "services": [
+        "cook-counseling",
+        "schiffert-medical",
+        "schiffert-gynecology",
+        "schiffert-allergy",
+        "timelycare-counseling",
+        "timelycare-coaching",
+        "carilion-primary",
+        "wellness-financial",
+        "wellness-basics",
+        "wellness-recovery"
+      ]
     }
   ]
 }
