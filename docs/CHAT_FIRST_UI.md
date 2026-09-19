@@ -27,7 +27,7 @@ The backend assistant's `care` and `appointments` navigation values remain uncha
 - The existing two-session calendar API verification passed against isolated local SQLite: interval conflicts, owner isolation, idempotency, SSE replay, atomic rescheduling and cancellation. UI test reservations were cancelled; no real provider appointment was made.
 - Actual Databricks-backed local API verification passed: six directory services, 700 New River observations, 64 suppressed counts retained, both facility series, filters and invalid-input handling.
 - The Health Intelligence draft was edited and its existing export button exercised. The in-app browser did not deliver a download event, so the saved text-file contents were not verified in this pass; the existing export implementation is unchanged.
-- Hosted release verification follows CI/merge and is reported in the implementation task. This document's local results do not claim a production rollout before that check.
+- PR [#13](https://github.com/sam044/vthacks-2026/pull/13) merged at `8acf2cf06614d8baffc4a496cbd5c8a9c5e506a5` after both CI runs passed, including the Linux container checks. Railway deployment `d1e53bac-542b-44a7-80e4-183d8ddad6c3` reported SUCCESS. At 21:14 UTC, hosted API verification returned that exact commit and passed the public data checks. Hosted calendar verification passed against Databricks Lakebase: two-session conflicts/ownership, idempotency, durable SSE, atomic rescheduling/cancellation, and a real Databricks conversational booking. Its temporary synthetic sessions were cleaned up. The hosted browser displayed the new chat-first screen and two-section navigation.
 
 ## Remaining work
 
