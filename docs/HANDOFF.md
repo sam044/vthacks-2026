@@ -1,5 +1,9 @@
 # Continuation notes
 
+## Portal-open fix
+
+The user reported that Open VT portal failed with "Companion not detected." It incorrectly depended on the optional extension. The primary action now directly opens the official portal in a new tab with no extension handshake. Companion detection is passive and non-blocking; enhanced window/read controls appear only when detected under Optional: view portal times in HokieCare. The extension's paired-window workflow remains separate, and a missing extension is informational rather than a broken primary action. Direct portal opening does not enable automated booking or real-record sync. TypeScript/Vite build passed; a local browser click opened the official portal, and the absent-extension state displayed informational setup guidance with no page error. No credentials or screening were entered during this regression check.
+
 ## Current milestone: appointments and Schiffert companion
 
 The user explicitly authorized a browser companion and focused authenticated Schiffert test, plus a fully internal Cook demo. This supersedes the planning-only / no-login scope below. Read [booking implementation](BOOKING_IMPLEMENTATION.md) and [Schiffert feasibility](SCHIFFERT_FEASIBILITY.md).

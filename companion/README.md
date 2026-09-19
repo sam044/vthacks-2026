@@ -2,7 +2,7 @@
 
 1. Download and extract the companion ZIP linked in HokieCare.
 2. In Chrome or Edge, open the Extensions page, turn on Developer mode, choose **Load unpacked**, and select the extracted folder containing `manifest.json`.
-3. Reload HokieCare in that same browser. Open Appointments → Schiffert → Open VT portal.
+3. Reload HokieCare in that same browser. Open Appointments → Schiffert → Optional: view portal times in HokieCare. Check connection, then choose **Open companion window** to pair the portal with this page. The primary **Open VT portal** link works independently without the extension and does not pair a companion window.
 4. Sign in directly with VT and Duo. Choose Schedule an Appointment, select your department, answer screening yourself, and search for appointments.
 5. Return to HokieCare and choose **Read portal times**. Select a displayed time to highlight it in the portal. Finish and verify the booking there.
 
