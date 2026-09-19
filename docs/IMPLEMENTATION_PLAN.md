@@ -1,5 +1,7 @@
 # HokieCare implementation plan
 
+**Latest requested scheduling milestone:** [Shared calendars and booking-agent design](BOOKING_AGENT_NEXT_SESSION_DESIGN.md) and [next-session prompt](NEXT_SESSION_PROMPT.md) specify monthly availability, Databricks transactional persistence, conversational booking tools, and provider-confirmation sync. They supersede older scheduling scope below as a plan; none of those additional capabilities is claimed implemented by this documentation update.
+
 **Current implementation:** [Appointment/navigation milestone](BOOKING_IMPLEMENTATION.md) and [authenticated Schiffert feasibility](SCHIFFERT_FEASIBILITY.md) supersede the older planning-only appointment status below. Cook demo persistence and the Databricks navigation agent are implemented; Schiffert availability was observed live, while final booking remains user-controlled and unverified for automation.
 
 **Latest appointment direction:** [Unified appointment hub](APPOINTMENT_HUB_PLAN.md) specifies the five-center experience, empty request/reservation store, student calendar, and scheduler queue. Use it for scheduling scope, persistence, connection capabilities, and delivery order; use the evolution plan for the broader agent and award strategy. No new booking feature is implemented by these planning updates.
