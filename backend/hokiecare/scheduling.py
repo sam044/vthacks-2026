@@ -38,8 +38,8 @@ def service(ident):
 
 def day_reason(s, day, now=None):
     today = (now or datetime.now(TZ)).astimezone(TZ).date()
-    if day < today or day > today + timedelta(days=CONFIG['horizon_days']):
-        return 'Outside demo booking window'
+    if day < today:
+        return 'Outside booking window'
     if not CONFIG['effective_from'] <= day.isoformat() < CONFIG['effective_to']:
         return 'Schedule rules not reviewed for this date'
     for e in CONFIG['exceptions']:
@@ -71,21 +71,22 @@ def candidates(ident, day, now=None):
         start, close = local_instant(day, begin), local_instant(day, end)
         while start + timedelta(minutes=s['duration_minutes'] + s['buffer_minutes']) <= close:
             if start > now:
-                result.append(dict(id=f"{ident}:{start.strftime('%Y%m%dT%H%MZ')}", service_id=ident,
+                result.append(dict(id=f"{ident}:{start.strftime('%Y%m%dT%H%MZ')}:v{CONFIG['version']}", service_id=ident,
                     center_id=s['center_id'], resource_id=s['resource_id'], starts=start.isoformat(),
                     ends=(start+timedelta(minutes=s['duration_minutes'])).isoformat(),
-                    version=CONFIG['version'], origin='demo', state='available'))
+                    local_date=day.isoformat(), blocked_until=(start+timedelta(minutes=s['duration_minutes']+s['buffer_minutes'])).isoformat(), version=CONFIG['version'], origin='demo', state='available'))
             start += timedelta(minutes=s['grid_minutes'])
     return result
 
 
-def resolve_slot(ident):
-    try:
-        sid, instant = ident.split(':')
-        day = datetime.strptime(instant, '%Y%m%dT%H%MZ').replace(tzinfo=timezone.utc).astimezone(TZ).date()
-        return next(s for s in candidates(sid, day) if s['id'] == ident)
-    except (ValueError, StopIteration):
-        raise HTTPException(409, 'This time is outside the current schedule. Refresh availability.') from None
+def resolve_slot(ident, db=None):
+    from . import booking as b
+    from contextlib import nullcontext
+    with (nullcontext(db) if db is not None else b.database()) as db:
+        row = db.execute('SELECT * FROM slots WHERE id=? AND active=1 AND version=?', (ident,CONFIG['version'])).fetchone()
+    if not row or datetime.fromisoformat(row['starts']) <= datetime.now(timezone.utc):
+        raise HTTPException(409, 'This time is outside the current schedule. Refresh availability.')
+    return dict(row)
 
 
 def public_services():

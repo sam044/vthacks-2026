@@ -27,7 +27,7 @@ def verify(url,ai=False):
         def prepare(u,slot,appointment=None):
             r=u.post('/api/booking/proposals',json={'slot_id':slot['id'],'version':slot['version'],'request_id':str(uuid.uuid4()),'appointment_id':appointment})
             r.raise_for_status();return r.json()
-        reviews=[prepare(u,slot) for u,slot in zip(users,slots[:2])]
+        reviews=[prepare(u,slots[0]) for u in users]
         def confirm(pair):return pair[0].post('/api/booking/proposals/'+pair[1]['id']+'/confirm')
         start=time.monotonic()
         with ThreadPoolExecutor(2) as pool:results=list(pool.map(confirm,zip(users,reviews)))

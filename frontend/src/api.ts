@@ -25,6 +25,7 @@ export type Service = {
   weekly: Record<string, string[][]>;
 };
 export type InventorySlot = {
+  blocked_until?: string;
   id: string;
   starts: string;
   ends: string;
@@ -34,6 +35,8 @@ export type InventorySlot = {
   state: string;
 };
 export type Appointment = {
+  booking_name?: string;
+  retain_until?: number;
   id: string;
   slot_id: string;
   status: string;
@@ -44,6 +47,9 @@ export type Appointment = {
   ends: string;
 };
 export type Review = {
+  booking_name?: string;
+  center_name?: string;
+  intake?: boolean;
   id: string;
   slot: InventorySlot;
   service_name: string;

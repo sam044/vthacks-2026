@@ -1,0 +1,112 @@
+import { useEffect, useRef, useState } from 'react';
+import { ArrowRight, CalendarDays, Check, Compass, LoaderCircle } from 'lucide-react';
+import { Brand } from './brand';
+import { BookingReview } from './calendar';
+import { useBooking } from './booking-state';
+import { api, session, easternDate, fullTime, type Review, type InventorySlot } from './api';
+import { emptyIntake, intakeErrors, needsCounseling, type IntakeForm } from './intake-validation';
+import './care-intake.css';
+
+type Result = { outcome:'proposal'|'no_match'|'urgent_support'; answer:string; sources:{name:string;url:string}[]; review:Review|null };
+const weekdays=['Mon','Tue','Wed','Thu','Fri'];
+
+export function CareIntake({visible}:{visible:boolean}) {
+  const b=useBooking();
+  const [form,setForm]=useState<IntakeForm>(emptyIntake),[touched,setTouched]=useState<Record<string,boolean>>({});
+  const [result,setResult]=useState<Result|null>(null),[loading,setLoading]=useState(false),[error,setError]=useState('');
+  const key=useRef<string|null>(null),sequence=useRef(0),locked=useRef(false),heading=useRef<HTMLHeadingElement>(null);
+  const errors=intakeErrors(form), counseling=needsCounseling(form);
+  const total=counseling?12:11, completed=total-Object.keys(errors).length;
+  const busy=loading||b.busy;
+  useEffect(()=>{ if(visible && (result||b.saved)) heading.current?.focus(); },[result,b.saved,visible]);
+  useEffect(()=>{
+    const reset=()=>{sequence.current++;key.current=null;locked.current=false;setLoading(false);setForm(emptyIntake());setResult(null);setError('');setTouched({});};
+    const prefill=(event:Event)=>{
+      const slot=(event as CustomEvent<InventorySlot>).detail;
+      const local=(value:string)=>new Intl.DateTimeFormat('en-GB',{timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value));
+      key.current=null;setResult(null);setError('');
+      setForm(f=>({...f,center:slot.center_id,support:slot.service_id.includes('counseling')?'counseling':slot.center_id==='wellness'||slot.service_id.includes('coaching')?'wellness':'physical',
+        modality:slot.center_id==='timelycare'?'virtual':'in-person',first_date:easternDate(slot.starts),last_date:easternDate(slot.starts),
+        weekdays:[(new Date(easternDate(slot.starts)+'T12:00:00Z').getUTCDay()+6)%7],after:local(slot.starts),before:local(slot.blocked_until||new Date(new Date(slot.starts).getTime()+3600000).toISOString())}));
+      requestAnimationFrame(()=>document.getElementById('booking_name')?.focus());
+    };
+    window.addEventListener('hokiecare-session-cleared',reset);
+    window.addEventListener('hokiecare-intake-prefill',prefill);
+    return()=>{window.removeEventListener('hokiecare-session-cleared',reset);window.removeEventListener('hokiecare-intake-prefill',prefill);};
+  },[]);
+  function update<K extends keyof IntakeForm>(name:K,value:IntakeForm[K]) {key.current=null;setForm(f=>({...f,[name]:value}));}
+  function edit() {
+    if(busy)return;
+    b.dismissReview(); b.setSaved(null); setResult(null); setError('');key.current=null;
+    requestAnimationFrame(()=>document.getElementById('booking_name')?.focus());
+  }
+  async function submit() {
+    if(locked.current||b.busy||Object.keys(errors).length)return;
+    locked.current=true;setLoading(true);setError('');b.setSaved(null);b.dismissReview();
+    const attempt=++sequence.current;
+    key.current ||= crypto.randomUUID();
+    try {
+      await session();
+      const next=await api<Result>('/api/assistant/intake','POST',{...form,booking_name:form.booking_name.trim(),description:form.description.trim(),
+        counseling:counseling?form.counseling:null,request_id:key.current});
+      if(attempt!==sequence.current){if(next.review)void api(`/api/booking/proposals/${next.review.id}`,'DELETE');return;}
+      setResult(next);if(next.review)b.adoptReview(next.review);
+    }catch(e){if(attempt===sequence.current)setError((e as Error).message);}
+    finally{if(attempt===sequence.current){locked.current=false;setLoading(false);}}
+  }
+  const field=(name:keyof IntakeForm,label:string,control:React.ReactNode)=> <div className="intake-field">
+    <label htmlFor={name}>{label} <span aria-hidden="true">*</span></label>{control}
+    {touched[name]&&errors[name]&&<span className="field-error" id={name+'-error'}>{errors[name]}</span>}
+  </div>;
+  const attributes=(name:keyof IntakeForm)=>({id:name,name,disabled:busy,required:true,'aria-invalid':!!(touched[name]&&errors[name]),'aria-describedby':touched[name]&&errors[name]?name+'-error':undefined,onBlur:()=>setTouched(t=>({...t,[name]:true})),
+    onInput:(e:React.FormEvent<HTMLInputElement|HTMLSelectElement|HTMLTextAreaElement>)=>{
+      if(['first_date','last_date','after','before'].includes(name))update(name,e.currentTarget.value as never);
+    }});
+  const select=(name:keyof IntakeForm,options:[string,string][])=> <select {...attributes(name)} value={String(form[name])} onChange={e=>update(name,e.target.value as never)}><option value="">Choose an answer</option>{options.map(([v,label])=><option key={v} value={v}>{label}</option>)}</select>;
+  const hasResult=!!result||!!b.review?.intake||!!b.saved;
+  return <section className="care-intake" aria-label="Appointment request">
+    <header className="intake-welcome"><Brand large/><p className="care-eyebrow">A LITTLE LESS RUNAROUND</p><h1>Less runaround. More care.</h1><p>A few answers. One next step across VT’s five care options.</p></header>
+    <nav className="intake-tools" aria-label="Care tools"><button disabled={busy} onClick={()=>{b.setPanel('calendar');}}><CalendarDays size={17}/>My calendar</button><button disabled={busy} onClick={()=>b.setPanel('directory')}><Compass size={17}/>Browse care options</button></nav>
+    <div className="intake-process" aria-label="Booking steps"><span className={!hasResult?'current':''}>1 <span>Your request</span></span><ArrowRight size={14}/><span className={hasResult&&!b.saved?'current':''}>2 <span>Review a match</span></span><ArrowRight size={14}/><span className={b.saved?'current':''}>3 <span>Confirm & save</span></span></div>
+    {hasResult ? <div className="intake-result" aria-live="polite">
+      <h2 ref={heading} tabIndex={-1}>{b.saved?'Your sample appointment is saved':result?.outcome==='urgent_support'?'Find immediate support':result?.outcome==='no_match'?'Let’s adjust your request':'A next step, picked for you'}</h2>
+      {b.saved?<><p><Check size={18}/> {b.saved.booking_name||form.booking_name} · {b.saved.center_name||b.saved.service_name}</p><p>{fullTime(b.saved.slot.starts)} Eastern · 30-minute visit</p><p>Saved in HokieCare. No provider was contacted.</p><button className="booking-primary" onClick={()=>{b.setPanel('calendar');b.setTab('agenda');}}>View my appointment</button></>:<>
+        {result&&<p className="intake-answer">{result.review&&!b.review?"Your previous proposal is no longer active. Edit your answers to find another appointment.":result.answer}</p>}
+        {!!result?.sources.length&&<details className="intake-sources"><summary>Why this recommendation? Sources</summary>{result.sources.map(x=><a key={x.url} href={x.url} target="_blank" rel="noreferrer">{x.name} ↗</a>)}</details>}
+        {b.review?.intake&&<BookingReview onEdit={edit}/>}
+        {b.canReplaceReview&&b.review?.intake&&<button disabled={busy} className="booking-secondary" onClick={()=>{if(Object.keys(errors).length){edit();return;}key.current=null;void submit();}}>Find another appointment</button>}
+      </>}
+      {!b.review?.intake&&<button disabled={busy} className="booking-secondary" onClick={()=>{const fresh=!!b.saved;edit();if(fresh){setForm(emptyIntake());setTouched({});}}}>{b.saved?'Start another request':'Edit answers'}</button>}
+    </div>:<form className="intake-form" noValidate onSubmit={e=>{e.preventDefault();void submit();}}>
+      <div className="intake-form-heading"><div><h2>Let’s find your next step.</h2><p>All fields marked * are required.</p></div><span>{Math.max(0,completed)} / {total} complete</span></div>
+      <progress value={Math.max(0,completed)} max={total} aria-label="Required answers completed"/>
+      <fieldset disabled={busy}><legend><span>01</span> Tell us what you’re looking for</legend>
+        {field('booking_name','What should we call you?',<input {...attributes('booking_name')} value={form.booking_name} maxLength={80} autoComplete="off" placeholder="First name or alias" onChange={e=>update('booking_name',e.target.value)}/>)}
+        {field('support','What kind of support?',select('support',[['physical','Physical health'],['counseling','Counseling'],['wellness','Wellness'],['unsure','I’m not sure']]))}
+        {field('description','What’s got you off your Hokie game?',<textarea {...attributes('description')} value={form.description} maxLength={600} rows={3} placeholder="Briefly describe the help you’re looking for. No medical records or identifying details needed." onChange={e=>update('description',e.target.value)}/>)}
+        <p className="intake-hint">Care navigation, not diagnosis. Your description is sent to our Databricks AI to find a service; it isn’t saved in our booking database.</p>
+      </fieldset>
+      <fieldset disabled={busy}><legend><span>02</span> Your care preferences</legend>
+        <div className="intake-grid">{field('center','Where would you like to go?',select('center',[['auto','Choose for me'],['schiffert','Schiffert Health Center'],['cook','Cook Counseling Center'],['timelycare','TimelyCare'],['carilion','Carilion Clinic'],['wellness','Hokie Wellness']]))}
+        {field('modality','How would you like to meet?',select('modality',[['in-person','In person'],['virtual','Virtual'],['either','Either works']]))}</div>
+        {field('student','Are you a current VT student?',select('student',[['yes','Yes'],['no','No']]))}
+        {counseling&&field('counseling','Are you currently receiving individual counseling?',select('counseling',[['none','No current individual counseling'],['cook','At Cook Counseling'],['timelycare','Through TimelyCare'],['elsewhere','Somewhere else'],['unsure','I’m not sure']]))}
+        {counseling&&<p className="intake-hint">Cook individual therapy and TimelyCare scheduled therapy cannot run concurrently.</p>}
+      </fieldset>
+      <fieldset disabled={busy}><legend><span>03</span> Make room in your week</legend><p className="intake-hint">We’ll find the earliest match within your answers. A 30-minute visit reserves an hour, including buffer time. All times Eastern.</p>
+        <div className="intake-grid">{field('first_date','Earliest date',<input {...attributes('first_date')} type="date" min={easternDate()} max="2027-05-12" value={form.first_date} onChange={e=>update('first_date',e.target.value)}/>)}
+        {field('last_date','Latest date',<input {...attributes('last_date')} type="date" min={form.first_date||easternDate()} max="2027-05-12" value={form.last_date} onChange={e=>update('last_date',e.target.value)}/>)}</div>
+        <fieldset className="weekday-field"><legend>Which weekdays work? *</legend><div className="intake-weekdays">{weekdays.map((label,i)=><label key={label}><input type="checkbox" checked={form.weekdays.includes(i)} onChange={e=>{update('weekdays',e.target.checked?[...form.weekdays,i]:form.weekdays.filter(x=>x!==i));setTouched(t=>({...t,weekdays:true}));}}/><span>{label}</span></label>)}</div>{touched.weekdays&&errors.weekdays&&<span className="field-error">{errors.weekdays}</span>}</fieldset>
+        <div className="intake-grid">{field('after','Available from (Eastern)',<input {...attributes('after')} type="time" value={form.after} onChange={e=>update('after',e.target.value)}/>)}
+        {field('before','Available until (Eastern)',<input {...attributes('before')} type="time" value={form.before} onChange={e=>{update('before',e.target.value);setTouched(t=>({...t,hours:true}));}}/>)}</div>
+        {touched.hours&&errors.hours&&<span className="field-error">{errors.hours}</span>}
+        <p className="intake-hint">Fall and spring 2026–27 only. Weekends, academic breaks, and summer are excluded from this sample calendar.</p>
+      </fieldset>
+      <label className="intake-consent"><input type="checkbox" checked={form.acknowledged} disabled={busy} onChange={e=>update('acknowledged',e.target.checked)}/><span>I understand these are fictional appointments. Confirming saves a sample reservation in HokieCare; no provider is contacted. *</span></label>
+      <div className="intake-submit"><p>{Object.keys(errors).length?`${Object.keys(errors).length} required answer${Object.keys(errors).length===1?'':'s'} remaining`:'Ready to find your appointment'}</p><button className="booking-primary" disabled={busy||!!Object.keys(errors).length} type="submit">{loading?<><LoaderCircle size={17} className="intake-spinner"/>Finding your appointment…</>:<>Find my appointment <ArrowRight size={17}/></>}</button></div>
+    </form>}
+    {loading&&<p role="status" className="intake-status">Checking service fit and available sample times. Your appointment will only be saved after you confirm.</p>}
+    {error&&<div className="booking-error" role="alert">{error}{hasResult&&<button disabled={busy} onClick={()=>void submit()}>Retry</button>}</div>}
+    <footer className="intake-footer"><p>Your name is private to this browser. Saved appointments remain until 30 days after the visit; clearing cookies loses access.</p><p>Need immediate support? <a href="https://ucc.vt.edu/emergency.html" target="_blank" rel="noreferrer">Urgent-help options ↗</a> · For an emergency, call 911.</p></footer>
+  </section>;
+}

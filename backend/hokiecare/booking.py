@@ -115,13 +115,25 @@ def session_id(request: Request, db):
     if not token or len(token) > 128:
         raise HTTPException(401, 'Start a demo session to manage appointments.')
     hashed = hashlib.sha256(token.encode()).hexdigest()
-    if not db.execute('SELECT 1 FROM sessions WHERE id=? AND expires>?', (hashed, time.time())).fetchone():
+    if not db.execute("SELECT 1 FROM sessions WHERE id=? AND expires>? AND kind='visitor'", (hashed, time.time())).fetchone():
         raise HTTPException(401, 'Your demo session expired. Start a new session.')
     return hashed
 
 
 def cleanup(db):
-    db.execute('DELETE FROM sessions WHERE expires<=?', (time.time(),))
+    now=time.time()
+    db.execute("DELETE FROM appointments WHERE record_origin='user_created' AND retain_until<=?",(now,))
+    db.execute('DELETE FROM proposals WHERE expires<? AND result_id IS NULL',(now-86400,))
+    db.execute('DELETE FROM agent_tasks WHERE expires<=?',(now,))
+    db.execute("DELETE FROM sessions WHERE expires<=? AND kind='visitor'", (now,))
+
+
+def renew_cookie(db,owner,request,response,expiry=None):
+    if expiry:
+        db.execute('UPDATE sessions SET expires=CASE WHEN expires<? THEN ? ELSE expires END WHERE id=?',(expiry,expiry,owner))
+    until=db.execute('SELECT expires FROM sessions WHERE id=?',(owner,)).fetchone()[0]
+    response.set_cookie(COOKIE,request.cookies.get(COOKIE,''),max_age=max(1,int(until-time.time())),
+        httponly=True,samesite='strict',secure=os.environ.get('HOKIECARE_COOKIE_SECURE','true').lower()!='false',path='/api')
 
 
 def appointment(row):
@@ -132,7 +144,7 @@ def appointment(row):
 
 
 def get_appointment(db, owner, ident):
-    row = db.execute('''SELECT a.id, a.status, a.created_at, s.id AS slot_id, s.center_id, s.service_id, s.starts, s.ends
+    row = db.execute('''SELECT a.id, a.status, a.created_at, a.booking_name, a.retain_until, s.id AS slot_id, s.center_id, s.service_id, s.starts, s.ends
         FROM appointments a JOIN slots s ON a.slot_id=s.id WHERE a.owner=? AND a.id=?''', (owner, ident)).fetchone()
     if not row:
         raise HTTPException(404, 'Appointment not found.')
@@ -155,15 +167,16 @@ def start_session(request: Request, response: Response):
     with database() as db:
         cleanup(db)
         try:
-            session_id(request, db)
-            return {'status': 'active', 'origin': 'demo', 'retention_hours': 24}
+            owner=session_id(request, db)
+            renew_cookie(db,owner,request,response)
+            return {'status':'active','origin':'demo','retention':'Appointment plus 30 days; same browser access'}
         except HTTPException:
             pass
         # The global API limiter also bounds anonymous session creation.
-        if db.execute('SELECT COUNT(*) FROM sessions').fetchone()[0] >= 2000:
+        if db.execute("SELECT COUNT(*) FROM sessions WHERE kind='visitor'").fetchone()[0] >= 2000:
             raise HTTPException(503, 'The demo is full. Please try again later.')
         token = secrets.token_urlsafe(32)
-        db.execute('INSERT INTO sessions VALUES (?,?)', (hashlib.sha256(token.encode()).hexdigest(), time.time()+LIFETIME))
+        db.execute('INSERT INTO sessions(id,expires) VALUES (?,?)', (hashlib.sha256(token.encode()).hexdigest(), time.time()+LIFETIME))
     response.set_cookie(COOKIE, token, max_age=LIFETIME, httponly=True, samesite='strict',
                         secure=os.environ.get('HOKIECARE_COOKIE_SECURE', 'true').lower() != 'false', path='/api')
     return {'status': 'active', 'origin': 'demo', 'retention_hours': 24}
@@ -173,44 +186,30 @@ def start_session(request: Request, response: Response):
 def appointments(request: Request):
     with database() as db:
         owner = session_id(request, db)
-        rows = db.execute('''SELECT a.id, a.status, a.created_at, s.id AS slot_id, s.center_id, s.service_id, s.starts, s.ends
+        rows = db.execute('''SELECT a.id, a.status, a.created_at, a.booking_name, a.retain_until, s.id AS slot_id, s.center_id, s.service_id, s.starts, s.ends
             FROM appointments a JOIN slots s ON a.slot_id=s.id WHERE a.owner=? ORDER BY s.starts''', (owner,)).fetchall()
     return {'appointments': [appointment(r) for r in rows], 'origin': 'demo'}
 
 
 @router.get('/slots')
 def slots(day: date):
-    with database() as db:
-        cleanup(db)
-        rows = db.execute('''SELECT s.* FROM slots s WHERE NOT EXISTS
-            (SELECT 1 FROM appointments a WHERE a.slot_id=s.id AND a.status='reserved') ORDER BY s.starts''').fetchall()
-    now = datetime.now(timezone.utc)
-    return {'slots': [{**dict(r), 'origin': 'demo'} for r in rows
-                      if datetime.fromisoformat(r['starts']).astimezone(TZ).date() == day
-                      and datetime.fromisoformat(r['starts']) > now], 'origin': 'demo'}
+    from .calendar import availability
+    result=availability('cook-counseling',day,day+timedelta(days=1),'demo')
+    return {'slots':[x for x in result['slots'] if x['state']=='available'],'origin':'demo'}
 
 
 @router.post('/demo-times')
 def publish_demo_times(body: DayRequest, request: Request):
     require_write(request)
-    today = datetime.now(TZ).date()
-    if body.day <= today or body.day > today + timedelta(days=30) or body.day.weekday() > 4:
-        raise HTTPException(422, 'Choose a weekday in the next 30 days, starting tomorrow.')
     from .scheduling import day_reason, service
-    if day_reason(service('cook-counseling'), body.day):
-        raise HTTPException(422, 'Campus break or holiday: demo schedule paused.')
-    with database() as db:
-        session_id(request, db)
-        for hour in (9, 10, 11, 14, 15):
-            start = datetime.combine(body.day, daytime(hour), TZ).astimezone(timezone.utc)
-            end = start + timedelta(minutes=45)
-            db.execute('INSERT OR IGNORE INTO slots (id,center_id,starts,ends) VALUES (?,?,?,?)',
-                       (f'cook-{body.day.isoformat()}-{hour}', 'cook', start.isoformat(), end.isoformat()))
+    if day_reason(service('cook-counseling'),body.day):
+        raise HTTPException(422,'Choose an open date in the academic-year sample calendar.')
+    with database() as db: session_id(request,db)
     return slots(body.day)
 
 
 @router.post('/appointments', status_code=201)
-def reserve(body: ReserveRequest, request: Request):
+def reserve(body: ReserveRequest, request: Request, response: Response):
     require_write(request)
     with database() as db:
         db.execute('BEGIN IMMEDIATE')
@@ -221,6 +220,7 @@ def reserve(body: ReserveRequest, request: Request):
         if existing:
             if existing['slot_id'] != body.slot_id:
                 raise HTTPException(409, 'This request was already used for a different time.')
+            renew_cookie(db,owner,request,response)
             return get_appointment(db, owner, existing['id'])
         slot = db.execute('SELECT * FROM slots WHERE id=?', (body.slot_id,)).fetchone()
         if not slot or datetime.fromisoformat(slot['starts']) <= datetime.now(timezone.utc):
@@ -230,16 +230,19 @@ def reserve(body: ReserveRequest, request: Request):
         if db.execute("SELECT COUNT(*) FROM appointments WHERE owner=?", (owner,)).fetchone()[0] >= 50:
             raise HTTPException(429, 'This session has reached its demo appointment limit.')
         conflict = db.execute('''SELECT 1 FROM appointments a JOIN slots s ON a.slot_id=s.id
-            WHERE a.owner=? AND a.status='reserved' AND s.starts<? AND s.ends>?''',
-            (owner, slot['ends'], slot['starts'])).fetchone()
+            WHERE a.owner=? AND a.status='reserved' AND s.starts<? AND COALESCE(s.blocked_until,s.ends)>?''',
+            (owner, slot['blocked_until'], slot['starts'])).fetchone()
         if conflict:
             raise HTTPException(409, 'You already have a demo appointment at this time.')
         ident = secrets.token_urlsafe(16)
         try:
-            db.execute('INSERT INTO appointments VALUES (?,?,?,?,?,?)',
+            db.execute('INSERT INTO appointments(id,owner,slot_id,status,request_id,created_at) VALUES (?,?,?,?,?,?)',
                        (ident, owner, body.slot_id, 'reserved', body.request_id, datetime.now(timezone.utc).isoformat()))
         except sqlite3.IntegrityError:
             raise HTTPException(409, 'Another demo user reserved this time. Choose another slot.') from None
+        expiry=(datetime.fromisoformat(slot['ends'])+timedelta(days=30)).timestamp()
+        db.execute('UPDATE appointments SET retain_until=? WHERE id=?',(expiry,ident))
+        renew_cookie(db,owner,request,response,expiry)
         return get_appointment(db, owner, ident)
 
 

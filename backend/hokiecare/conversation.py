@@ -55,7 +55,7 @@ def relative_day(message, today):
 
 
 def task(db, owner):
-    row = db.execute('SELECT state,version FROM agent_tasks WHERE owner=?', (owner,)).fetchone()
+    row = db.execute('SELECT state,version FROM agent_tasks WHERE owner=? AND (expires IS NULL OR expires>?)', (owner,time.time())).fetchone()
     return (json.loads(row['state']), row['version']) if row else ({}, 0)
 
 
@@ -67,10 +67,12 @@ def model_schema(value):
     return value
 
 
-def invoke(w, model, messages, name, shape, source_ids):
+def invoke(w, model, messages, name, shape, source_ids, allowed_service_ids=None):
     schema = model_schema(shape.model_json_schema())
     schema['required'] = list(schema['properties'])
     schema['properties']['source_ids']['items'] = {'type': 'string', 'enum': source_ids}
+    if allowed_service_ids is not None:
+        schema['properties']['service_ids']['items'] = {'type': 'string', 'enum': allowed_service_ids}
     if shape is Intent:
         schema['properties']['service_id'] = {'anyOf': [{'type': 'string', 'enum': list(s.SERVICES)}, {'type': 'null'}]}
     result = w.api_client.do('POST', f'/serving-endpoints/{model}/invocations', body={
@@ -301,6 +303,7 @@ Only say an internal panel opened if internal_navigation is present. Never claim
             if current != version: raise HTTPException(409, 'Your conversation changed. Please retry this message.')
             db.execute('''INSERT INTO agent_tasks(owner,state,version) VALUES (?,?,?)
                 ON CONFLICT(owner) DO UPDATE SET state=excluded.state,version=excluded.version''', (owner, json.dumps(state), version + 1))
+        with b.database() as db: db.execute('UPDATE agent_tasks SET expires=? WHERE owner=?',(time.time()+86400,owner))
         return {'answer': reply.answer, 'preferences': public_preferences(state), **inventory,
                 'sources': [{'id': r['id'], 'name': r['name'], 'url': r['source_url'], 'access': r['access']} for r in sources],
                 'action': action, 'selected_slot': selected_slot, 'model': model,

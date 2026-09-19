@@ -29,7 +29,7 @@ export const shiftMonth = (month: string, amount: number) => {
   return d.toISOString().slice(0, 7);
 };
 
-export function BookingReview() {
+export function BookingReview({onEdit}:{onEdit?:()=>void} = {}) {
   const { review, confirm, dismissReview, busy, error } = useBooking();
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
@@ -47,6 +47,7 @@ export function BookingReview() {
           : "Review your appointment"}
       </h3>
       <strong>{serviceLabel(review.service_name)}</strong>
+      {review.booking_name && <p>{review.booking_name} · {review.center_name}</p>}
       <p>
         {fullTime(review.slot.starts)} – {easternTime(review.slot.ends)} Eastern
       </p>
@@ -79,9 +80,9 @@ export function BookingReview() {
         <button
           className="booking-secondary"
           disabled={busy}
-          onClick={dismissReview}
+          onClick={onEdit || dismissReview}
         >
-          Back to times
+          {onEdit ? "Edit answers" : "Back to times"}
         </button>
       </div>
     </section>
@@ -202,12 +203,7 @@ export function SharedCalendar({ active }: { active: boolean }) {
     day: "numeric",
   });
   const firstWeekday = new Date(month + "-01T12:00:00Z").getUTCDay();
-  const maxMonth = shiftMonth(easternDate().slice(0, 7), 11),
-    maxDay = new Date(
-      Date.UTC(Number(maxMonth.slice(0, 4)), Number(maxMonth.slice(5, 7)), 0),
-    )
-      .toISOString()
-      .slice(0, 10);
+  const maxMonth = "2027-05", maxDay = "2027-05-12";
   const selectDay = (value: string) => changeSelection({ day: value });
   return (
     <section className="shared-calendar" aria-label="Service calendar">
@@ -444,8 +440,7 @@ export function SharedCalendar({ active }: { active: boolean }) {
             ]
               ?.map((x) => x.join("–"))
               .join(", ") || "Closed"}
-            . {service?.hours_note} Overlapping starts share one fictional
-            resource.
+            . {service?.hours_note} Each 30-minute visit includes a 30-minute buffer; starts are one hour apart.
           </p>
           <p className="booking-small">
             {live
