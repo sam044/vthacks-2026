@@ -1,5 +1,7 @@
 # Build and deployment plan
 
+**Archived architecture reference:** the active HokieCare plan is [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md), with verified tooling/account status in [DATABRICKS_SETUP.md](DATABRICKS_SETUP.md). The following preserves earlier HokieAccess/GIS work. Its Vultr/Gemini choices are not current core signup requirements.
+
 This is a proposed implementation plan, not a statement that the application exists. Following user feedback, the architecture and routing checks below are a **HokieAccess module reference**, not a decision to build the original standalone product. The current ExpoFlow and HokieHarvest architectures and four-minute demos are in [EXPANDED_IDEAS.md](EXPANDED_IDEAS.md). Choose one before implementation.
 
 ## Architecture

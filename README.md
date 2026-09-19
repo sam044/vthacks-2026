@@ -1,12 +1,12 @@
 # VTHacks 2026
 
-Planning repository for a four-person VTHacks 14 team. Primary targets are the Deloitte × Databricks student experience challenge and Impiricus HCP engagement challenge.
+HokieCare repository for a four-person VTHacks 14 team. Primary targets are the Deloitte × Databricks student experience challenge and Impiricus HCP engagement challenge.
 
-**Status:** evaluating HokieCare through verified public-data access. Application implementation and deployment have not started. See the [healthcare data feasibility report](docs/HEALTHCARE_DATA_FEASIBILITY.md).
+**Status:** build planning and Databricks tooling setup complete. Existing workspace OAuth access is verified and 31 official Databricks skills are installed. Application implementation, data import and deployment have not started. Read the [implementation plan](docs/IMPLEMENTATION_PLAN.md) and [verified setup](docs/DATABRICKS_SETUP.md).
 
-## Current shortlist
+## Current product
 
-The current research focus is **HokieCare**: student care navigation and a healthcare-professional planning assistant. Public VT service pages and New River respiratory records are accessible; private VT appointment/capacity records are not secured. Earlier ExpoFlow and HokieHarvest ideas remain background research. The user has not authorized application implementation or selected the final feature scope.
+**HokieCare** combines student care navigation with a healthcare-professional briefing and resource-card workflow. The user has asked to begin building, starting with the plan. Public VT service pages and New River respiratory records are accessible; private VT appointment/capacity records are not secured. Earlier ExpoFlow and HokieHarvest ideas remain background research.
 
 Preserve the existing VT GIS evidence and HokieAccess concept. Databricks data processing, analytics, and a Genie Agent are proposed core components. Campus-wide Wi-Fi data, dining operational records, and building controls are not available to this project at present.
 
@@ -16,12 +16,14 @@ This is an independent hackathon prototype, not an official Virginia Tech servic
 
 ## Planning documents
 
+- [Current implementation order and architecture](docs/IMPLEMENTATION_PLAN.md)
+- [Verified Databricks workspace and skill setup](docs/DATABRICKS_SETUP.md)
 - [HokieCare data feasibility, verified downloads, and limits](docs/HEALTHCARE_DATA_FEASIBILITY.md)
 - [Ideas and recommendation](docs/PROJECT_PLAN.md)
 - [Expanded food, expo, Wi-Fi, and energy research](docs/EXPANDED_IDEAS.md)
 - [Prize priorities and evidence](docs/PRIZE_STRATEGY.md)
 - [Accounts and access](docs/SETUP.md)
-- [Build and deployment plan](docs/BUILD_PLAN.md)
+- [Earlier HokieAccess module build reference](docs/BUILD_PLAN.md)
 - [Research sources and verified data](docs/RESEARCH.md)
 - [Team workflow](CONTRIBUTING.md)
 - [Continuation notes](docs/HANDOFF.md)

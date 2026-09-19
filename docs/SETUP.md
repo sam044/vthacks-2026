@@ -2,19 +2,18 @@
 
 The agent will implement, test, configure, and deploy the project once the required accounts are available. Account creation, sign-in, MFA, accepting terms, and entering billing details belong to the account owner. Signing into a site does not automatically give the terminal/API access; verify each connection with a small authenticated operation.
 
-## Do first
+## Current HokieCare setup
 
 | Service | Your action | Agent's next step |
 | --- | --- | --- |
 | GitHub | All three teammates already have verified write access to [sam044/vthacks-2026](https://github.com/sam044/vthacks-2026) | Authentication already verified; maintain code and collaboration setup |
-| Databricks | Prefer the Deloitte/Databricks sponsor workspace. Otherwise create [Free Edition](https://www.databricks.com/learn/free-edition). Share the workspace URL, not a password. | Configure local OAuth, create a small table, and test SQL access from the app environment |
-| Google AI Studio | Sign into [AI Studio](https://aistudio.google.com/apikey) and create a project/API key | Store the key in ignored local configuration and later hosting secrets; verify one model/tool call |
-| Vultr | Create/sign into [Vultr](https://www.vultr.com/), claim available event credits, and complete any required billing verification | Configure API/SSH access, provision a small server, and deploy the container with HTTPS |
+| Databricks | Existing profile `sam` explicitly selected; OAuth access verified. No new signup needed | Verify SQL/inference, import core data, create a scoped Genie agent, and check hosted OAuth identity. [Setup details](DATABRICKS_SETUP.md) |
+| Railway | Sign into [Railway](https://railway.com/) with GitHub; authorize this repository when connecting it; account owner handles billing | Deploy one React/FastAPI container with public HTTPS and server-side Databricks credentials |
 | Devpost + event Discord | All four teammates join [VTHacks 14](https://vthacks-14.devpost.com/); obtain the current sponsor briefs and workspace link | Prepare the submission, evidence, and demo materials |
 
-Free Edition has quotas, a small SQL warehouse, and restricted outbound connectivity. We will fetch public campus data from our application/ingestion environment and upload it, instead of relying on notebook internet access. Verify external SQL authentication early. A quota outage must be visible to the user; a cached fallback must be labeled as a snapshot. If the sponsor environment is available, use it. [Current limitations](https://docs.databricks.com/aws/en/getting-started/free-edition-limitations)
+The current workspace's exact edition/billing has not been established. If it is Free Edition, quotas and outbound restrictions apply. Locally fetched public snapshots can be uploaded through the Files API. Verify external SQL authentication early; display cached fallback as a dated snapshot. [Current limitations](https://docs.databricks.com/aws/en/getting-started/free-edition-limitations)
 
-Databricks documents browser-based local CLI OAuth. Deployment needs its own supported, scoped credential; do not copy a local user token cache onto the server. Prefer a service principal where supported, otherwise assess the workspace's permitted short-lived credential options. [OAuth setup](https://docs.databricks.com/aws/en/dev-tools/auth/oauth-u2m)
+Databricks browser-based CLI OAuth is working. Deployment needs its own supported, scoped OAuth service principal; do not copy a local user token cache onto the server. Check this before the first hosted integration. No separate Google AI Studio, MongoDB, Vultr or AWS signup is required for the initial plan. [OAuth setup](https://docs.databricks.com/aws/en/dev-tools/auth/oauth-u2m)
 
 ## Only if we pursue these extensions
 
