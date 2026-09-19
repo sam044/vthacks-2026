@@ -1,5 +1,9 @@
 # Continuation notes
 
+## Next session: shared calendars and a booking agent
+
+The user requested a design/prompt for a fresh session to implement monthly service calendars, anonymous shared availability, Databricks appointment persistence, and an agent that actually executes bookings and imports provider confirmation. Read [the detailed next-session design](BOOKING_AGENT_NEXT_SESSION_DESIGN.md) and [copyable continuation prompt](NEXT_SESSION_PROMPT.md). This turn creates documentation only. Lakebase availability and final provider booking remain unverified; no resources or real bookings were created. The design distinguishes demo inventory, user-scoped provider availability, and private confirmed appointment copies, with provider-specific hours/break rules and real-time update requirements.
+
 ## Portal-open fix
 
 The user reported that Open VT portal failed with "Companion not detected." It incorrectly depended on the optional extension. The primary action now directly opens the official portal in a new tab with no extension handshake. Companion detection is passive and non-blocking; enhanced window/read controls appear only when detected under Optional: view portal times in HokieCare. The extension's paired-window workflow remains separate, and a missing extension is informational rather than a broken primary action. Direct portal opening does not enable automated booking or real-record sync. TypeScript/Vite build passed; a local browser click opened the official portal, and the absent-extension state displayed informational setup guidance with no page error. No credentials or screening were entered during this regression check.
