@@ -1,0 +1,40 @@
+{
+  "datasets": [
+    {
+      "name": "bronze_vdh",
+      "filename": "bronze_vdh_d71bbc172182bed4.jsonl",
+      "sha256": "d71bbc172182bed466b2b764cbbf65b0406615b4e01f19d62c6c63a8135045f7",
+      "rows": 28700
+    },
+    {
+      "name": "respiratory",
+      "filename": "respiratory_f53dfe50b28b3d33.jsonl",
+      "sha256": "f53dfe50b28b3d33e21fecdc779ca2ad2145726974a5e044457de5daad528f5a",
+      "rows": 28700
+    },
+    {
+      "name": "services",
+      "filename": "services_e39d6424c3623b6f.jsonl",
+      "sha256": "e39d6424c3623b6fdd9b026c2f0400f259b3ec37f819b63c0c7ec033c3ddeea3",
+      "rows": 6
+    }
+  ],
+  "vdh_source_sha256": "7c681c4a6cc19c11723d077d788dadba9a9df8e836d1e28ce66341e6eab9a84d",
+  "new_river_rows": 700,
+  "first_week": "2020-01-04",
+  "last_week": "2026-09-12",
+  "new_river_suppressed_combined_counts": 64,
+  "tables": {
+    "bronze_vdh": "workspace.hokiecare.bronze_vdh_d71bbc172182bed4",
+    "respiratory": "workspace.hokiecare.respiratory_f53dfe50b28b3d33",
+    "services": "workspace.hokiecare.services_e39d6424c3623b6f"
+  },
+  "validation": [
+    {
+      "rows": "700",
+      "first_week": "2020-01-04",
+      "last_week": "2026-09-12",
+      "suppressed": "64"
+    }
+  ]
+}
