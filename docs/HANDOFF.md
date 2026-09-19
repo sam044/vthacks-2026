@@ -6,6 +6,16 @@ The Care Assistant now uses a required scrollable intake form, one Databricks-gr
 
 Local validation: 67 backend tests, nine frontend/companion checks and the production build passed. Actual Databricks inference + Lakebase intake/confirm/private-name/retention/calendar/cancel checks passed, along with the two-session conflict, idempotency, SSE, reschedule and cancellation checks. The hosted principal verified the materialized dataset over TLS. Browser checks exercised a real AI proposal and confirmed booking, retained form input, and Health Intelligence data. Production application release verification follows below once deployed.
 
+Integration note: main commit `c59eb27` restored `appointments.tsx` byte-for-byte to the pre-chat-workspace `f993ec1` version. The merge retains the current shared booking panel required by this implementation and preserves the separate hashing-branch handoff below.
+
+
+## Standalone keyed hashing — September 19
+
+Branch `codex/encrypt-user-data` adds a backend-only HMAC-SHA-256 module and 20
+passing tests, with a CI step. No frontend, FastAPI, database write path, or deployed
+behavior changes. Read [the hashing handover](USER_DATA_HASHING_HANDOFF.md) and
+[module documentation](../backend/README.md) before integrating it. It is Node.js;
+the existing Python backend does not call it yet. No secrets were provisioned.
 
 ## Chat-first UI milestone — September 19
 
