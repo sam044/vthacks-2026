@@ -44,7 +44,7 @@ export function CareAssistant({navigate}:{navigate:(action:Navigation)=>void}) {
           <div className="chat-examples">{['I have a sore throat and want an appointment','Compare Cook and TimelyCare','Try a Cook demo next Tuesday after 2'].map(example=><button key={example} disabled={busy} onClick={()=>void send(example)}>{example}</button>)}</div>
         </div>}
         {turns.map((turn,i)=><article className={`chat-turn chat-${turn.role}`} key={i}><span className="chat-speaker">{turn.role==='user'?'You':'HokieCare'}</span><p>{turn.content}</p>
-          {!!turn.sources?.length&&<details><summary>Sources and access instructions</summary>{turn.sources.map(source=><div className="chat-source" key={source.url}><a href={source.url} target="_blank" rel="noreferrer">{source.name} ↗</a>{source.access&&<p>{source.access}</p>}</div>)}</details>}
+          {!!turn.sources?.length&&<details><summary>Sources and access instructions</summary>{turn.sources.map(source=><div className="chat-source" key={source.name}><a href={source.url} target="_blank" rel="noreferrer">{source.name} ↗</a>{source.access&&<p>{source.access}</p>}</div>)}</details>}
         </article>)}
         {busy&&<p role="status">Checking our directory and calendars…</p>}
       </div>
