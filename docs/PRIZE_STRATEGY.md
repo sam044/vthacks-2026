@@ -2,6 +2,8 @@
 
 Build one convincing product with a clear Databricks contribution. Add sponsor integrations only when they improve its main demo. Eligibility and simultaneous awards remain subject to the organizers; these are target tracks, not secured entries.
 
+Following team feedback, ExpoFlow targets Deloitte's career-navigator category; HokieHarvest targets smart campus/campus life. Keep HokieAccess as a supporting feature. See [expanded research](EXPANDED_IDEAS.md) for the current options; the access-oriented examples below describe the retained module. Genie is the proposed built-in Databricks agent, subject to a live workspace check. Peraton is not a core target for the career-fair product.
+
 | Priority | Track | Concrete evidence to show |
 | --- | --- | --- |
 | Required | Deloitte × Databricks | Real tables, a transformation job/notebook, a successful application query against Databricks, a tool-using student agent, and a useful impact dashboard |
@@ -37,4 +39,4 @@ GoDaddy documents domain validation, certificates, and DNS as part of registrati
 
 ## Submission essentials
 
-The published deadline is **September 20, 2026, 10:00 a.m. EDT**. Follow participant-channel updates if it changes. All four members need Devpost accounts and contributor entries. Build during the official window and disclose external resources and AI assistance. Confirm the organizer's AI-use interpretation, sponsor dataset requirements, whether judges need a public repo, and how to opt into multiple tracks. [Rules](https://vthacks-14.devpost.com/rules) · [Deadline/resources](https://vthacks-14.devpost.com/resources)
+The user's updated requirements set **September 20, 2026, 8:00 a.m. ET** as the submission deadline and explicitly require an accessible public source-code repository and working demo or presentation links. Use these requirements over the earlier online deadline. All four members need Devpost contributor entries and must attend their assigned judging slot in the 10:30 a.m.–1:00 p.m. ET window. The presentation is four minutes. Select every desired prize category, disclose libraries/frameworks/open-source and pre-event work, and submit one project. Target submission by 7:00 a.m. ET. [Full user-supplied requirements](PROJECT_PLAN.md#requirements) · [Public rules](https://vthacks-14.devpost.com/rules)

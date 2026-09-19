@@ -1,6 +1,6 @@
 # Build and deployment plan
 
-This is a proposed implementation plan, not a statement that the application exists.
+This is a proposed implementation plan, not a statement that the application exists. Following user feedback, the architecture and routing checks below are a **HokieAccess module reference**, not a decision to build the original standalone product. The current ExpoFlow and HokieHarvest architectures and four-minute demos are in [EXPANDED_IDEAS.md](EXPANDED_IDEAS.md). Choose one before implementation.
 
 ## Architecture
 
@@ -38,16 +38,17 @@ The dashboard uses sample trips until real, consented data exists. Report measur
 
 ## Work schedule
 
-The public deadline is September 20 at 10:00 a.m. EDT. The planning pass occurred shortly after midnight September 19, so approximately 34 hours remained at that point. Recheck the actual time before starting and compress these blocks accordingly.
+The user's updated requirements set submission at **September 20, 8:00 a.m. ET**, superseding the earlier online deadline for our planning. Recheck remaining time before implementation and compress the blocks below. Reserve the last hours for verification and a four-minute presentation; target submission by 7:00 a.m. ET.
 
 | Block | Deliverable and gate |
 | --- | --- |
-| First 2 hours | Finalize idea, authenticate Databricks and model, inspect graph connectivity, deploy a basic health page. Pivot/simplify immediately if essential data or access fails. |
-| Next 6 hours | Complete the first vertical slice: real data in Databricks → app query → model/tool result → map and sources. |
-| Next 8 hours | Add the closure scenario, validated routing outcomes, data freshness, and staff impact view. |
-| Next 6 hours | Polish mobile/keyboard UX, test failure paths, validate sample campus paths, measure demo latency. |
-| Next 4 hours | Add at most one demanding extension, such as ANS. A small voice feature or HokieAI sidekick can be included only if the core stays stable. |
-| Remaining time | Freeze features; verify public deployment, record the demo, prepare Devpost, and rehearse. Aim to submit by 9:00 a.m. EDT for a buffer. |
+| First 2 hours | Choose flagship, authenticate Databricks/Genie, verify required data and deploy a health page. No dependency on obtaining campus Wi-Fi admin access. |
+| Next 6 hours | First complete flow: participant/operator input → app state → Databricks ingestion → Genie answer → visible result. |
+| Next 6 hours | Complete the selected queue/recruiter or dining scenario workflow, with data provenance. |
+| Next 4 hours | Add the small HokieAccess venue-map integration; distinguish campus GIS from any sample indoor layout. |
+| Next 4 hours | Polish phone/keyboard UX, verify permissions and failure handling, rehearse live inputs. |
+| Only if time remains | Add one sponsor extension after the core works. |
+| Final reserved hours | Freeze features, verify public HTTPS and source repo, record demo, enter every chosen track and contributor, submit by 7:00 a.m. ET. |
 
 ## Verification that matters
 
@@ -66,4 +67,4 @@ Provision after account access is ready. Build the container, bind the app behin
 
 Keep a dated, labeled snapshot mode and a short recorded demo for internet/API failure. A snapshot demonstrates the fallback; it must not be presented as a live Databricks query.
 
-Three-minute story: show a student's access constraint, explain a sourced baseline route, activate a clearly labeled closure scenario, replan or honestly show unavailable access, then reveal the Databricks-backed staff impact view. Finish with the specific departmental use and known limitations.
+Use the selected four-minute story in EXPANDED_IDEAS.md. The full team must be present during its assigned slot in the Sunday 10:30 a.m.–1:00 p.m. ET judging window. Make the repository publicly accessible before submission, after checking tracked content for secrets and private records.

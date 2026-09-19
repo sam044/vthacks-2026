@@ -4,17 +4,20 @@ Planning repository for a four-person VTHacks 14 team. Our first priority is the
 
 **Status:** research and repository setup complete; product choice is a recommendation, and application implementation and deployment have not started.
 
-## Recommended project: HokieAccess
+## Current shortlist
 
-A Virginia Tech campus access agent that explains how facilities disruptions affect a student's trip and helps campus staff understand the impact of barriers. Start with a small, verified part of the Blacksburg campus, official access-map data, and dated facilities notices.
+The team wants a broader problem with clear company-facing value. The current recommendation is **ExpoFlow + HokieAccess**: career-fair matching, queue information, and opt-in recruiter follow-up, with accessible campus navigation. **HokieHarvest + HokieAccess**, focused on dining preparation and food waste, is the sustainability alternative. The user has not selected the final direction.
 
-The student sees a map, an access plan, sources, and data freshness. A staff demo shows how a simulated closure changes reachable destinations and detour distances. Databricks stores and prepares the data, serves queries used by the agent, and powers the impact dashboard.
+Preserve the existing VT GIS evidence and HokieAccess concept. Databricks data processing, analytics, and a Genie Agent are proposed core components. Campus-wide Wi-Fi data, dining operational records, and building controls are not available to this project at present.
+
+**Submission requirements:** September 20, 8:00 a.m. ET; public source repository; working demo/presentation links; four-minute presentation; full team present for judging. The user's full requirements are preserved in the project plan. Repository visibility must be made public before submission; it is currently private.
 
 This is an independent hackathon prototype, not an official Virginia Tech service.
 
 ## Planning documents
 
 - [Ideas and recommendation](docs/PROJECT_PLAN.md)
+- [Expanded food, expo, Wi-Fi, and energy research](docs/EXPANDED_IDEAS.md)
 - [Prize priorities and evidence](docs/PRIZE_STRATEGY.md)
 - [Accounts and access](docs/SETUP.md)
 - [Build and deployment plan](docs/BUILD_PLAN.md)

@@ -2,6 +2,8 @@
 
 Checked September 19, 2026. Public sources support the problem and the proposed data paths; they do not establish sponsor acceptance or a working implementation.
 
+Update after user feedback: preserve the GIS findings below. Broader food, expo, Wi-Fi, energy, and Genie research is in [EXPANDED_IDEAS.md](EXPANDED_IDEAS.md). The user's new Requirements block sets an **8:00 a.m. ET** submission deadline and public repository requirement; it supersedes the earlier deadline found online for our plan.
+
 | Source | What it supports | Limitation |
 | --- | --- | --- |
 | [VTHacks 14 overview](https://vthacks-14.devpost.com/) | Current event and public prize/judging information | Several sponsor details remain TBD |
