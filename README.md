@@ -4,7 +4,7 @@ HokieCare repository for a four-person VTHacks 14 team. Primary targets are the 
 
 **Live demo: [HokieCare](https://vthacks-2026-production.up.railway.app)**
 
-**New milestone:** [Appointment hub and AI navigation](docs/BOOKING_IMPLEMENTATION.md) adds Cook demo reservations, an agenda/calendar export, and a Databricks tool-driven assistant. The [Schiffert companion preview](companion/README.md) follows a successful authenticated availability test; it selects displayed times and leaves final booking with the user in the official portal. It does not yet import confirmed real bookings.
+**New milestone, deployed and verified:** [Appointment hub and AI navigation](docs/BOOKING_IMPLEMENTATION.md) adds Cook demo reservations, an agenda/calendar export, and a Databricks tool-driven assistant. The [Schiffert companion preview](companion/README.md) follows a successful authenticated availability test; its code supports selecting displayed times and leaves final booking with the user in the official portal. Installed-extension end-to-end behavior remains unverified, and it does not yet import confirmed real bookings.
 
 **Status:** the first Databricks-backed application is deployed and verified on Railway. Six VT care resources and 700 New River observations are served by FastAPI to a React frontend. Public HTTPS, data readiness, filters and source suppression passed live checks. Read [deployment evidence](docs/DEPLOYMENT_VALIDATION.md), [run/deploy instructions](docs/OPERATIONS.md), and the [implementation plan](docs/IMPLEMENTATION_PLAN.md).
 
