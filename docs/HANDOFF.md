@@ -1,5 +1,13 @@
 # Continuation notes
 
+## Standalone keyed hashing — September 19
+
+Branch `codex/encrypt-user-data` adds a backend-only HMAC-SHA-256 module and 20
+passing tests, with a CI step. No frontend, FastAPI, database write path, or deployed
+behavior changes. Read [the hashing handover](USER_DATA_HASHING_HANDOFF.md) and
+[module documentation](../backend/README.md) before integrating it. It is Node.js;
+the existing Python backend does not call it yet. No secrets were provisioned.
+
 ## Grounded assistant interaction update — September 19
 
 The user asked to fix the existing Databricks chatbot, with generated answers grounded in project data, conversational follow-ups, and automatic internal navigation. No Gemini or new model/provider was added.

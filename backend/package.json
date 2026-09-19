@@ -1,0 +1,17 @@
+{
+  "name": "@hokiecare/user-data-hashing",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "exports": {
+    ".": {
+      "browser": null,
+      "node": "./src/user-data-hasher.mjs",
+      "default": null
+    }
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  }
+}

@@ -18,6 +18,8 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+      - name: Verify keyed user-data hashing
+        run: npm --prefix backend test
       - run: pip install -r requirements-dev.in
       - run: python -m pytest -q
       - run: python scripts/package_companion.py
