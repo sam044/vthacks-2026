@@ -113,6 +113,18 @@ def test_no_slots_or_untrusted_service_never_proposes(client,monkeypatch):
     with b.database() as db: assert db.execute('SELECT COUNT(*) FROM proposals').fetchone()[0]==0
 
 
+def test_general_wellness_cannot_select_specialized_consultation(client,monkeypatch):
+    calls=model(monkeypatch,['wellness-basics'])
+    body=form(support='wellness',center='wellness',description='Help with healthy routines and stress management.')
+    response=client.post('/api/assistant/intake',headers=H,json=body)
+    assert response.json()['outcome']=='no_match' and not calls
+    automatic=intake.Intake(**{**body,'center':'auto','modality':'either'})
+    assert intake.allowed_services(automatic)==['timelycare-coaching']
+    financial=intake.Intake(**{**body,'description':'I want financial coaching to plan my budget.'})
+    assert intake.allowed_services(financial)==['wellness-financial']
+    assert not client.get('/api/booking/appointments').json()['appointments']
+
+
 def test_urgent_result_and_inference_failure_do_not_book(client,monkeypatch):
     model(monkeypatch,[],outcome='urgent_support')
     result=client.post('/api/assistant/intake',headers=H,json=form()).json()

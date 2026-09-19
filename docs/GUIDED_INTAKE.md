@@ -8,6 +8,8 @@ Complete the required name/alias, support category, brief request, center prefer
 
 The Databricks Qwen endpoint selects suitable allowlisted services from sourced context. The backend enforces explicit preferences and Cook/TimelyCare concurrency restrictions, selects the earliest stored available slot, and creates one owner-bound two-minute review. Confirmation is a separate explicit user action and transaction. No-match and model/network failures preserve answers for editing or retry; there is no follow-up chat interview. Uncertain confirmation retries use the same review, and replacement proposals require fresh confirmation.
 
+A live-model regression exposed an overbroad general-wellness match. Backend topic restrictions now prevent unrelated BASICS, recovery, or financial consultations from being proposed; the model must still verify fit. Service scope follows [the published consultations](https://hokiewellness.vt.edu/students/our_services/consultations.html).
+
 The booking name is excluded from model context. The brief request is sent for inference, but is not persisted in our database, browser storage, or application logs. Idempotency uses a keyed input digest, not retained request text. This does not assert a Databricks inference-log retention policy.
 
 ## Databricks and data

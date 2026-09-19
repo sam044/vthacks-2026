@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import time
 from typing import Literal
 from fastapi import APIRouter, HTTPException, Request
@@ -62,6 +63,13 @@ class Routing(b.StrictBody):
 
 def allowed_services(body):
     result=[]
+    # Published specialized consultations are not interchangeable general wellness visits.
+    # Topic evidence only narrows model choices; it never diagnoses a condition.
+    topics={
+        'wellness-basics': r'\b(alcohol|drinking)\b|(?-i:\bBASICS\b)',
+        'wellness-recovery': r'\b(recovery|substance|addiction|sobriety|sober)\b',
+        'wellness-financial': r'\b(financial|finance|finances|money|budget|budgeting|debt|credit|loans)\b',
+    }
     for ident, service in s.SERVICES.items():
         center=service['center_id']
         category='counseling' if ident in ('cook-counseling','timelycare-counseling') else 'wellness' if center=='wellness' or ident=='timelycare-coaching' else 'physical'
@@ -69,6 +77,7 @@ def allowed_services(body):
         if body.center!='auto' and center!=body.center: continue
         if body.support!='unsure' and body.support!=category: continue
         if body.modality!='either' and modality!=body.modality: continue
+        if ident in topics and not re.search(topics[ident],body.description,re.I): continue
         if category=='counseling':
             if body.counseling=='unsure': continue
             if body.counseling=='cook' and center=='timelycare': continue
