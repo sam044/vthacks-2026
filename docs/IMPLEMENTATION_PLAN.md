@@ -1,6 +1,6 @@
 # HokieCare implementation plan
 
-**Implementation update (September 19):** the first core import and local browser/API read flow are now implemented. Docker/Railway deployment verification is underway. [Operations](OPERATIONS.md) and [handoff](HANDOFF.md) track actual delivery. The original roadmap below remains the design reference; the first-release API uses fixed bounded SQL and validates/filter parameters over small results. It does not accept arbitrary SQL. AI generation/curated Genie/forecasting remain later milestones.
+**Implementation update (September 19):** the first core import and public browser/API read flow are deployed and verified on Railway. [Deployment evidence](DEPLOYMENT_VALIDATION.md), [operations](OPERATIONS.md) and [handoff](HANDOFF.md) track actual delivery. The original roadmap below remains the design reference; the first-release API uses fixed bounded SQL and validates/filters parameters over small results. It does not accept arbitrary SQL. AI generation/curated Genie/forecasting remain later milestones.
 
 Updated September 19, 2026. The user has authorized beginning the build, starting with this architecture, setup, and implementation plan. Deloitte × Databricks and Impiricus remain the primary prize targets. [Submission requirements](PROJECT_PLAN.md#requirements) remain authoritative: September 20, 8:00 a.m. ET, with a 7:00 a.m. submission target.
 

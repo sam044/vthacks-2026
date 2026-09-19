@@ -2,7 +2,9 @@
 
 HokieCare repository for a four-person VTHacks 14 team. Primary targets are the Deloitte × Databricks student experience challenge and Impiricus HCP engagement challenge.
 
-**Status:** the first Databricks-backed application is implemented and locally verified. Six VT care resources and 700 New River observations are served by FastAPI to a React frontend. The Docker image and Railway configuration are ready for deployment verification. Read [run/deploy instructions](docs/OPERATIONS.md) and the [implementation plan](docs/IMPLEMENTATION_PLAN.md).
+**Live demo: [HokieCare](https://vthacks-2026-production.up.railway.app)**
+
+**Status:** the first Databricks-backed application is deployed and verified on Railway. Six VT care resources and 700 New River observations are served by FastAPI to a React frontend. Public HTTPS, data readiness, filters and source suppression passed live checks. Read [deployment evidence](docs/DEPLOYMENT_VALIDATION.md), [run/deploy instructions](docs/OPERATIONS.md), and the [implementation plan](docs/IMPLEMENTATION_PLAN.md).
 
 ## Current product
 

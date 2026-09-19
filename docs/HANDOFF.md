@@ -3,13 +3,13 @@
 ## Current implementation state (supersedes planning status below)
 
 - User explicitly authorized implementing and deploying the first data-backed app, and expects frequent tested GitHub pushes.
-- Development branch: `codex/hokiecare-first-deployment`. First backend milestone pushed as `5639820`.
+- Implementation branch `codex/hokiecare-first-deployment` was pushed in milestones and merged through PR #2 into `main`, commit `8ebd762`. The prior planning PR #1 is also merged. Railway deploys `main` automatically.
 - Actual Databricks import: 28,700 VDH records, 700 New River records (350 weeks), six curated service cards. Sixty-four suppressed combined counts remain null. Immutable snapshot tables and a Volume are in `workspace.hokiecare`; gold views serve the app.
 - FastAPI routes `/api/services`, `/api/trends`, `/api/health`, `/api/ready` work against real data. Cache modes, bounded inputs/queries, timeouts, process-wide rate limit, and error states are implemented. No model is called yet.
 - React/TypeScript/Vite frontend: source-backed service cards/filters, responsive trend chart and accessible table, evidence panel, editable deterministic HCP draft and text export. Browser tests verified filtering, therapy constraints, chart selectors, and downloaded draft contents.
 - Dedicated OAuth service principal `hokiecare-railway` has read access to both gold views and CAN_USE on the existing warehouse. Hosted identity queries passed. Credentials reside in Railway and ignored `.secrets`; secret expires 30 days from September 19, 2026. Do not print/commit them or deploy the developer cache.
-- Railway already exists and is authenticated via CLI, connected to `main`. The original failure was a docs-only commit. Domain allocated: `https://vthacks-2026-production.up.railway.app`; port 8000. Docker build and `/api/health` configuration are in this implementation. Public deployment verification is next.
-- Eleven pytest checks pass; production TypeScript/Vite build passes. Local live API returned six services and 52 weekly points ending September 12, 2026 (ED combined 1.3%). One SDK initialization issue was corrected to use `Config` before constructing `WorkspaceClient`.
+- Railway deployment `b6d27376-418b-4743-a344-7a10eff1f829` succeeded for `8ebd762`. Public demo: `https://vthacks-2026-production.up.railway.app`; port 8000. Live unauthenticated checks verified frontend, health, readiness, all six services, both 350-week series, 64 suppressed counts and invalid-input rejection. The original docs-only deployment failure is resolved.
+- Eleven pytest checks and the production TypeScript/Vite build pass. GitHub Actions built and ran the Linux container successfully. Local and hosted API queries return six services and observations ending September 12, 2026 (ED combined 1.3%). Hosted identity cannot read the bronze table. A CI-only expired-cache test assumption about machine uptime was corrected. See [deployment evidence](DEPLOYMENT_VALIDATION.md).
 - [OPERATIONS.md](OPERATIONS.md) is the current run/deploy reference. Next after deployment: student/HCP AI tool flows and curated Genie integration; forecasting optional.
 
 The following sections retain historical planning context. Statements that no app/import exists refer to the earlier planning turn.
