@@ -23,7 +23,8 @@ The assistant allows 6 requests/session/minute, 20 total/minute and 2 concurrent
 - 20 backend tests pass, including parallel reservation conflict, persistent session ownership, idempotency, cancellation/reuse, expiry, deletion, CSRF/origin checks, injected status rejection, allowlisted AI tools, and AI rate limits.
 - Three companion tests use invented names/times with the observed DOM structure. They check extraction, stale-slot rejection, no login/screening reads, and selection without final form submission.
 - Production TypeScript/Vite build passes. Existing bundle-size warning remains.
-- Local browser: empty agenda → explicit fictional availability → review → reservation displayed. Additional deployment/browser evidence is recorded in the handoff as completed.
+- Local browser: empty agenda → explicit fictional availability → review → reservation displayed → cancellation → deletion. Downloaded ICS contained the demo notice and correct UTC start/end for the selected Eastern time. Missing companion showed installation guidance.
+- PR #4 / commit `28e268e537402964199bbc504cbca5ec7ac44ece` deployed successfully on Railway. At 16:32 UTC September 19, hosted old-data regression checks and `scripts/verify_booking.py --ai` passed: actual model/tool response, reservation lifecycle, and downloadable extension ZIP. Hosted browser also saved a demo reservation. CI verified the Linux runtime runs at UID 10001 and writes its database. See [handoff](HANDOFF.md) for deployment identifiers.
 - An installed browser extension and real final booking have not been validated end to end. No real booking was created as a test.
 
 ## Running and testing
