@@ -13,6 +13,9 @@ google-auth==2.58.0
 h11==0.16.0
 idna==3.20
 protobuf==6.33.6
+psycopg==3.3.6
+psycopg-binary==3.3.6
+psycopg-pool==3.3.2
 pyasn1==0.6.4
 pyasn1-modules==0.4.2
 pycparser==3.0

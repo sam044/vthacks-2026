@@ -63,6 +63,11 @@ def database_path():
 
 @contextmanager
 def database():
+    if os.environ.get('HOKIECARE_BOOKING_STORE') == 'lakebase':
+        from .booking_store import lakebase_database
+        with lakebase_database() as db:
+            yield db
+        return
     path = database_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     db = sqlite3.connect(path, timeout=10)
@@ -78,8 +83,9 @@ def database():
             slot_id TEXT NOT NULL REFERENCES slots(id), status TEXT NOT NULL,
             request_id TEXT NOT NULL, created_at TEXT NOT NULL, UNIQUE(owner, request_id));
         CREATE UNIQUE INDEX IF NOT EXISTS one_reservation ON appointments(slot_id) WHERE status='reserved';
-        PRAGMA user_version=1;
     ''')
+    from .booking_store import migrate_sqlite
+    migrate_sqlite(db)
     try:
         yield db
         db.commit()
@@ -91,6 +97,8 @@ def database():
 
 
 def require_write(request: Request):
+    if os.environ.get('HOKIECARE_BOOKING_STORE','sqlite')!='lakebase' and database_path().with_suffix('.paused').exists():
+        raise HTTPException(503,'Appointment storage is being upgraded. Please retry shortly with the same review.')
     # Custom header plus same-origin policy blocks form/CSRF requests. No CORS is enabled.
     if request.headers.get('x-hokiecare-action') != '1':
         raise HTTPException(403, 'Open this action in HokieCare.')
@@ -117,12 +125,14 @@ def cleanup(db):
 
 
 def appointment(row):
-    return {**dict(row), 'origin': 'demo', 'center_name': 'Cook Counseling Center',
-            'timezone': 'America/New_York', 'notice': 'Demo appointment. Not booked with Cook.'}
+    result = dict(row)
+    name = next(c['name'] for c in CENTERS if c['id'] == result['center_id'])
+    return {**result, 'origin': 'demo', 'center_name': name,
+            'timezone': 'America/New_York', 'notice': 'Demo appointment. Not booked with the provider.'}
 
 
 def get_appointment(db, owner, ident):
-    row = db.execute('''SELECT a.id, a.status, a.created_at, s.id AS slot_id, s.center_id, s.starts, s.ends
+    row = db.execute('''SELECT a.id, a.status, a.created_at, s.id AS slot_id, s.center_id, s.service_id, s.starts, s.ends
         FROM appointments a JOIN slots s ON a.slot_id=s.id WHERE a.owner=? AND a.id=?''', (owner, ident)).fetchone()
     if not row:
         raise HTTPException(404, 'Appointment not found.')
@@ -131,7 +141,10 @@ def get_appointment(db, owner, ident):
 
 @router.get('/catalog')
 def catalog():
+    from .scheduling import public_services, CONFIG
     return {'centers': CENTERS, 'timezone': 'America/New_York',
+            'services': public_services(), 'schedule_version': CONFIG['version'],
+            'storage': os.environ.get('HOKIECARE_BOOKING_STORE', 'sqlite'),
             'companion': {'provider': 'schiffert', 'automation_verified': False,
                           'availability_verified': True, 'status': 'availability_verified_final_submission_unverified'}}
 
@@ -160,7 +173,7 @@ def start_session(request: Request, response: Response):
 def appointments(request: Request):
     with database() as db:
         owner = session_id(request, db)
-        rows = db.execute('''SELECT a.id, a.status, a.created_at, s.id AS slot_id, s.center_id, s.starts, s.ends
+        rows = db.execute('''SELECT a.id, a.status, a.created_at, s.id AS slot_id, s.center_id, s.service_id, s.starts, s.ends
             FROM appointments a JOIN slots s ON a.slot_id=s.id WHERE a.owner=? ORDER BY s.starts''', (owner,)).fetchall()
     return {'appointments': [appointment(r) for r in rows], 'origin': 'demo'}
 
@@ -183,12 +196,15 @@ def publish_demo_times(body: DayRequest, request: Request):
     today = datetime.now(TZ).date()
     if body.day <= today or body.day > today + timedelta(days=30) or body.day.weekday() > 4:
         raise HTTPException(422, 'Choose a weekday in the next 30 days, starting tomorrow.')
+    from .scheduling import day_reason, service
+    if day_reason(service('cook-counseling'), body.day):
+        raise HTTPException(422, 'Campus break or holiday: demo schedule paused.')
     with database() as db:
         session_id(request, db)
         for hour in (9, 10, 11, 14, 15):
             start = datetime.combine(body.day, daytime(hour), TZ).astimezone(timezone.utc)
             end = start + timedelta(minutes=45)
-            db.execute('INSERT OR IGNORE INTO slots VALUES (?,?,?,?)',
+            db.execute('INSERT OR IGNORE INTO slots (id,center_id,starts,ends) VALUES (?,?,?,?)',
                        (f'cook-{body.day.isoformat()}-{hour}', 'cook', start.isoformat(), end.isoformat()))
     return slots(body.day)
 
@@ -209,6 +225,8 @@ def reserve(body: ReserveRequest, request: Request):
         slot = db.execute('SELECT * FROM slots WHERE id=?', (body.slot_id,)).fetchone()
         if not slot or datetime.fromisoformat(slot['starts']) <= datetime.now(timezone.utc):
             raise HTTPException(409, 'This time is no longer available.')
+        from .calendar import validate_stored_slot
+        validate_stored_slot(slot)
         if db.execute("SELECT COUNT(*) FROM appointments WHERE owner=?", (owner,)).fetchone()[0] >= 50:
             raise HTTPException(429, 'This session has reached its demo appointment limit.')
         conflict = db.execute('''SELECT 1 FROM appointments a JOIN slots s ON a.slot_id=s.id

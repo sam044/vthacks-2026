@@ -16,10 +16,14 @@ from fastapi.staticfiles import StaticFiles
 from .db import client, execute
 from .booking import router as booking_router
 from .assistant import router as assistant_router
+from .calendar import router as calendar_router
+from .conversation import router as conversation_router
 
 app = FastAPI(title="HokieCare", version="0.1.0", docs_url=None, openapi_url="/api/openapi.json", redoc_url=None)
 app.include_router(booking_router)
 app.include_router(assistant_router)
+app.include_router(calendar_router)
+app.include_router(conversation_router)
 logger = logging.getLogger("hokiecare")
 CACHE_SECONDS = 300
 cache = {}
