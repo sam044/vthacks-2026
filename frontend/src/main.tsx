@@ -6,7 +6,6 @@ import {
   Heart,
   Activity,
   Compass,
-  GraduationCap,
   ShieldCheck,
   ExternalLink,
   RefreshCw,
@@ -32,7 +31,10 @@ import {
   YAxis,
 } from "recharts";
 import "./styles.css";
-import { AppointmentHub, CareAssistant, type Navigation } from "./appointments";
+import { useApi } from "./use-public-data";
+import { CareWorkspace } from "./care-workspace";
+import { Brand } from "./care-assistant";
+import "./care-workspace.css";
 
 type Meta = {
   mode: "live" | "cached";
@@ -92,52 +94,6 @@ const formatDate = (v: string) =>
     day: "numeric",
     year: "numeric",
   });
-
-function useApi<T>(path: string) {
-  const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [version, setVersion] = useState(0);
-  useEffect(() => {
-    const controller = new AbortController();
-    let active = true;
-    setLoading(true);
-    setData(null);
-    setError("");
-    const timer = setTimeout(() => controller.abort(), 70000);
-    fetch(path, { signal: controller.signal })
-      .then(async (r) => {
-        const body = await r.json();
-        if (!r.ok) throw new Error(body.detail || "Unable to load data.");
-        return body as T;
-      })
-      .then((value) => {
-        if (active) setData(value);
-      })
-      .catch((e) => {
-        if (active && !controller.signal.aborted) setError(e.message);
-      })
-      .finally(() => {
-        if (active && !controller.signal.aborted) setLoading(false);
-      });
-    controller.signal.addEventListener(
-      "abort",
-      () => {
-        if (active) {
-          setLoading(false);
-          setError("The request timed out. Please retry.");
-        }
-      },
-      { once: true },
-    );
-    return () => {
-      active = false;
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [path, version]);
-  return { data, error, loading, retry: () => setVersion((x) => x + 1) };
-}
 
 function Evidence({ data, snapshot }: { data: Meta; snapshot?: string }) {
   return (
@@ -258,62 +214,6 @@ function FindCare({ initialCategory = "all" }: { initialCategory?: string }) {
   );
   return (
     <>
-      <section className="hero">
-        <div className="hero-copy">
-          <p className="eyebrow">
-            <span className="dot" />
-            FOR THE HOKIE COMMUNITY
-          </p>
-          <h1>
-            A little direction.
-            <br />
-            <em>A lot of support.</em>
-          </h1>
-          <p className="hero-description">
-            Finding the right care shouldn’t be the hard part. Explore trusted
-            Virginia Tech resources and take your next step with confidence.
-          </p>
-          <a className="button primary" href="#resources">
-            Find your support <ArrowRight size={17} />
-          </a>
-          <div className="hero-note">
-            <ShieldCheck size={16} />
-            Official sources. Clear next steps. Your choice.
-          </div>
-        </div>
-        <div className="hero-art" aria-hidden="true">
-          <div className="orbit orbit-one" />
-          <div className="orbit orbit-two" />
-          <div className="art-center">
-            <Heart size={52} strokeWidth={1.35} />
-            <span>Care, connected.</span>
-          </div>
-          <div className="float-card art-virtual">
-            <span className="float-icon">
-              <Video size={19} />
-            </span>
-            <div>
-              <b>Support wherever you are</b>
-              <small>Explore virtual options</small>
-            </div>
-            <Check size={15} />
-          </div>
-          <div className="float-card art-campus">
-            <span className="float-icon orange">
-              <GraduationCap size={22} />
-            </span>
-            <div>
-              <b>Rooted in your campus</b>
-              <small>Virginia Tech resources</small>
-            </div>
-          </div>
-          <div className="little-star">✳</div>
-          <div className="little-plus">+</div>
-          <div className="art-caption">
-            BLACKSBURG, VIRGINIA <span>↗</span>
-          </div>
-        </div>
-      </section>
       <section className="resource-section" id="resources">
         <div className="section-heading">
           <div>
@@ -463,7 +363,7 @@ function Briefing({ data }: { data: Trends }) {
   );
 }
 
-function HealthTrends() {
+function HealthIntelligence() {
   const [facility, setFacility] = useState("Emergency Department");
   const [weeks, setWeeks] = useState(52);
   const query = useApi<Trends>(
@@ -723,95 +623,77 @@ function HealthTrends() {
   );
 }
 
-function App() {
-  const [view, setView] = useState<"care" | "trends" | "appointments">("care");
-  const [destination, setDestination] = useState<Navigation>({
-    view: "care",
-    category: "all",
-    center_id: "schiffert",
-  });
+function AppShell() {
+  const [view, setView] = useState<"care" | "intelligence">("care");
+  const [intelligenceVisited, setIntelligenceVisited] = useState(false);
   return (
     <>
       <a className="skip-link" href="#main">
         Skip to content
       </a>
-      <header>
-        <div className="header-inner">
+      <header className="app-header">
+        <div className="app-header-inner">
           <a
             href="#"
-            className="brand"
+            className="home-link"
+            aria-label="HokieCare home"
             onClick={(e) => {
               e.preventDefault();
               setView("care");
             }}
-            aria-label="HokieCare home"
           >
-            <span>
-              <Heart size={23} />
-            </span>
-            hokie<span className="brand-light">care</span>
-            <small>VT</small>
+            <Brand />
           </a>
           <nav aria-label="Main navigation">
-            <button
-              className={view === "appointments" ? "selected" : ""}
-              aria-current={view === "appointments" ? "page" : undefined}
-              onClick={() => setView("appointments")}
-            >
-              <CalendarDays size={16} />
-              Appointments
-            </button>
             <button
               className={view === "care" ? "selected" : ""}
               aria-current={view === "care" ? "page" : undefined}
               onClick={() => setView("care")}
             >
-              <Compass size={16} />
-              Find care
+              <Heart size={17} />
+              Care Assistant
             </button>
             <button
-              className={view === "trends" ? "selected" : ""}
-              aria-current={view === "trends" ? "page" : undefined}
-              onClick={() => setView("trends")}
+              className={view === "intelligence" ? "selected" : ""}
+              aria-current={view === "intelligence" ? "page" : undefined}
+              onClick={() => {
+                setIntelligenceVisited(true);
+                setView("intelligence");
+              }}
             >
-              <Activity size={16} />
-              Health intelligence
+              <Activity size={17} />
+              Health Intelligence
             </button>
           </nav>
-          <span className="prototype">
-            VTHacks prototype <span className="dot" />
-          </span>
         </div>
       </header>
-      <main id="main">
-        {view === "care" ? (
-          <FindCare initialCategory={destination.category} />
-        ) : view === "appointments" ? (
-          <AppointmentHub initialCenter={destination.center_id} destination={destination} />
-        ) : (
-          <HealthTrends />
+      <main id="main" className="app-main">
+        <div hidden={view !== "care"}>
+          <CareWorkspace
+            active={view === "care"}
+            renderDirectory={(category) => (
+              <FindCare initialCategory={category} />
+            )}
+          />
+        </div>
+        {intelligenceVisited && (
+          <div
+            hidden={view !== "intelligence"}
+            className="intelligence-container"
+          >
+            <HealthIntelligence />
+          </div>
         )}
       </main>
-      <CareAssistant
-        navigate={(action) => {
-          setDestination(action);
-          setView(action.view);
-        }}
-      />
-      <footer>
-        <a className="footer-brand" href="#" onClick={() => setView("care")}>
-          <Heart size={17} />
-          hokiecare
-        </a>
-        <span>Built for Hokies. Grounded in public sources.</span>
+      <footer className="app-footer">
+        <span>Built for Hokies.</span>
         <span>Independent student project · Not an official VT service</span>
       </footer>
     </>
   );
 }
-
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
+    <AppShell />
   </StrictMode>,
 );

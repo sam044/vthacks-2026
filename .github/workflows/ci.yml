@@ -21,7 +21,7 @@ jobs:
       - run: pip install -r requirements-dev.in
       - run: python -m pytest -q
       - run: python scripts/package_companion.py
-      - run: npm ci && node --test companion.test.mjs && npm run build
+      - run: npm ci && npm test && npm run build
         working-directory: frontend
       - run: docker build -t hokiecare:ci .
       - name: Container health and frontend

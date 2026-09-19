@@ -1,5 +1,11 @@
 # Continuation notes
 
+## Chat-first UI milestone — September 19
+
+Implemented the requested two-section design: Care Assistant is the landing workspace, with the logo/motto above a large composer, and Health Intelligence remains separate. Chat, contextual directory, calendar and agenda now share scheduling selection and a single review. On mobile the panel becomes a keyboard-accessible sheet; switching sections preserves in-memory conversation and drafts. No model, booking API, database schema or mock-data import changed. See [design and implementation evidence](CHAT_FIRST_UI.md).
+
+Local verification passed the production frontend build, 45 Python tests, seven frontend/companion tests, actual Databricks data reads and model responses, manual/conversational booking review, save/reschedule/cancel, and desktop/mobile UI checks. Fixed an existing public-data timeout bug found during those checks: successfully loaded results no longer become timeout errors after 70 seconds. Hosted CI/deployment checks are performed after publishing this milestone and reported in the task's final report; do not infer production rollout solely from these local checks. Mock-data creation remains the next separately requested task. The original Requirements block is untouched.
+
 ## Grounded assistant interaction update — September 19
 
 The user asked to fix the existing Databricks chatbot, with generated answers grounded in project data, conversational follow-ups, and automatic internal navigation. No Gemini or new model/provider was added.
