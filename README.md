@@ -18,6 +18,7 @@ This is an independent hackathon prototype, not an official Virginia Tech servic
 
 ## Planning documents
 
+- [Latest appointment hub plan: five centers, student calendar, and scheduler workspace](docs/APPOINTMENT_HUB_PLAN.md)
 - [Next-build plan: frontend agent, HCP workflow, scheduling sandbox, and award strategy](docs/PROTOTYPE_EVOLUTION_PLAN.md)
 - [Run, test, deploy and operate the app](docs/OPERATIONS.md)
 - [Current implementation order and architecture](docs/IMPLEMENTATION_PLAN.md)

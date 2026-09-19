@@ -1,5 +1,7 @@
 # HokieCare implementation plan
 
+**Latest appointment direction:** [Unified appointment hub](APPOINTMENT_HUB_PLAN.md) specifies the five-center experience, empty request/reservation store, student calendar, and scheduler queue. Use it for scheduling scope, persistence, connection capabilities, and delivery order; use the evolution plan for the broader agent and award strategy. No new booking feature is implemented by these planning updates.
+
 **Next-build update (September 19):** [Prototype evolution and award strategy](PROTOTYPE_EVOLUTION_PLAN.md) is the current delivery plan based on the working repository, `message2.txt`, and the user's revised sponsor requirements. Prioritize a frontend tool-using agent and the HCP workflow, then a clearly labeled scheduling sandbox. Genie and forecasting are conditional enhancements. The original architecture below remains a reference; later historical statements about missing imports/deployment are superseded by the implementation update and handoff.
 
 **Implementation update (September 19):** the first core import and public browser/API read flow are deployed and verified on Railway. [Deployment evidence](DEPLOYMENT_VALIDATION.md), [operations](OPERATIONS.md) and [handoff](HANDOFF.md) track actual delivery. The original roadmap below remains the design reference; the first-release API uses fixed bounded SQL and validates/filters parameters over small results. It does not accept arbitrary SQL. AI generation/curated Genie/forecasting remain later milestones.

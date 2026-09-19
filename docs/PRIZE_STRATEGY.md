@@ -2,6 +2,8 @@
 
 Build one convincing product with a clear Databricks contribution. Add sponsor integrations only when they improve its main demo. Eligibility and simultaneous awards remain subject to the organizers; these are target tracks, not secured entries.
 
+**Appointment refinement:** the [unified hub plan](APPOINTMENT_HUB_PLAN.md) adds a complete student/scheduler workflow to the professional story. Demonstrate synthetic slot publication, a student's request, a staff proposal, acceptance, and both calendars updating. This is a working coordination prototype; no actual clinic adoption, booking integration, or wait reduction is claimed.
+
 **Latest priority update:** Deloitte × Databricks and **Impiricus** are both primary targets. The [prototype evolution plan](PROTOTYPE_EVOLUTION_PLAN.md) now maps the actual deployed prototype and `message2.txt` to the next build. Add the frontend tool-using agent first, strengthen the professional question/draft/export flow, then demonstrate scheduling with explicitly synthetic slots. A sourced directory and trend view are already deployed; model inference, scheduling, forecasting, and user-role authorization are not. This is a proposed sponsor fit, not sponsor-confirmed eligibility. The user's Impiricus working-tool or five-minute-pitch option is separate from the event's four-minute presentation slot.
 
 Earlier alternatives: ExpoFlow targets Deloitte's career-navigator category; HokieHarvest targets smart campus/campus life. Keep HokieAccess research available for later reuse. See [expanded research](EXPANDED_IDEAS.md). A curated Genie Agent is optional after the frontend agent works; the existing backend can supply bounded tools directly.

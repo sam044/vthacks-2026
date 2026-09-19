@@ -1,5 +1,13 @@
 # Continuation notes
 
+## Latest direction: a unified appointment hub
+
+- The user asked for a more tailored plan around Schiffert, Cook, TimelyCare, Carilion, and Hokie Wellness, with scheduling and records kept in HokieCare. Read [APPOINTMENT_HUB_PLAN.md](APPOINTMENT_HUB_PLAN.md) first for the updated booking design. This turn delivered planning/research only.
+- Build both student and scheduler sides: empty appointment/slot tables, deliberate synthetic slot publication, requests/proposals/acceptance, calendar/list, cancellation and rescheduling. Named-center scenarios must visibly say they are demonstrations and not connected to actual providers. Saving a request locally cannot replace a real provider's booking process.
+- Persistence now matters: proposed SQLite on a Railway volume for the single-replica synthetic demo supersedes process-memory slots. No volume/database has been provisioned. Keep Databricks as the public-data/agent platform; Atlas is an optional replacement for the transactional store if its prize is restored.
+- Research corrections: TimelyCare includes human scheduled counseling and TalkNow, alongside a distinct AI product whose VT availability is unverified. Carilion uses MyChart direct scheduling and request workflows; the supplied VT link is a health-system overview. Hokie Wellness has separate consultation and interest-form routes, not a generic medical scheduler. All source links and integration limits are in the new plan.
+- Actual provider connections, raw student health data, VT sign-in, and real appointments remain outside the current public demo. No credential entry, external forms/messages, booking actions, or application deployment occurred. Preserve the existing Requirements block and submission buffer.
+
 ## Latest planning update: prototype evolution
 
 - The user requested planning against the current repo, `message2.txt`, and the Impiricus / Deloitte × Databricks briefs. The [prototype evolution plan](PROTOTYPE_EVOLUTION_PLAN.md) is the current next-build order. This update changes documentation only; no new application functionality is implemented.

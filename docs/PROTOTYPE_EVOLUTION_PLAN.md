@@ -1,5 +1,7 @@
 # HokieCare: prototype evolution and award strategy
 
+**Latest scheduling revision:** [Unified appointment hub](APPOINTMENT_HUB_PLAN.md) refines this plan following the user's five-center research request. Build a student calendar and scheduler workspace with initially empty records, persistent backend storage, and explicit demo/request/confirmation states. That document supersedes the process-memory scheduling design below and brings the hub forward in delivery priority. Existing agent, HCP briefing, evidence, and submission guidance remains applicable.
+
 Planning update: September 19, 2026. This document is the current next-build plan, based on the existing repository, the user's latest two sponsor requirements, and `message2.txt`. It supersedes the delivery order in the earlier [implementation plan](IMPLEMENTATION_PLAN.md), while retaining its data architecture and safeguards. This update implements no new application features.
 
 ## Product decision
