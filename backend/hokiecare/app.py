@@ -145,6 +145,14 @@ if (static / 'assets').is_dir():
     app.mount('/assets', StaticFiles(directory=static / 'assets'), name='assets')
 
 
+@app.get('/hokiecare-companion.zip', include_in_schema=False)
+def companion_download():
+    path = static / 'hokiecare-companion.zip'
+    if not path.is_file():
+        raise HTTPException(404, 'Companion package is unavailable. Rebuild the frontend download.')
+    return FileResponse(path, media_type='application/zip', filename='hokiecare-companion.zip')
+
+
 @app.get('/', include_in_schema=False)
 def index():
     if not (static / 'index.html').is_file():
