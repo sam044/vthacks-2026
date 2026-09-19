@@ -363,3 +363,21 @@
 .previous-turn {border-left:2px solid #cedbd4;padding-left:10px;color:#627169;font-size:.82rem}
 .assistant-panel {max-height:80vh;overflow:auto}
 @media(max-width:600px){.calendar-day{min-height:57px}.calendar-toolbar{gap:6px}.calendar-toolbar button{padding:7px}.calendar-day small{font-size:.55rem}}
+
+/* Conversation stays open while the underlying app follows validated navigation. */
+.assistant-panel {width:min(440px,calc(100vw - 32px));max-height:85dvh;overflow:auto}
+.chat-heading {display:flex;align-items:center;justify-content:space-between;gap:12px}
+.chat-heading .booking-secondary {padding:6px 10px;font-size:.75rem}
+.chat-transcript {max-height:38dvh;overflow-y:auto;overscroll-behavior:contain;margin:12px 0;padding-right:5px}
+.chat-turn {padding:10px 12px;border-radius:12px;margin:10px 0;background:#f4f2f7}
+.chat-turn.chat-user {background:#e8effa;margin-left:28px}
+.chat-turn.chat-assistant {margin-right:12px}
+.chat-speaker {font-size:.72rem;font-weight:700;color:#514365}
+.chat-turn p {white-space:pre-wrap;margin:5px 0;line-height:1.5}
+.chat-examples {display:grid;gap:7px}
+.chat-examples button {text-align:left;border:1px solid #ded6e5;border-radius:8px;background:white;padding:9px 11px;color:#4e345e;cursor:pointer}
+.chat-source {margin:8px 0;font-size:.8rem}
+.chat-source a {color:#653354;text-decoration:underline}
+.chat-slots {max-height:180px;overflow:auto;margin-bottom:10px}
+.chat-privacy {margin-top:12px!important;font-size:.68rem!important}
+.assistant-panel textarea {min-height:64px}

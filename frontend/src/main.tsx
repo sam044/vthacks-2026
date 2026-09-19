@@ -787,7 +787,7 @@ function App() {
         {view === "care" ? (
           <FindCare initialCategory={destination.category} />
         ) : view === "appointments" ? (
-          <AppointmentHub initialCenter={destination.center_id} />
+          <AppointmentHub initialCenter={destination.center_id} destination={destination} />
         ) : (
           <HealthTrends />
         )}

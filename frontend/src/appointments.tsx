@@ -1,13 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CalendarDays,
   ArrowUpRight,
-  Bot,
-  Send,
   ShieldCheck,
 } from "lucide-react";
 import "./appointments.css";
-import { SharedCalendar, BookingReview, prepareReview, easternTime, type InventorySlot, type Review } from "./calendar";
+import { SharedCalendar } from "./calendar";
 
 type Center = {
   id: string;
@@ -45,6 +43,9 @@ export type Navigation = {
   view: "care" | "appointments";
   category: string;
   center_id: string;
+  mode?: "demo" | "provider";
+  service_id?: string;
+  day?: string;
 };
 
 export async function api<T>(
@@ -157,7 +158,9 @@ function downloadCalendar(a: Appointment) {
 
 export function AppointmentHub({
   initialCenter = "schiffert",
+  destination,
 }: {
+  destination?: Navigation;
   initialCenter?: string;
 }) {
   const [centers, setCenters] = useState<Center[]>([]);
@@ -314,8 +317,6 @@ export function AppointmentHub({
             >
               Official access details <ArrowUpRight size={15} />
             </a>
-            <SharedCalendar centerId={centerId} records={records} onSaved={() => void refresh()}
-              reschedule={rescheduling} onStopReschedule={() => setRescheduling(null)} />
             {center.kind === "portal" && (
               <>
                 <ol className="companion-steps">
@@ -463,6 +464,8 @@ export function AppointmentHub({
                 Continue to {center.name} <ArrowUpRight size={16} />
               </a>
             )}
+            <SharedCalendar destination={destination?.center_id===centerId ? destination : undefined} centerId={centerId} records={records} onSaved={() => void refresh()}
+              reschedule={rescheduling} onStopReschedule={() => setRescheduling(null)} />
           </div>
           <aside className="booking-panel agenda">
             <CalendarDays size={25} />
@@ -567,145 +570,4 @@ export function AppointmentHub({
   );
 }
 
-type Answer = {
-  answer: string;
-  slots?: InventorySlot[];
-  action: Navigation | null;
-  model: string;
-  tool: string;
-  sources: { name: string; url: string }[];
-};
-export function CareAssistant({
-  navigate,
-}: {
-  navigate: (action: Navigation) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [text, setText] = useState("");
-  const [answer, setAnswer] = useState<Answer | null>(null);
-  const [review, setReview] = useState<Review | null>(null);
-  const [turns, setTurns] = useState<string[]>([]);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const input = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => {
-    if (open) {
-      input.current?.focus();
-      void session().then(async()=>{
-        setAnswer(await api<Answer>("/api/assistant/booking"));
-        const id=sessionStorage.getItem("hokiecare-review-id");
-        if(id) {try {const saved=await api<Review>(`/api/booking/proposals/${id}`); if(saved.expires_at*1000>Date.now())setReview(saved);} catch {sessionStorage.removeItem("hokiecare-review-id")}}
-      }).catch(e=>setError(e.message));
-    }
-  }, [open]);
-  async function send() {
-    setBusy(true);
-    setError("");
-    setReview(null);
-    if(answer)setTurns(old=>[...old.slice(-5),answer.answer]);
-    try {
-      await session();
-      setAnswer(await api<Answer>("/api/assistant/booking", "POST", { message: text }));
-      setText("");
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <div className="assistant-wrap">
-      <button
-        className="assistant-toggle"
-        aria-expanded={open}
-        onClick={() => setOpen(!open)}
-      >
-        <Bot size={20} />
-        {open ? "Close assistant" : "Ask HokieCare"}
-      </button>
-      {open && (
-        <section
-          className="assistant-panel"
-          aria-label="HokieCare booking assistant"
-        >
-          <h2>Let’s find a time.</h2>
-          <p>
-            Ask about services, appointments, or using HokieCare. Keep questions
-            general—don’t enter names, credentials, or medical details.
-          </p>
-          <p className="booking-small">
-            Powered by Databricks AI. Your question is sent there for
-            processing. Only scheduling preferences persist for your 24-hour demo session; raw chat is not saved. This is not medical advice.
-          </p>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void send();
-            }}
-          >
-            <label htmlFor="care-question">Your question</label>
-            <textarea
-              id="care-question"
-              ref={input}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              maxLength={600}
-              placeholder="Book a Cook demo next Tuesday after 2"
-              required
-            />
-            <button className="booking-primary" disabled={busy || !text.trim()}>
-              <Send size={16} />
-              {busy ? "Finding your next step…" : "Ask assistant"}
-            </button>
-          </form>
-          <div role="alert">
-            {error && <p className="booking-error">{error}</p>}
-          </div>
-          <div aria-live="polite">
-            {answer && (
-              <>
-                {turns.map((turn,i)=><p className="previous-turn" key={i}>{turn}</p>)}
-                <p>{answer.answer}</p>
-                <div className="time-grid">{answer.slots?.map(slot=><button key={slot.id} disabled={busy} onClick={async()=>{setBusy(true);setError("");try{setReview(await prepareReview(slot))}catch(e){setError((e as Error).message)}finally{setBusy(false)}}}>{easternTime(slot.starts)}<small>Review demo time</small></button>)}</div>
-                {review&&<BookingReview review={review} onDismiss={()=>{setReview(null);sessionStorage.removeItem("hokiecare-pending-review");sessionStorage.removeItem("hokiecare-review-id")}} onSaved={()=>{setReview(null);sessionStorage.removeItem("hokiecare-review-id");setAnswer({...answer,answer:"Demo appointment saved in your private agenda. No provider was contacted.",slots:[],action:{view:"appointments",category:"all",center_id:review.slot.center_id}})}}/>}
-                {answer.action && (
-                  <button
-                    className="booking-secondary"
-                    onClick={() => {
-                      navigate(answer.action!);
-                      setOpen(false);
-                    }}
-                  >
-                    Open{" "}
-                    {answer.action.view === "appointments"
-                      ? "appointments"
-                      : "matching services"}
-                  </button>
-                )}
-                <details>
-                  <summary>Sources and AI action</summary>
-                  <p className="booking-small">
-                    Model: {answer.model}
-                    <br />
-                    Tool: {answer.tool}
-                  </p>
-                  {answer.sources.map((s) => (
-                    <a
-                      className="booking-source"
-                      key={s.url}
-                      href={s.url}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {s.name} ↗
-                    </a>
-                  ))}
-                </details>
-              </>
-            )}
-          </div>
-        </section>
-      )}
-    </div>
-  );
-}
+export { CareAssistant } from "./care-assistant";
