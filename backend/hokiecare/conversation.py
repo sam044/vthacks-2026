@@ -67,10 +67,12 @@ def model_schema(value):
     return value
 
 
-def invoke(w, model, messages, name, shape, source_ids):
+def invoke(w, model, messages, name, shape, source_ids, allowed_service_ids=None):
     schema = model_schema(shape.model_json_schema())
     schema['required'] = list(schema['properties'])
     schema['properties']['source_ids']['items'] = {'type': 'string', 'enum': source_ids}
+    if allowed_service_ids is not None:
+        schema['properties']['service_ids']['items'] = {'type': 'string', 'enum': allowed_service_ids}
     if shape is Intent:
         schema['properties']['service_id'] = {'anyOf': [{'type': 'string', 'enum': list(s.SERVICES)}, {'type': 'null'}]}
     result = w.api_client.do('POST', f'/serving-endpoints/{model}/invocations', body={
