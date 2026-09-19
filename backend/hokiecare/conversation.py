@@ -140,6 +140,11 @@ def converse(body:legacy.Message,request:Request):
                 'slots':[],'sources':[{'name':'VT TimelyCare','url':'https://ucc.vt.edu/timelycare.html'}],
                 'action':{'view':'care','category':'all','center_id':'none'}}
     state={} if intent.action=='reset' else {**previous,**{k:v for k,v in intent.model_dump(mode='json').items() if k!='action' and v is not None}}
+    if state.get('after') and state.get('before') and state['after']>=state['before']:
+        # A changed bound supersedes a now-incompatible bound from an older turn.
+        if intent.before and not intent.after:state.pop('after',None)
+        elif intent.after and not intent.before:state.pop('before',None)
+        else:raise HTTPException(422,'Choose a time window whose end is after its start.')
     with b.database() as db:
         db.execute('BEGIN IMMEDIATE')
         b.session_id(request,db)

@@ -3,7 +3,7 @@ import { api, session } from './appointments';
 
 export type InventorySlot = {id:string; starts:string; ends:string; service_id:string; center_id:string; version:number; state:string};
 type Service = {id:string;center_id:string;name:string;hours_note:string;source_url:string;duration_minutes:number;weekly:Record<string,string[][]>};
-export type Review = {id:string;slot:InventorySlot;service_name:string;expires_at:number;operation:string;notice:string};
+export type Review = {id:string;slot:InventorySlot;service_name:string;expires_at:number;operation:string;notice:string;result_id:string|null};
 type Day = {day:string;state:string;reason:string|null;available:number|null};
 type Inventory = {days:Day[];slots:InventorySlot[];revision:number;fetched_at:string;storage:string};
 export const easternDate = () => new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
@@ -35,7 +35,11 @@ export async function prepareReview(slot:InventorySlot,appointmentId?:string) {
   try{pending=JSON.parse(sessionStorage.getItem('hokiecare-pending-review')||'null')}catch{/* invalid browser value */}
   if(pending?.fingerprint!==fingerprint) pending={fingerprint,key:crypto.randomUUID()};
   sessionStorage.setItem('hokiecare-pending-review',JSON.stringify(pending));
-  const review=await api<Review>('/api/booking/proposals','POST',{slot_id:slot.id,version:slot.version,request_id:pending!.key,appointment_id:appointmentId||null});
+  let review=await api<Review>('/api/booking/proposals','POST',{slot_id:slot.id,version:slot.version,request_id:pending!.key,appointment_id:appointmentId||null});
+  if(review.expires_at*1000<Date.now()&&!review.result_id){
+    pending={fingerprint,key:crypto.randomUUID()};sessionStorage.setItem('hokiecare-pending-review',JSON.stringify(pending));
+    review=await api<Review>('/api/booking/proposals','POST',{slot_id:slot.id,version:slot.version,request_id:pending.key,appointment_id:appointmentId||null});
+  }
   sessionStorage.setItem('hokiecare-review-id',review.id);
   return review;
 }
