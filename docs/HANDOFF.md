@@ -1,5 +1,10 @@
 # Continuation notes
 
+## Frontend-only waitlist prompt — September 20
+
+At the user's request, submitting another completed intake when My appointments already has an upcoming reserved appointment now immediately shows Would you like to join the waitlist? This is a frontend demonstration: it skips the intake API for that request, clicking only changes local React state to You joined the waitlist, and the UI labels the choice as not saved. Editing, Home, another request, or reloading resets it. Existing backend waitlist and booking data are unchanged; this prompt has no real enrollment, matching, persistence or notification behavior.
+
+
 ## Waitlist intake correction — September 20
 
 The reported Edit answers dead end was the intake path: only the calendar offered joining. Intake now returns anonymous taken-time choices and renders Join waitlist; clicking opens My waitlist. A same-browser existing appointment produces an explicit conflict explanation and View my appointments. Tabs share the same student session. The user authorized removing optional buffers: 30-minute windows and back-to-back visits now work, while actual owner/resource overlaps remain blocked in application and database transactions.

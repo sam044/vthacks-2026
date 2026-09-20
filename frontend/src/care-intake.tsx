@@ -16,16 +16,18 @@ export function CareIntake({visible}:{visible:boolean}) {
   const [form,setForm]=useState<IntakeForm>(emptyIntake),[touched,setTouched]=useState<Record<string,boolean>>({});
   const [result,setResult]=useState<Result|null>(null),[loading,setLoading]=useState(false),[error,setError]=useState('');
   const [waitlistTarget,setWaitlistTarget]=useState<(InventorySlot & {waitlist_id:string})|null>(null);
+  const [demoWaitlistJoined,setDemoWaitlistJoined]=useState(false);
   const key=useRef<string|null>(null),sequence=useRef(0),locked=useRef(false),heading=useRef<HTMLHeadingElement>(null);
   const errors=intakeErrors(form), counseling=needsCounseling(form);
   const total=counseling?12:11, completed=total-Object.keys(errors).length;
   const busy=loading||b.busy;
   useEffect(()=>{ if(visible && (result||b.saved)) heading.current?.focus(); },[result,b.saved,visible]);
   useEffect(()=>{
-    const reset=()=>{sequence.current++;key.current=null;locked.current=false;setLoading(false);setForm(emptyIntake());setResult(null);setError('');setTouched({});setWaitlistTarget(null);};
+    const reset=()=>{sequence.current++;key.current=null;locked.current=false;setLoading(false);setForm(emptyIntake());setResult(null);setError('');setTouched({});setWaitlistTarget(null);setDemoWaitlistJoined(false);};
     const prefill=(event:Event)=>{
       const slot=(event as CustomEvent<InventorySlot & {waitlist_id?:string}>).detail;
       sequence.current++;locked.current=false;setLoading(false);
+      setDemoWaitlistJoined(false);
       setWaitlistTarget(slot.waitlist_id ? {...slot,waitlist_id:slot.waitlist_id} : null);
       const local=(value:string)=>new Intl.DateTimeFormat('en-GB',{timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value));
       key.current=null;setResult(null);setError('');
@@ -44,10 +46,18 @@ export function CareIntake({visible}:{visible:boolean}) {
     if(busy)return;
     if(!b.dismissReview())return;
     b.setSaved(null); setResult(null); setError('');key.current=null;
+    setDemoWaitlistJoined(false);
     requestAnimationFrame(()=>document.getElementById('booking_name')?.focus());
   }
   async function submit() {
     if(locked.current||b.busy||b.uncertainSave||Object.keys(errors).length)return;
+    setDemoWaitlistJoined(false);
+    if(!waitlistTarget && b.records.some(a=>a.status==='reserved' && new Date(a.ends).getTime()>Date.now())) {
+      if(!b.dismissReview())return;
+      b.setSaved(null);setError('');
+      setResult({outcome:'no_match',reason:'demo_waitlist',answer:'You already have an appointment in My appointments.',sources:[],review:null});
+      return;
+    }
     locked.current=true;setLoading(true);setError('');b.setSaved(null);b.dismissReview();
     const attempt=++sequence.current;
     key.current ||= crypto.randomUUID();
@@ -77,11 +87,14 @@ export function CareIntake({visible}:{visible:boolean}) {
     {b.waitlist.some(w=>w.status==='available')&&<div className="waitlist-offer" role="status"><strong>A waitlisted time is available.</strong><button className="booking-secondary" disabled={busy} onClick={()=>{b.setPanel('calendar');b.setTab('waitlist');}}>View my waitlist</button></div>}
     <div className="intake-process" aria-label="Booking steps"><span className={!hasResult?'current':''}>1 <span>Your request</span></span><ArrowRight size={14}/><span className={hasResult&&!b.saved?'current':''}>2 <span>Review a match</span></span><ArrowRight size={14}/><span className={b.saved?'current':''}>3 <span>Confirm & save</span></span></div>
     {hasResult ? <div className="intake-result" aria-live="polite">
-      <h2 ref={heading} tabIndex={-1}>{b.saved?'Appointment saved':result?.outcome==='urgent_support'?'Find immediate support':result?.waitlist_options?.length?'Join the waitlist for your time':result?.outcome==='no_match'?'Let’s adjust your request':'A next step, picked for you'}</h2>
+      <h2 ref={heading} tabIndex={-1}>{b.saved?'Appointment saved':['demo_waitlist','appointment_conflict'].includes(result?.reason||'')?'Join the waitlist':result?.outcome==='urgent_support'?'Find immediate support':result?.waitlist_options?.length?'Join the waitlist for your time':result?.outcome==='no_match'?'Let’s adjust your request':'A next step, picked for you'}</h2>
       {b.saved?<><p><Check size={18}/> {b.saved.booking_name||form.booking_name} · {b.saved.center_name||b.saved.service_name}</p><p>{fullTime(b.saved.slot.starts)} Eastern · 30-minute visit</p><p>Saved in HokieCare.</p><button className="booking-primary" onClick={()=>{b.setPanel('calendar');b.setTab('agenda');}}>View my appointment</button></>:<>
         {result&&<p className="intake-answer">{result.review&&!b.review?"Your previous proposal is no longer active. Edit your answers to find another appointment.":result.answer}</p>}
         {!!result?.waitlist_options?.length&&<WaitlistChoices options={result.waitlist_options}/>}
-        {result?.reason==='appointment_conflict'&&<button className="booking-primary" onClick={()=>{b.setPanel('calendar');b.setTab('agenda');}}>View my appointments</button>}
+        {['demo_waitlist','appointment_conflict'].includes(result?.reason||'')&&<div className="waitlist-offer">
+          {demoWaitlistJoined?<p role="status"><Check size={18}/> You joined the waitlist.</p>:<button className="booking-primary" onClick={()=>setDemoWaitlistJoined(true)}>Would you like to join the waitlist?</button>}
+          <p className="booking-small">Demo only — this choice is not saved.</p>
+        </div>}
         {!!result?.sources.length&&<details className="intake-sources"><summary>Why this recommendation? Sources</summary>{result.sources.map(x=><a key={x.url} href={x.url} target="_blank" rel="noreferrer">{x.name} ↗</a>)}</details>}
         {b.review?.intake&&<BookingReview onEdit={edit}/>}
         {b.canReplaceReview&&b.review?.intake&&<button disabled={busy} className="booking-secondary" onClick={()=>{if(Object.keys(errors).length){edit();return;}key.current=null;void submit();}}>{waitlistTarget?'Check this time again':'Find another appointment'}</button>}
