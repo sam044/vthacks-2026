@@ -58,14 +58,23 @@ def test_one_proposal_then_explicit_confirm_and_private_name(client,monkeypatch)
     body=form()
     first=client.post('/api/assistant/intake',headers=H,json=body)
     assert first.status_code==200,first.text
-    result=first.json();review=result['review']
-    assert result['outcome']=='proposal' and review['intake']
+    result=first.json()
+    assert result['outcome']=='choices' and result['review'] is None
+    assert len(result['slots'])>10
+    with b.database() as db: assert db.execute('SELECT COUNT(*) FROM proposals').fetchone()[0]==0
+    chosen=result['slots'][3]
+    selection=dict(lookup_token=result['lookup_token'],slot_id=chosen['id'],version=chosen['version'],
+        request_id='selection-request-12345',booking_name=body['booking_name'])
+    selected=client.post('/api/assistant/intake/select',headers=H,json=selection)
+    assert selected.status_code==200,selected.text
+    review=selected.json()['review']
+    assert review['intake'] and review['slot']['id']==chosen['id']
     assert review['booking_name']=='Private Alias'
     assert len(calls)==1 and 'Private Alias' not in json.dumps(calls)
     assert not client.get('/api/booking/appointments').json()['appointments']
-    retry=client.post('/api/assistant/intake',headers=H,json=body).json()
+    retry=client.post('/api/assistant/intake/select',headers=H,json=selection).json()
     assert retry['review']['id']==review['id'] and len(calls)==1
-    changed=client.post('/api/assistant/intake',headers=H,json=form(description='Changed request'))
+    changed=client.post('/api/assistant/intake/select',headers=H,json={**selection,'slot_id':result['slots'][0]['id']})
     assert changed.status_code==409
     saved=client.post('/api/booking/proposals/'+review['id']+'/confirm',headers=H)
     assert saved.status_code==200,saved.text
@@ -87,8 +96,9 @@ def test_one_proposal_then_explicit_confirm_and_private_name(client,monkeypatch)
 def test_earliest_candidate_tiebreak_and_decline(client,monkeypatch):
     model(monkeypatch,['schiffert-medical','carilion-primary'])
     reply=client.post('/api/assistant/intake',headers=H,json=form()).json()
-    assert reply['review']['slot']['service_id']=='carilion-primary'
-    ident=reply['review']['id']
+    assert reply['slots'][0]['service_id']=='carilion-primary'
+    assert reply['slots']==sorted(reply['slots'],key=lambda x:(x['starts'],x['service_id']))
+    ident=choose(client,reply)['id']
     assert client.delete('/api/booking/proposals/'+ident,headers=H).status_code==200
     assert client.post('/api/booking/proposals/'+ident+'/confirm',headers=H).status_code in (404,409)
     assert not client.get('/api/booking/appointments').json()['appointments']
@@ -99,9 +109,9 @@ def test_intake_reply_omits_repeated_dataset_qualifiers(client,monkeypatch):
     response=client.post('/api/assistant/intake',headers=H,json=form())
     assert response.status_code==200,response.text
     result=response.json()
-    assert result['outcome']=='proposal'
+    assert result['outcome']=='choices'
     assert all(word not in result['answer'].lower() for word in ('sample','fictional','demo'))
-    assert result['review']['origin']=='demo'  # presentation does not relabel underlying records
+    assert choose(client,result)['origin']=='demo'  # presentation does not relabel underlying records
 
 
 @pytest.mark.parametrize('changes',[{'student':'no'},{'center':'cook','support':'physical','counseling':'none'},
@@ -173,7 +183,7 @@ def test_materialized_dataset_constraints_and_seed_replay(client):
 
 def test_retention_and_seed_survive_short_task_expiry(client,monkeypatch):
     model(monkeypatch)
-    review=client.post('/api/assistant/intake',headers=H,json=form()).json()['review']
+    review=choose(client,client.post('/api/assistant/intake',headers=H,json=form()).json())
     client.post('/api/booking/proposals/'+review['id']+'/confirm',headers=H)
     owner=hashlib.sha256(client.cookies.get(b.COOKIE).encode()).hexdigest()
     with b.database() as db:
@@ -184,3 +194,58 @@ def test_retention_and_seed_survive_short_task_expiry(client,monkeypatch):
         db.execute('UPDATE appointments SET retain_until=?',(time.time()-1,))
         b.cleanup(db)
         assert db.execute('SELECT COUNT(*) FROM appointments').fetchone()[0]==0
+
+
+def choose(client,result,index=0,**overrides):
+    slot=result['slots'][index]
+    response=client.post('/api/assistant/intake/select',headers=H,json=dict(
+        lookup_token=result['lookup_token'],slot_id=slot['id'],version=slot['version'],
+        request_id='select-request-123456',booking_name='Private Alias')|overrides)
+    assert response.status_code==200,response.text
+    return response.json()['review']
+
+
+def test_lookup_security_expiry_and_no_narrative(client,monkeypatch):
+    import base64
+    model(monkeypatch)
+    body=form();body.pop('weekdays')
+    result=client.post('/api/assistant/intake',headers=H,json=body).json()
+    token=result['lookup_token'];claims=json.loads(base64.urlsafe_b64decode(token.split('.')[0]))
+    assert claims['weekdays']==list(range(7))
+    assert not {'description','booking_name','insurance','email'} & claims.keys()
+    other=TestClient(api.app);other.post('/api/booking/session',headers=H)
+    payload={'lookup_token':token}
+    slot=result['slots'][0]
+    selection=dict(lookup_token=token,slot_id=slot['id'],version=slot['version'],
+        request_id='security-selection-1234',booking_name='Alias')
+    assert other.post('/api/assistant/intake/choices',headers=H,json=payload).status_code==409
+    assert other.post('/api/assistant/intake/select',headers=H,json=selection).status_code==409
+    assert client.post('/api/assistant/intake/choices',headers=H,json={'lookup_token':token+'0'}).status_code==409
+    assert client.post('/api/assistant/intake/select',headers=H,json={**selection,'lookup_token':token+'0'}).status_code==409
+    monkeypatch.setattr(intake,'LOOKUP_TTL',-1)
+    expired=client.post('/api/assistant/intake',headers=H,json=form()).json()['lookup_token']
+    assert client.post('/api/assistant/intake/choices',headers=H,json={'lookup_token':expired}).status_code==409
+    assert client.post('/api/assistant/intake/select',headers=H,json={**selection,'lookup_token':expired}).status_code==409
+    with b.database() as db: assert db.execute('SELECT COUNT(*) FROM proposals').fetchone()[0]==0
+
+
+def test_taken_choice_refresh_never_substitutes(client,monkeypatch):
+    model(monkeypatch)
+    result=client.post('/api/assistant/intake',headers=H,json=form()).json()
+    slot=result['slots'][0]
+    other=TestClient(api.app);other.post('/api/booking/session',headers=H)
+    p=other.post('/api/booking/proposals',headers=H,json=dict(slot_id=slot['id'],version=slot['version'],request_id='other-request-123456')).json()
+    assert other.post('/api/booking/proposals/'+p['id']+'/confirm',headers=H).status_code==200
+    selection=dict(lookup_token=result['lookup_token'],slot_id=slot['id'],version=slot['version'],request_id='select-request-123456',booking_name='Alias')
+    assert client.post('/api/assistant/intake/select',headers=H,json=selection).status_code==409
+    refreshed=client.post('/api/assistant/intake/choices',headers=H,json={'lookup_token':result['lookup_token']}).json()
+    assert slot['id'] not in [x['id'] for x in refreshed['slots']]
+    assert client.get('/api/booking/appointments').json()['appointments']==[]
+    choose(client,result,index=1)
+    assert client.post('/api/assistant/intake/select',headers=H,json={**selection,'slot_id':'invented-slot','request_id':'different-request-1234'}).status_code==409
+
+
+def test_cosmetic_fields_rejected_by_intake(client,monkeypatch):
+    calls=model(monkeypatch)
+    assert client.post('/api/assistant/intake',headers=H,json=form(insurance='private',email='a@example.com')).status_code==422
+    assert not calls

@@ -30,19 +30,22 @@ execFileSync(
     "--outDir",
     compiled,
     ...[
+      "vite-env.d.ts",
       "api.ts",
       "booking-state.tsx",
       "calendar.tsx",
       "use-public-data.ts",
       "intake-validation.ts",
       "waitlist-choices.tsx",
+      "care-intake.tsx",
+      "cosmetic-controls.tsx",
     ].map((name) => join(project, "src", name)),
   ],
   { cwd: project, stdio: "pipe" },
 );
-for (const name of ["api", "booking-state", "calendar", "use-public-data", "intake-validation", "waitlist-choices"]) {
+for (const name of ["api", "booking-state", "calendar", "use-public-data", "intake-validation", "waitlist-choices", "care-intake", "cosmetic-controls", "brand"]) {
   const source = await readFile(join(compiled, name + ".js"), "utf8");
-  const result = source.replace(
+  const result = source.replace(/import ["'][^"']+\.css["'];?/g, "").replace(
     /from (["'])(\.\/[^"']+)\1/g,
     (_, quote, path) => "from " + quote + path + ".mjs" + quote,
   );
@@ -58,6 +61,8 @@ const { useApi } = await import(
   pathToFileURL(join(compiled, "use-public-data.mjs")).href
 );
 const { WaitlistChoices } = await import(pathToFileURL(join(compiled, "waitlist-choices.mjs")).href);
+const { CareIntake } = await import(pathToFileURL(join(compiled,"care-intake.mjs")).href);
+const { AlertsBell, ConfirmationEmail } = await import(pathToFileURL(join(compiled,"cosmetic-controls.mjs")).href);
 const slot = {
   id: "slot-a",
   starts: "2026-09-22T14:00:00Z",
@@ -126,7 +131,7 @@ const review = {
   result_id: null,
 };
 
-async function setup({ choices = false, calendar = false, failConfirmation = false, confirmationGate, waiting = [] } = {}) {
+async function setup({ intakeView = false, choices = false, calendar = false, failConfirmation = false, confirmationGate, waiting = [] } = {}) {
   const { window } = parseHTML(
     '<html><body><div id="root"></div></body></html>',
   );
@@ -138,6 +143,9 @@ async function setup({ choices = false, calendar = false, failConfirmation = fal
     CustomEvent: window.CustomEvent,
     IS_REACT_ACT_ENVIRONMENT: true,
   });
+  window.HTMLElement.prototype.showModal=function(){this.setAttribute("open","");};
+  window.HTMLElement.prototype.close=function(){this.removeAttribute("open");};
+  globalThis.requestAnimationFrame=(fn)=>{fn();return 1;};
   const storage = new Map();
   globalThis.sessionStorage = {
     getItem: (k) => storage.get(k) || null,
@@ -213,6 +221,7 @@ async function setup({ choices = false, calendar = false, failConfirmation = fal
   };
   function Probe() {
     state = useBooking();
+    if (intakeView) return React.createElement(CareIntake,{visible:true});
     if (choices) return React.createElement(WaitlistChoices, { options: [{...slot,state:"busy",service_name:"Medical clinic"}] });
     return calendar
       ? React.createElement(SharedCalendar, {
@@ -387,16 +396,16 @@ test("calendar streams and polling stop when hidden, resume with the selected da
   }
 });
 
-const {emptyIntake,intakeErrors,needsCounseling}=await import(pathToFileURL(join(compiled,"intake-validation.mjs")).href);
+const {emptyIntake,intakeErrors,intakePayload,needsCounseling}=await import(pathToFileURL(join(compiled,"intake-validation.mjs")).href);
 test("intake requires every answer and a 30-minute window before submission",()=>{
-  const empty=emptyIntake();assert.equal(Object.keys(intakeErrors(empty)).length,11);
+  const empty=emptyIntake();assert.equal(Object.keys(intakeErrors(empty)).length,10);
   const valid={...empty,booking_name:"Student",support:"physical",description:"Routine visit",center:"auto",modality:"in-person",
-    first_date:"2026-10-01",last_date:"2026-10-02",weekdays:[0,1],after:"09:00",before:"17:00",student:"yes",acknowledged:true};
+    first_date:"2026-10-01",last_date:"2026-10-02",after:"09:00",before:"17:00",student:"yes",acknowledged:true};
   assert.deepEqual(intakeErrors(valid),{});
   assert.ok(intakeErrors({...valid,booking_name:"   "}).booking_name);
   assert.deepEqual(intakeErrors({...valid,after:"16:30"}),{});
   assert.ok(intakeErrors({...valid,after:"16:31"}).hours);
-  assert.ok(intakeErrors({...valid,weekdays:[]}).weekdays);
+  assert.equal(intakeErrors(valid).weekdays,undefined);
   assert.ok(intakeErrors({...valid,support:"counseling"}).counseling);
   assert.ok(needsCounseling({...valid,center:"timelycare"}));
   assert.deepEqual(intakeErrors({...valid,support:"counseling",counseling:"none"}),{});
@@ -482,4 +491,63 @@ test("taken-time intake result joins explicitly and opens My waitlist", async ()
     await act(async()=>{document.querySelector("button").click();});
     assert.equal(app.requests.filter(r=>r.path==="/api/booking/waitlist"&&r.method==="POST").length,1);
   } finally {await app.cleanup();}
+});
+
+
+test("insurance appears only for nonstudents, clears on Yes, and never makes a request",async()=>{
+  const h=await setup({intakeView:true});
+  try {
+    const select=document.getElementById("student");
+    const choose=async value=>act(async()=>{
+      Object.defineProperty(select,"value",{configurable:true,value});
+      select.dispatchEvent(new window.Event("change",{bubbles:true}));
+    });
+    const before=h.requests.length;
+    assert.equal(document.getElementById("insurance-provider"),null);
+    await choose("no");
+    assert.ok(document.getElementById("insurance-provider"));
+    assert.match(document.body.textContent,/If self-pay, put N\/A/);
+    await choose("yes");
+    assert.equal(document.getElementById("insurance-provider"),null);
+    await choose("no");
+    assert.equal(document.getElementById("insurance-provider").value,"");
+    assert.equal(h.requests.length,before);
+    assert.ok(!document.body.textContent.includes("Which weekdays work"));
+  } finally {await h.cleanup();}
+});
+
+test("bell toggles locally and email opens once per confirmation without requests",async()=>{
+  const h=await setup();
+  const container=document.createElement("div");document.body.append(container);
+  const root=createRoot(container);
+  const render=async id=>act(async()=>root.render(React.createElement(React.Fragment,null,
+    React.createElement(AlertsBell),React.createElement(ConfirmationEmail,{confirmationId:id,visible:true}))));
+  try {
+    const before=h.requests.length;
+    await render(undefined);
+    const bell=container.querySelector(".alerts-bell"),dialog=container.querySelector("dialog");
+    assert.equal(bell.getAttribute("aria-pressed"),"false");
+    assert.equal(dialog.hasAttribute("open"),false);
+    await act(async()=>bell.click());assert.equal(bell.getAttribute("aria-pressed"),"true");
+    assert.match(container.textContent,/Sign up for Alerts on incoming outbreaks/);
+    await act(async()=>bell.click());assert.equal(bell.getAttribute("aria-pressed"),"false");
+    await render("confirmed-a");assert.equal(dialog.hasAttribute("open"),true);
+    await act(async()=>dialog.querySelector("form").dispatchEvent(new window.Event("submit",{bubbles:true,cancelable:true})));
+    assert.equal(dialog.hasAttribute("open"),false);
+    await render("confirmed-a");assert.equal(dialog.hasAttribute("open"),false);
+    await render("confirmed-b");assert.equal(dialog.hasAttribute("open"),true);
+    await act(async()=>dialog.querySelector(".booking-secondary").click());
+    assert.equal(dialog.hasAttribute("open"),false);
+    assert.equal(h.requests.length,before);
+  } finally {await act(async()=>root.unmount());await h.cleanup();}
+});
+
+
+test("intake payload excludes cosmetic values even if attached to form data",()=>{
+  const payload=intakePayload({...emptyIntake(),booking_name:" Alias ",description:" Routine visit ",
+    insurance:"Private insurance",email:"private@example.com",alerts:true,weekdays:[0]},"request-123456789");
+  assert.equal(payload.booking_name,"Alias");
+  assert.equal(payload.description,"Routine visit");
+  for(const key of ["insurance","email","alerts","weekdays"])assert.equal(key in payload,false);
+  assert.equal(JSON.stringify(payload).includes("private@example.com"),false);
 });

@@ -1074,3 +1074,15 @@ button:disabled {
     scroll-behavior: auto !important;
   }
 }
+
+/* Cosmetic controls deliberately have no persistence or service integration. */
+.app-main{background:radial-gradient(ellipse at 5% 12%,#ffc68c65,transparent 48%),radial-gradient(ellipse at 96% 35%,#d99bb44a,transparent 52%),#fff8ee}
+.app-header{border-bottom:0;box-shadow:0 6px 28px #64253c09;background:#fffaf3}
+.alerts-control{position:relative;align-self:center}.app-header nav .alerts-bell{width:44px;height:44px;padding:10px;border:1px solid #b68d9c;border-radius:50%;background:white;color:#64253c}
+.alerts-bell svg{fill:white}.app-header nav .alerts-bell.is-selected{background:#861f49;color:white;border-color:#861f49}.alerts-bell.is-selected svg{fill:#861f49}
+.alerts-popover{position:absolute;right:0;top:54px;width:230px;z-index:30;padding:18px;border:1px solid #ecd0d9;border-radius:18px;background:#fffaf4;box-shadow:0 14px 36px #64253c20;color:#64253c;font-size:14px;line-height:1.5}
+.confirmation-email{position:fixed;inset:0;margin:auto;max-height:calc(100svh - 32px);overflow:auto;box-sizing:border-box;width:min(440px,calc(100vw - 32px));border:1px solid #f1d9de;border-radius:28px;padding:36px;background:radial-gradient(ellipse at top right,#ffe0b9,transparent 65%),#fffaf5;color:var(--care-ink);box-shadow:0 24px 80px #3f172d33}
+.confirmation-email::backdrop{background:#35203275;backdrop-filter:blur(5px)}.email-close{position:absolute;top:14px;right:14px;background:transparent;color:#64253c;border:0;padding:8px}
+.email-success{display:inline-flex;padding:14px;border-radius:50%;background:#f1dce5;color:#86234a}.email-eyebrow{font-size:10px;letter-spacing:1.8px;color:#86234a;margin-top:22px}.confirmation-email h2{font-family:inherit;font-size:30px;letter-spacing:-1px;margin:8px 0}.confirmation-email>p:not(.email-eyebrow){color:var(--muted);margin:10px 0 24px}
+.confirmation-email label{font-size:13px;display:block;margin-bottom:9px}.confirmation-email label span{color:var(--muted)}.email-input{display:flex;align-items:center;gap:10px;border:1px solid #d9c3ca;background:white;padding:0 13px;border-radius:12px;color:#86234a}.email-input input{font:inherit;min-width:0;width:100%;padding:14px 0;border:0;background:transparent;outline-offset:2px}.email-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:24px}
+@media(max-width:600px){.app-header-inner{padding:12px 16px;gap:10px;flex-wrap:wrap}.app-header nav{flex-wrap:wrap;max-width:100%}.app-header nav button{padding:10px;font-size:12px}.confirmation-email{padding:28px 24px}}
