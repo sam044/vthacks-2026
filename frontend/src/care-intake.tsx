@@ -6,8 +6,9 @@ import { useBooking } from './booking-state';
 import { api, session, easternDate, fullTime, type Review, type InventorySlot } from './api';
 import { emptyIntake, intakeErrors, needsCounseling, type IntakeForm } from './intake-validation';
 import './care-intake.css';
+import { WaitlistChoices, type WaitlistChoice } from './waitlist-choices';
 
-type Result = { outcome:'proposal'|'no_match'|'urgent_support'; answer:string; sources:{name:string;url:string}[]; review:Review|null };
+type Result = { outcome:'proposal'|'no_match'|'urgent_support'; reason?:string; answer:string; sources:{name:string;url:string}[]; review:Review|null; waitlist_options?:WaitlistChoice[] };
 const weekdays=['Mon','Tue','Wed','Thu','Fri'];
 
 export function CareIntake({visible}:{visible:boolean}) {
@@ -30,7 +31,7 @@ export function CareIntake({visible}:{visible:boolean}) {
       key.current=null;setResult(null);setError('');
       setForm(f=>({...f,center:slot.center_id,support:slot.service_id.includes('counseling')?'counseling':slot.center_id==='wellness'||slot.service_id.includes('coaching')?'wellness':'physical',
         modality:slot.center_id==='timelycare'?'virtual':'in-person',first_date:easternDate(slot.starts),last_date:easternDate(slot.starts),
-        weekdays:[(new Date(easternDate(slot.starts)+'T12:00:00Z').getUTCDay()+6)%7],after:local(slot.starts),before:local(slot.blocked_until||new Date(new Date(slot.starts).getTime()+3600000).toISOString())}));
+        weekdays:[(new Date(easternDate(slot.starts)+'T12:00:00Z').getUTCDay()+6)%7],after:local(slot.starts),before:local(slot.ends)}));
       requestAnimationFrame(()=>document.getElementById('booking_name')?.focus());
     };
     window.addEventListener('hokiecare-session-cleared',reset);
@@ -76,9 +77,11 @@ export function CareIntake({visible}:{visible:boolean}) {
     {b.waitlist.some(w=>w.status==='available')&&<div className="waitlist-offer" role="status"><strong>A waitlisted time is available.</strong><button className="booking-secondary" disabled={busy} onClick={()=>{b.setPanel('calendar');b.setTab('waitlist');}}>View my waitlist</button></div>}
     <div className="intake-process" aria-label="Booking steps"><span className={!hasResult?'current':''}>1 <span>Your request</span></span><ArrowRight size={14}/><span className={hasResult&&!b.saved?'current':''}>2 <span>Review a match</span></span><ArrowRight size={14}/><span className={b.saved?'current':''}>3 <span>Confirm & save</span></span></div>
     {hasResult ? <div className="intake-result" aria-live="polite">
-      <h2 ref={heading} tabIndex={-1}>{b.saved?'Appointment saved':result?.outcome==='urgent_support'?'Find immediate support':result?.outcome==='no_match'?'Let’s adjust your request':'A next step, picked for you'}</h2>
+      <h2 ref={heading} tabIndex={-1}>{b.saved?'Appointment saved':result?.outcome==='urgent_support'?'Find immediate support':result?.waitlist_options?.length?'Join the waitlist for your time':result?.outcome==='no_match'?'Let’s adjust your request':'A next step, picked for you'}</h2>
       {b.saved?<><p><Check size={18}/> {b.saved.booking_name||form.booking_name} · {b.saved.center_name||b.saved.service_name}</p><p>{fullTime(b.saved.slot.starts)} Eastern · 30-minute visit</p><p>Saved in HokieCare.</p><button className="booking-primary" onClick={()=>{b.setPanel('calendar');b.setTab('agenda');}}>View my appointment</button></>:<>
         {result&&<p className="intake-answer">{result.review&&!b.review?"Your previous proposal is no longer active. Edit your answers to find another appointment.":result.answer}</p>}
+        {!!result?.waitlist_options?.length&&<WaitlistChoices options={result.waitlist_options}/>}
+        {result?.reason==='appointment_conflict'&&<button className="booking-primary" onClick={()=>{b.setPanel('calendar');b.setTab('agenda');}}>View my appointments</button>}
         {!!result?.sources.length&&<details className="intake-sources"><summary>Why this recommendation? Sources</summary>{result.sources.map(x=><a key={x.url} href={x.url} target="_blank" rel="noreferrer">{x.name} ↗</a>)}</details>}
         {b.review?.intake&&<BookingReview onEdit={edit}/>}
         {b.canReplaceReview&&b.review?.intake&&<button disabled={busy} className="booking-secondary" onClick={()=>{if(Object.keys(errors).length){edit();return;}key.current=null;void submit();}}>{waitlistTarget?'Check this time again':'Find another appointment'}</button>}
@@ -101,7 +104,7 @@ export function CareIntake({visible}:{visible:boolean}) {
         {counseling&&field('counseling','Are you currently receiving individual counseling?',select('counseling',[['none','No current individual counseling'],['cook','At Cook Counseling'],['timelycare','Through TimelyCare'],['elsewhere','Somewhere else'],['unsure','I’m not sure']]))}
         {counseling&&<p className="intake-hint">Cook individual therapy and TimelyCare scheduled therapy cannot run concurrently.</p>}
       </fieldset>
-      <fieldset disabled={busy}><legend><span>03</span> Make room in your week</legend><p className="intake-hint">We’ll find the earliest match within your answers. A 30-minute visit reserves an hour, including buffer time. All times Eastern.</p>
+      <fieldset disabled={busy}><legend><span>03</span> Make room in your week</legend><p className="intake-hint">We’ll find the earliest match within your answers. Allow 30 minutes for your visit; no extra buffer is required. All times Eastern.</p>
         <div className="intake-grid">{field('first_date','Earliest date',<input {...attributes('first_date')} type="date" min={easternDate()} max="2027-05-12" value={form.first_date} onChange={e=>update('first_date',e.target.value)}/>)}
         {field('last_date','Latest date',<input {...attributes('last_date')} type="date" min={form.first_date||easternDate()} max="2027-05-12" value={form.last_date} onChange={e=>update('last_date',e.target.value)}/>)}</div>
         <fieldset className="weekday-field"><legend>Which weekdays work? *</legend><div className="intake-weekdays">{weekdays.map((label,i)=><label key={label}><input type="checkbox" checked={form.weekdays.includes(i)} onChange={e=>{update('weekdays',e.target.checked?[...form.weekdays,i]:form.weekdays.filter(x=>x!==i));setTouched(t=>({...t,weekdays:true}));}}/><span>{label}</span></label>)}</div>{touched.weekdays&&errors.weekdays&&<span className="field-error">{errors.weekdays}</span>}</fieldset>

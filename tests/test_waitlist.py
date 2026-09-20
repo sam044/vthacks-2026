@@ -61,9 +61,9 @@ def test_complete_private_cancel_refill_and_retry(client,monkeypatch):
     with b.database() as db:
         assert db.execute('SELECT status FROM waitlist WHERE id=?',(entry['id'],)).fetchone()[0]=='available'
     assert listing(c)[0]['status']=='available'
-    p=review(c,entry);assert p.status_code==200,p.text
+    p=review(c,entry,before='09:30');assert p.status_code==200,p.text
     p=p.json()['review'];assert p['slot']['id']==target['id'] and p['waitlist_id']==entry['id'] and p['intake']
-    assert review(c,entry).json()['review']['id']==p['id']
+    assert review(c,entry,before='09:30').json()['review']['id']==p['id']
     assert c.get('/api/booking/appointments').json()['appointments']==[]
     confirmed=c.post('/api/booking/proposals/'+p['id']+'/confirm',headers=H)
     assert confirmed.status_code==200,confirmed.text
@@ -74,6 +74,41 @@ def test_complete_private_cancel_refill_and_retry(client,monkeypatch):
     with b.database() as db:
         assert 'Private Alias' not in str([dict(r) for r in db.execute('SELECT * FROM outbox_events')])
         assert 'description' not in db.execute("SELECT sql FROM sqlite_master WHERE name='waitlist'").fetchone()[0]
+
+
+def test_taken_time_from_intake_offers_join_instead_of_edit_only(client,monkeypatch):
+    a,c=users(client);target=slot(a);saved=book(a,target);model(monkeypatch)
+    body=form(before='09:30',last_date=form()['first_date'])
+    result=c.post('/api/assistant/intake',headers=H,json=body)
+    assert result.status_code==200,result.text
+    data=result.json()
+    assert data['outcome']=='no_match' and data['review'] is None
+    assert [x['id'] for x in data['waitlist_options']]==[target['id']]
+    option=data['waitlist_options'][0]
+    assert set(option)=={'id','starts','ends','service_id','center_id','version','state','service_name'}
+    assert option['state']=='busy' and 'Join the waitlist' in data['answer']
+    assert listing(c)==[]  # Suggestions never enroll the student automatically.
+    own=a.post('/api/assistant/intake',headers=H,json=body).json()
+    assert not own.get('waitlist_options')  # An existing own visit still conflicts.
+    assert own['reason']=='appointment_conflict' and 'already have an appointment' in own['answer']
+    entry=join(c,option).json();cancel(a,saved)
+    assert listing(c)[0]['status']=='available'
+    response=review(c,entry,before='09:30')
+    assert response.json()['review']['slot']['id']==target['id']
+
+
+def test_interval_migration_preserves_bookings_and_memberships(client):
+    a,c=users(client);target=slot(a);saved=book(a,target);entry=join(c,target).json()
+    with b.database() as db:
+        db.execute('UPDATE slots SET blocked_until=? WHERE id=?',
+            ((datetime.fromisoformat(target['ends'])+timedelta(minutes=30)).isoformat(),target['id']))
+        db.execute('PRAGMA user_version=6')
+    # Reopening replays only the new migration, preserving visits and membership.
+    with b.database() as db:
+        row=db.execute('SELECT * FROM slots WHERE id=?',(target['id'],)).fetchone()
+        assert row['starts']==target['starts'] and row['ends']==target['ends']==row['blocked_until']
+        assert db.execute('SELECT status FROM appointments WHERE id=?',(saved['id'],)).fetchone()[0]=='reserved'
+        assert db.execute('SELECT status FROM waitlist WHERE id=?',(entry['id'],)).fetchone()[0]=='waiting'
 
 
 def test_leave_invalidates_reviews_and_does_not_book(client,monkeypatch):
@@ -153,24 +188,32 @@ def test_restoration_cleanup_missed_events_and_migration_replay(client):
         db.execute("UPDATE appointments SET status='cancelled' WHERE id=?",(saved['id'],))
     restored=TestClient(api.app);restored.cookies.update(c.cookies)
     assert listing(restored)[0]['status']=='available'  # missed event recovered from storage
-    with b.database() as db:assert db.execute('PRAGMA user_version').fetchone()[0]==6
+    with b.database() as db:assert db.execute('PRAGMA user_version').fetchone()[0]==7
     assert restored.delete('/api/booking/session',headers=H).status_code==200
     with b.database() as db:
         assert not db.execute('SELECT 1 FROM waitlist WHERE id=?',(entry['id'],)).fetchone()
         assert db.execute('PRAGMA foreign_key_check').fetchall()==[]
 
 
-def test_waitlist_respects_buffer_and_passed_time(client):
+def test_waitlist_ignores_old_buffer_but_respects_passed_time(client,monkeypatch):
     a,c=users(client);target=slot(a);saved=book(a,target)
-    # A different service at 09:30 conflicts with the waiting student's 09:00
-    # visit buffer even though the 30-minute visit itself has ended.
+    # A different service at 09:30 fits after the 09:00 visit ends.
+    # Legacy buffer metadata must not prevent the exact-time offer.
     book(c,slot(c,'carilion-primary'))
     with b.database() as db:
         starts=datetime.fromisoformat(target['starts'])+timedelta(minutes=30)
         db.execute('UPDATE slots SET starts=?,ends=?,blocked_until=? WHERE id=?',
                    (starts.isoformat(),(starts+timedelta(minutes=30)).isoformat(),
                     (starts+timedelta(hours=1)).isoformat(),target['id']))
-    assert join(c,target).status_code==409
+    joined=join(c,target);assert joined.status_code==200,joined.text
+    assert joined.json()['status']=='waiting'
+    cancel(a,saved)
+    assert listing(c)[0]['status']=='available'
+    model(monkeypatch)
+    result=review(c,joined.json(),after='09:30',before='10:00')
+    assert result.status_code==200,result.text
+    proposal=result.json()['review'];assert proposal is not None,result.text
+    assert c.post('/api/booking/proposals/'+proposal['id']+'/confirm',headers=H).status_code==200
     other=TestClient(api.app);other.post('/api/booking/session',headers=H)
     entry=join(other,target).json()
     with b.database() as db:

@@ -256,7 +256,7 @@ function useBookingState(active: boolean) {
     try {
       await session();
       await api("/api/booking/waitlist", "POST", { slot_id: slot.id, request_id: crypto.randomUUID() });
-      await refreshWaitlist(); setTab("waitlist");
+      await refreshWaitlist(); setTab("waitlist"); setPanel("calendar");
     } catch (e) { setWaitlistError((e as Error).message); }
     finally { setWaitlistBusy(false); }
   }

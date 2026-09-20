@@ -30,8 +30,19 @@ def verify(url):
             day+=timedelta(days=1)
         assert available
         target=available[0]
+        local=datetime.fromisoformat(target['starts']).astimezone(ZoneInfo('America/New_York'))
+        until=datetime.fromisoformat(target['ends']).astimezone(ZoneInfo('America/New_York'))
+        body=dict(request_id=str(uuid.uuid4()),booking_name='Waitlist Verification Alias',support='physical',
+            description='I would like a routine medical appointment.',center='schiffert',modality='in-person',
+            first_date=str(local.date()),last_date=str(local.date()),weekdays=[local.weekday()],
+            after=local.strftime('%H:%M'),before=until.strftime('%H:%M'),student='yes',counseling=None,acknowledged=True)
         saved=data(confirm(a,prepare(a,target)))
         def join(user):return data(user.post('/api/booking/waitlist',json={'slot_id':target['id'],'request_id':str(uuid.uuid4())}))
+        suggestion=data(b.post('/api/assistant/intake',json=body))
+        assert suggestion['outcome']=='no_match' and suggestion['review'] is None
+        assert [x['id'] for x in suggestion['waitlist_options']]==[target['id']]
+        assert set(suggestion['waitlist_options'][0])=={'id','starts','ends','service_id','center_id','version','state','service_name'}
+        assert data(b.get('/api/booking/waitlist'))['entries']==[]
         entries=[join(u) for u in (b,c)]
         assert all(e['status']=='waiting' for e in entries)
         assert join(b)['id']==entries[0]['id']
@@ -41,12 +52,6 @@ def verify(url):
         data(a.post('/api/booking/appointments/'+saved['id']+'/cancel'))
         for user in (b,c):assert data(user.get('/api/booking/waitlist'))['entries'][0]['status']=='available'
         seconds=round(time.monotonic()-started,3)
-        local=datetime.fromisoformat(target['starts']).astimezone(ZoneInfo('America/New_York'))
-        until=datetime.fromisoformat(target['blocked_until']).astimezone(ZoneInfo('America/New_York'))
-        body=dict(request_id=str(uuid.uuid4()),booking_name='Waitlist Verification Alias',support='physical',
-            description='I would like a routine medical appointment.',center='schiffert',modality='in-person',
-            first_date=str(local.date()),last_date=str(local.date()),weekdays=[local.weekday()],
-            after=local.strftime('%H:%M'),before=until.strftime('%H:%M'),student='yes',counseling=None,acknowledged=True)
         reviews=[]
         for user,entry in zip((b,c),entries):
             path='/api/booking/waitlist/'+entry['id']+'/review'
@@ -76,7 +81,7 @@ def verify(url):
         data(losing.delete('/api/booking/waitlist/'+entries[1-winner]['id']))
         assert data(losing.get('/api/booking/waitlist'))['entries']==[]
         print(json.dumps({'passed':True,'storage':inventory['storage'],'cancellation_to_offer_api_seconds':seconds,
-            'checks':['two waiters','private offers','exact-slot live inference','required intake','confirmation race',
+            'checks':['intake taken-time waitlist suggestion','30-minute window','two waiters','private offers','exact-slot live inference','required intake','confirmation race',
                       'retry idempotency','agenda','anonymous events','leave waitlist']}))
     finally:
         for user in users:

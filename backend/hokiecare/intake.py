@@ -47,8 +47,8 @@ class Intake(b.StrictBody):
         if any(type(d) is not int or d<0 or d>6 for d in self.weekdays) or len(set(self.weekdays))!=len(self.weekdays):
             raise ValueError('Choose distinct weekdays.')
         minutes=lambda t:int(t[:2])*60+int(t[3:])
-        if minutes(self.before)-minutes(self.after)<60:
-            raise ValueError('Allow at least one hour for the visit and buffer.')
+        if minutes(self.before)-minutes(self.after)<30:
+            raise ValueError('Allow at least 30 minutes for the visit.')
         if self.needs_counseling() and self.counseling is None:
             raise ValueError('Choose your current counseling situation.')
         return self
@@ -164,20 +164,31 @@ def submit(body:Intake,request:Request):
         if result.outcome!='match' or not result.service_ids:
             return no_match('service_fit',result.explanation+' Edit your answers or browse the sourced care options.',sources)
         matches=[]
+        waiting=[]
+        own_conflict=False
         with b.database() as db:
             for ident in dict.fromkeys(result.service_ids):
-                slots=db.execute('''SELECT s.* FROM slots s WHERE s.service_id=? AND s.active=1 AND s.version=?
+                slots=db.execute('''SELECT s.*,EXISTS(
+                    SELECT 1 FROM appointments a JOIN slots t ON t.id=a.slot_id
+                    WHERE a.status='reserved' AND t.resource_id=s.resource_id
+                    AND t.starts<s.ends AND t.ends>s.starts) AS occupied,
+                    EXISTS(SELECT 1 FROM appointments a JOIN slots t ON t.id=a.slot_id
+                    WHERE a.status='reserved' AND a.owner=?
+                    AND t.starts<s.ends AND t.ends>s.starts) AS own_conflict
+                  FROM slots s WHERE s.service_id=? AND s.active=1 AND s.version=?
                   AND s.local_date>=? AND s.local_date<=? AND s.starts>?
-                  AND NOT EXISTS(SELECT 1 FROM appointments a JOIN slots t ON t.id=a.slot_id
-                    WHERE a.status='reserved' AND (t.resource_id=s.resource_id OR a.owner=?)
-                    AND t.starts<s.blocked_until AND COALESCE(t.blocked_until,t.ends)>s.starts)
-                  ORDER BY s.starts''',(ident,s.CONFIG['version'],str(body.first_date),str(body.last_date),datetime.now(timezone.utc).isoformat(),owner)).fetchall()
+                  ORDER BY s.starts''',(owner,ident,s.CONFIG['version'],str(body.first_date),str(body.last_date),datetime.now(timezone.utc).isoformat())).fetchall()
                 for row in slots:
                     if target and row['id']!=target['id']: continue
                     start=datetime.fromisoformat(row['starts']).astimezone(s.TZ)
-                    until=datetime.fromisoformat(row['blocked_until']).astimezone(s.TZ)
+                    until=datetime.fromisoformat(row['ends']).astimezone(s.TZ)
                     if start.weekday() in body.weekdays and body.after<=start.strftime('%H:%M') and until.strftime('%H:%M')<=body.before:
-                        matches.append(dict(row))
+                        if row['own_conflict']:
+                            own_conflict=True
+                            continue
+                        public_slot={k:row[k] for k in ('id','starts','ends','service_id','center_id','version')}
+                        public_slot['state']='busy' if row['occupied'] else 'available'
+                        (waiting if row['occupied'] else matches).append(public_slot)
         for slot in sorted(matches,key=lambda x:(x['starts'],x['service_id']))[:10]:
             try:
                 review=cal.prepare_review(cal.ProposalRequest(slot_id=slot['id'],version=slot['version'],request_id=body.request_id,booking_name=body.booking_name),request,fingerprint,body.waitlist_id)
@@ -186,6 +197,13 @@ def submit(body:Intake,request:Request):
                 return dict(outcome='proposal',answer=result.explanation+(' Your waitlisted time is ready for confirmation.' if target else ' The earliest matching appointment is ready for your confirmation.'),sources=sources,review=review,model=model)
             except HTTPException as error:
                 if error.status_code!=409: raise
+        if waiting and not target:
+            options=sorted(waiting,key=lambda x:(x['starts'],x['service_id']))[:5]
+            return dict(outcome='no_match',reason='availability',review=None,sources=sources,
+                        answer='Matching times are currently taken. Join the waitlist for a time below, or edit your answers to find another opening.',
+                        waitlist_options=[{**slot,'service_name':s.service(slot['service_id'])['name']} for slot in options])
+        if own_conflict and not target:
+            return no_match('appointment_conflict','You already have an appointment during the matching times. View your appointments to cancel or reschedule it, or choose a different time. Tabs in this browser share the same student session.',sources)
         return no_match('availability',('Your waitlisted time is unavailable or outside these preferences. Your waitlist entry is preserved.' if target else 'No suitable opening fits your dates, weekdays, and time window. Edit your answers to search again.'),sources)
     except HTTPException:
         raise

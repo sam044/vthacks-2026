@@ -230,8 +230,8 @@ def reserve(body: ReserveRequest, request: Request, response: Response):
         if db.execute("SELECT COUNT(*) FROM appointments WHERE owner=?", (owner,)).fetchone()[0] >= 50:
             raise HTTPException(429, 'This session has reached its appointment limit.')
         conflict = db.execute('''SELECT 1 FROM appointments a JOIN slots s ON a.slot_id=s.id
-            WHERE a.owner=? AND a.status='reserved' AND s.starts<? AND COALESCE(s.blocked_until,s.ends)>?''',
-            (owner, slot['blocked_until'], slot['starts'])).fetchone()
+            WHERE a.owner=? AND a.status='reserved' AND s.starts<? AND s.ends>?''',
+            (owner, slot['ends'], slot['starts'])).fetchone()
         if conflict:
             raise HTTPException(409, 'You already have an appointment at this time.')
         ident = secrets.token_urlsafe(16)

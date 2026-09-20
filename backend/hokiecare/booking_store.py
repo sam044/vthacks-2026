@@ -33,6 +33,8 @@ def migrate_sqlite(db):
             migrate_intake(db)
             from .waitlist import migrate_sqlite as migrate_waitlist
             migrate_waitlist(db)
+            from .visit_intervals import migrate_sqlite as migrate_intervals
+            migrate_intervals(db)
             return
         # DDL is transactional; legacy IDs/times and sessions remain intact.
         db.execute('PRAGMA foreign_keys=OFF')
@@ -88,6 +90,8 @@ def migrate_sqlite(db):
         migrate_intake(db)
         from .waitlist import migrate_sqlite as migrate_waitlist
         migrate_waitlist(db)
+        from .visit_intervals import migrate_sqlite as migrate_intervals
+        migrate_intervals(db)
 
 
 class Record(dict):

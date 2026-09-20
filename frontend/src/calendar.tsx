@@ -439,7 +439,7 @@ export function SharedCalendar({ active }: { active: boolean }) {
             ]
               ?.map((x) => x.join("–"))
               .join(", ") || "Closed"}
-            . Each 30-minute visit includes a 30-minute buffer; starts are one hour apart.
+            . Visits last 30 minutes with no extra buffer; calendar starts remain one hour apart.
           </p>
           <p className="booking-small">
             {live

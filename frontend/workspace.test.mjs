@@ -35,11 +35,12 @@ execFileSync(
       "calendar.tsx",
       "use-public-data.ts",
       "intake-validation.ts",
+      "waitlist-choices.tsx",
     ].map((name) => join(project, "src", name)),
   ],
   { cwd: project, stdio: "pipe" },
 );
-for (const name of ["api", "booking-state", "calendar", "use-public-data", "intake-validation"]) {
+for (const name of ["api", "booking-state", "calendar", "use-public-data", "intake-validation", "waitlist-choices"]) {
   const source = await readFile(join(compiled, name + ".js"), "utf8");
   const result = source.replace(
     /from (["'])(\.\/[^"']+)\1/g,
@@ -56,6 +57,7 @@ const { SharedCalendar } = await import(
 const { useApi } = await import(
   pathToFileURL(join(compiled, "use-public-data.mjs")).href
 );
+const { WaitlistChoices } = await import(pathToFileURL(join(compiled, "waitlist-choices.mjs")).href);
 const slot = {
   id: "slot-a",
   starts: "2026-09-22T14:00:00Z",
@@ -124,7 +126,7 @@ const review = {
   result_id: null,
 };
 
-async function setup({ calendar = false, failConfirmation = false, confirmationGate, waiting = [] } = {}) {
+async function setup({ choices = false, calendar = false, failConfirmation = false, confirmationGate, waiting = [] } = {}) {
   const { window } = parseHTML(
     '<html><body><div id="root"></div></body></html>',
   );
@@ -211,6 +213,7 @@ async function setup({ calendar = false, failConfirmation = false, confirmationG
   };
   function Probe() {
     state = useBooking();
+    if (choices) return React.createElement(WaitlistChoices, { options: [{...slot,state:"busy",service_name:"Medical clinic"}] });
     return calendar
       ? React.createElement(SharedCalendar, {
           active:
@@ -385,13 +388,14 @@ test("calendar streams and polling stop when hidden, resume with the selected da
 });
 
 const {emptyIntake,intakeErrors,needsCounseling}=await import(pathToFileURL(join(compiled,"intake-validation.mjs")).href);
-test("intake requires every answer and a full-hour window before submission",()=>{
+test("intake requires every answer and a 30-minute window before submission",()=>{
   const empty=emptyIntake();assert.equal(Object.keys(intakeErrors(empty)).length,11);
   const valid={...empty,booking_name:"Student",support:"physical",description:"Routine visit",center:"auto",modality:"in-person",
     first_date:"2026-10-01",last_date:"2026-10-02",weekdays:[0,1],after:"09:00",before:"17:00",student:"yes",acknowledged:true};
   assert.deepEqual(intakeErrors(valid),{});
   assert.ok(intakeErrors({...valid,booking_name:"   "}).booking_name);
-  assert.ok(intakeErrors({...valid,after:"16:30"}).hours);
+  assert.deepEqual(intakeErrors({...valid,after:"16:30"}),{});
+  assert.ok(intakeErrors({...valid,after:"16:31"}).hours);
   assert.ok(intakeErrors({...valid,weekdays:[]}).weekdays);
   assert.ok(intakeErrors({...valid,support:"counseling"}).counseling);
   assert.ok(needsCounseling({...valid,center:"timelycare"}));
@@ -462,4 +466,20 @@ test("Home cannot discard an uncertain save; retry resolves it before starting f
     assert.equal(app.state.records.length,1);
     assert.equal(app.state.uncertainSave,false);
   } finally { await app.cleanup(); }
+});
+
+
+test("taken-time intake result joins explicitly and opens My waitlist", async () => {
+  const app=await setup({choices:true});
+  try {
+    const button=document.querySelector("button");
+    assert.equal(button.textContent,"Join waitlist");
+    assert.equal(app.requests.filter(r=>r.path==="/api/booking/waitlist"&&r.method==="POST").length,0);
+    await act(async()=>{button.click();});
+    assert.equal(app.requests.filter(r=>r.path==="/api/booking/waitlist"&&r.method==="POST").length,1);
+    assert.equal(app.state.tab,"waitlist");assert.equal(app.state.panel,"calendar");
+    assert.equal(document.querySelector("button").textContent,"View my waitlist");
+    await act(async()=>{document.querySelector("button").click();});
+    assert.equal(app.requests.filter(r=>r.path==="/api/booking/waitlist"&&r.method==="POST").length,1);
+  } finally {await app.cleanup();}
 });
