@@ -47,6 +47,7 @@ export type Appointment = {
   ends: string;
 };
 export type Review = {
+  waitlist_id?: string | null;
   booking_name?: string;
   center_name?: string;
   intake?: boolean;
@@ -57,6 +58,14 @@ export type Review = {
   operation: string;
   notice: string;
   result_id: string | null;
+};
+export type WaitlistEntry = {
+  id: string;
+  slot: InventorySlot;
+  service_name: string;
+  status: "waiting" | "available" | "fulfilled" | "expired";
+  result_id: string | null;
+  created_at: string;
 };
 export class ApiError extends Error {
   constructor(

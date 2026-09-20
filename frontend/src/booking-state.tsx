@@ -19,6 +19,7 @@ import {
   type InventorySlot,
   type Review,
   type Navigation,
+  type WaitlistEntry,
 } from "./api";
 
 const initialSelection = (): Navigation => ({
@@ -28,7 +29,21 @@ const initialSelection = (): Navigation => ({
 
 function useBookingState(active: boolean) {
   const [panel, setPanel] = useState<"calendar" | "directory" | null>(null);
-  const [tab, setTab] = useState<"calendar" | "agenda">("calendar");
+  const [tab, setTab] = useState<"calendar" | "agenda" | "waitlist">("calendar");
+  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
+  const [waitlistError, setWaitlistError] = useState("");
+  const [waitlistBusy, setWaitlistBusy] = useState(false);
+  const waitlistGeneration = useRef(0);
+  const waitlistCursor = useRef(0);
+  const refreshWaitlist = useCallback(async () => {
+    const generation = ++waitlistGeneration.current;
+    try {
+      const result = await api<{ entries: WaitlistEntry[]; revision: number }>("/api/booking/waitlist");
+      if (generation === waitlistGeneration.current) { waitlistCursor.current = result.revision; setWaitlist(result.entries); setWaitlistError(""); }
+    } catch (e) {
+      if (generation === waitlistGeneration.current) setWaitlistError((e as Error).message);
+    }
+  }, []);
   const [selection, setSelection] = useState<Navigation>(initialSelection);
   const [centers, setCenters] = useState<Center[]>([]),
     [services, setServices] = useState<Service[]>([]);
@@ -70,6 +85,7 @@ function useBookingState(active: boolean) {
       setCenters(catalog.centers);
       setServices(catalog.services);
       await refresh();
+      await refreshWaitlist();
       setReady(true);
       setError("");
       if (!loaded.current) {
@@ -103,10 +119,31 @@ function useBookingState(active: boolean) {
     } catch (e) {
       setError((e as Error).message);
     }
-  }, [refresh, setReview]);
+  }, [refresh, refreshWaitlist, setReview]);
   useEffect(() => {
     void initialize();
   }, [initialize]);
+  const hasWaiting = waitlist.some(w => w.status === "waiting" || w.status === "available");
+  useEffect(() => {
+    if (!ready || !active) return;
+    let stream: EventSource | null = null;
+    const changed = () => { void refreshWaitlist(); };
+    const visibility = () => {
+      stream?.close(); stream = null;
+      if (!document.hidden) {
+        changed();
+        if (hasWaiting) {
+          stream = new EventSource("/api/booking/events?cursor=" + waitlistCursor.current);
+          stream.addEventListener("availability", changed);
+        }
+      }
+    };
+    visibility();
+    const timer = hasWaiting ? window.setInterval(() => { if (!document.hidden) changed(); }, 5000) : null;
+    document.addEventListener("visibilitychange", visibility);
+    window.addEventListener("hokiecare-booking-changed", changed);
+    return () => { stream?.close(); if (timer !== null) window.clearInterval(timer); document.removeEventListener("visibilitychange", visibility); window.removeEventListener("hokiecare-booking-changed", changed); };
+  }, [ready, active, hasWaiting, refreshWaitlist]);
   useEffect(() => {
     if (!active) return;
     const changed = () => void refresh().catch((e) => setError(e.message));
@@ -136,6 +173,7 @@ function useBookingState(active: boolean) {
   }, [dismissReview]);
   useEffect(() => {
     const cleared = () => {
+      waitlistGeneration.current++; setWaitlist([]); setWaitlistError("");
       uncertain.current = false; setUncertainSave(false);
       resetRequest();
     };
@@ -212,6 +250,31 @@ function useBookingState(active: boolean) {
       if (resetQueued.current) resetRequest();
     }
   }
+  async function joinWaitlist(slot: InventorySlot) {
+    if (waitlistBusy || locked.current || uncertain.current) return;
+    setWaitlistBusy(true); setWaitlistError("");
+    try {
+      await session();
+      await api("/api/booking/waitlist", "POST", { slot_id: slot.id, request_id: crypto.randomUUID() });
+      await refreshWaitlist(); setTab("waitlist");
+    } catch (e) { setWaitlistError((e as Error).message); }
+    finally { setWaitlistBusy(false); }
+  }
+  async function leaveWaitlist(id: string) {
+    if (waitlistBusy || locked.current || uncertain.current) return;
+    setWaitlistBusy(true); setWaitlistError("");
+    try {
+      await api(`/api/booking/waitlist/${id}`, "DELETE");
+      if (currentReview.current?.waitlist_id === id) dismissReview();
+      await refreshWaitlist();
+    } catch (e) { setWaitlistError((e as Error).message); }
+    finally { setWaitlistBusy(false); }
+  }
+  function reviewWaitlist(entry: WaitlistEntry) {
+    if (!dismissReview()) return;
+    setSaved(null); setRescheduling(null); setPanel(null);
+    window.dispatchEvent(new CustomEvent("hokiecare-intake-prefill", { detail: { ...entry.slot, waitlist_id: entry.id } }));
+  }
   function adoptReview(next: Review) {
     setCanReplaceReview(false);
     setReview(next);setError("");setSaved(null);setRescheduling(null);setPanel(null);
@@ -239,6 +302,7 @@ function useBookingState(active: boolean) {
       setUncertainSave(uncertain.current);
       setCanReplaceReview(replaceable);
       setError((e as Error).message);
+      void refreshWaitlist();
     } finally {
       locked.current = false;
       setBusy(false);
@@ -258,6 +322,13 @@ function useBookingState(active: boolean) {
   }
   return {
     active,
+    waitlist,
+    waitlistError,
+    waitlistBusy,
+    refreshWaitlist,
+    joinWaitlist,
+    leaveWaitlist,
+    reviewWaitlist,
     resetVersion,
     uncertainSave,
     panel,

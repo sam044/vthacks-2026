@@ -31,6 +31,8 @@ def migrate_sqlite(db):
         if version >= 4:
             from .dataset import migrate_sqlite as migrate_intake
             migrate_intake(db)
+            from .waitlist import migrate_sqlite as migrate_waitlist
+            migrate_waitlist(db)
             return
         # DDL is transactional; legacy IDs/times and sessions remain intact.
         db.execute('PRAGMA foreign_keys=OFF')
@@ -84,6 +86,8 @@ def migrate_sqlite(db):
         db.execute('PRAGMA foreign_keys=ON')
         from .dataset import migrate_sqlite as migrate_intake
         migrate_intake(db)
+        from .waitlist import migrate_sqlite as migrate_waitlist
+        migrate_waitlist(db)
 
 
 class Record(dict):

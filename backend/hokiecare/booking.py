@@ -243,6 +243,8 @@ def reserve(body: ReserveRequest, request: Request, response: Response):
         expiry=(datetime.fromisoformat(slot['ends'])+timedelta(days=30)).timestamp()
         db.execute('UPDATE appointments SET retain_until=? WHERE id=?',(expiry,ident))
         renew_cookie(db,owner,request,response,expiry)
+        from .waitlist import reconcile
+        reconcile(db)
         return get_appointment(db, owner, ident)
 
 
@@ -250,9 +252,12 @@ def reserve(body: ReserveRequest, request: Request, response: Response):
 def cancel(ident: str, request: Request):
     require_write(request)
     with database() as db:
+        db.execute('BEGIN IMMEDIATE')
         owner = session_id(request, db)
         get_appointment(db, owner, ident)
         db.execute("UPDATE appointments SET status='cancelled' WHERE id=? AND owner=?", (ident, owner))
+        from .waitlist import reconcile
+        reconcile(db)
         return get_appointment(db, owner, ident)
 
 
@@ -260,7 +265,10 @@ def cancel(ident: str, request: Request):
 def delete_session(request: Request, response: Response):
     require_write(request)
     with database() as db:
+        db.execute('BEGIN IMMEDIATE')
         owner = session_id(request, db)
         db.execute('DELETE FROM sessions WHERE id=?', (owner,))
+        from .waitlist import reconcile
+        reconcile(db)
     response.delete_cookie(COOKIE, path='/api')
     return {'deleted': True}

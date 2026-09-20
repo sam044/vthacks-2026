@@ -413,16 +413,16 @@ export function SharedCalendar({ active }: { active: boolean }) {
           return (
             <button
               key={slot.id}
-              disabled={b.busy || slot.state !== "available" || !!error}
+              disabled={b.busy || b.waitlistBusy || yours || (slot.state === "busy" && !!rescheduling) || !!error}
               className={slot.state + (yours ? " yours" : "")}
-              onClick={() => void b.selectSlot(slot, rescheduling?.id)}
+              onClick={() => slot.state === "busy" ? void b.joinWaitlist(slot) : void b.selectSlot(slot, rescheduling?.id)}
             >
               {easternTime(slot.starts)}
               <small>
                 {yours
                   ? "Your appointment"
                   : slot.state === "busy"
-                    ? "Busy"
+                    ? "Join waitlist"
                     : "Available"}
               </small>
             </button>

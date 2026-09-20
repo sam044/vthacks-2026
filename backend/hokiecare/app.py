@@ -19,6 +19,7 @@ from .assistant import router as assistant_router
 from .calendar import router as calendar_router
 from .conversation import router as conversation_router
 from .intake import router as intake_router
+from .waitlist import router as waitlist_router
 
 app = FastAPI(title="HokieCare", version="0.1.0", docs_url=None, openapi_url="/api/openapi.json", redoc_url=None)
 app.include_router(booking_router)
@@ -26,6 +27,7 @@ app.include_router(assistant_router)
 app.include_router(calendar_router)
 app.include_router(conversation_router)
 app.include_router(intake_router)
+app.include_router(waitlist_router)
 logger = logging.getLogger("hokiecare")
 CACHE_SECONDS = 300
 cache = {}

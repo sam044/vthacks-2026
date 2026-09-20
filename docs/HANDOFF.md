@@ -1,5 +1,11 @@
 # Continuation notes
 
+## Exact-time waitlist — September 19–20
+
+Implemented on `codex/appointment-waitlist`. Taken calendar times now offer **Join waitlist**; **My waitlist** and a private Care Assistant banner show available offers. The review path retains required intake and real Databricks service-fit inference, is pinned to the requested service/time, and saves only after explicit confirmation. No holds or ranking engine; conflicting confirmation leaves the losing waiter waiting. Names and membership stay out of shared availability/events. [Design, API, migration, and operations](WAITLIST_IMPLEMENTATION.md).
+
+Additive Lakebase migration applied to the existing approved project/schema; 258 sessions, 12,508 slots, 4,406 appointments and 12 proposals preserved. A private backup is in ignored `.secrets`. Hosted identity passed actual TLS waitlist read/write with its probe rolled back. No inventory reseeding or new services. Local real-Lakebase/model verification passed two waiting sessions, cancellation offers, required exact-slot reviews, concurrent confirmation, retry, agenda, private projection, anonymous SSE and leaving; its temporary API sessions were deleted. Cancellation plus two private reads measured 1.5 seconds locally. Desktop 1440px and mobile 390px offer layouts inspected. Final deployment evidence will follow after release.
+
 ## Cleaner appointment wording and fresh-request Home — September 19
 
 The required checkbox now reads **Confirm appointment lookup**. Care Assistant intake/results, calendar, agenda, review controls and displayed API messages use plain appointment wording. Model replies are instructed to explain service fit without repeated dataset qualifiers; a fallback handles responses that repeat them. Internal `demo` origins, schedule metadata, booking data and exported-calendar disclosures remain unchanged. No provider integration or database migration was added.

@@ -1,0 +1,13 @@
+.my-waitlist { padding: 8px 0; }
+.waitlist-card { margin: 14px 0; padding: 18px; border: 1px solid #dfd8ce; border-radius: 14px; background: #fffefa; }
+.waitlist-card h4 { margin: 0 0 8px; }
+.waitlist-card p { overflow-wrap: anywhere; }
+.waitlist-card.available, .waitlist-offer { border: 1px solid #b8cfc1; background: #f0f6f1; }
+.waitlist-offer { padding: 14px 18px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 14px 0; }
+.panel-tabs { flex-wrap: wrap; }
+.time-grid button.busy:not(:disabled) { cursor: pointer; border-style: dashed; }
+.time-grid button.busy:not(:disabled):hover { border-color: #7a263a; background: #f7eeee; }
+@media (max-width: 520px) {
+  .waitlist-offer { flex-direction: column; align-items: stretch; }
+  .waitlist-card { padding: 14px; }
+}
