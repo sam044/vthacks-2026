@@ -37,9 +37,9 @@ def availability(service_id: str, start: date = Query(alias='from'), end: date =
     if mode == 'demo':
         with b.database() as db:
             b.cleanup(db)
-            occupied = db.execute('''SELECT s.starts,COALESCE(s.blocked_until,s.ends) AS blocked_until
+            occupied = db.execute('''SELECT s.starts,s.ends AS blocked_until
                 FROM appointments a JOIN slots s ON s.id=a.slot_id
-                WHERE s.resource_id=? AND a.status='reserved' AND s.starts<? AND COALESCE(s.blocked_until,s.ends)>?''',
+                WHERE s.resource_id=? AND a.status='reserved' AND s.starts<? AND s.ends>?''',
                 (service['resource_id'],datetime.combine(end,datetime.min.time(),s.TZ).astimezone(timezone.utc).isoformat(),
                  datetime.combine(start,datetime.min.time(),s.TZ).astimezone(timezone.utc).isoformat())).fetchall()
             stored = [dict(r) for r in db.execute('''SELECT s.* FROM slots s WHERE service_id=? AND local_date>=? AND local_date<?
@@ -51,7 +51,7 @@ def availability(service_id: str, start: date = Query(alias='from'), end: date =
         reason = s.day_reason(service,day,now) if mode == 'demo' else 'Availability not connected'
         daily = [{**x, 'origin':'demo', 'state':'available'} for x in stored if x['local_date']==str(day) and x['starts']>now.isoformat() and (not reason or not x['active'])] if mode == 'demo' else []
         for item in daily:
-            if not item['active'] or any(o['starts'] < item['blocked_until'] and o['blocked_until'] > item['starts'] for o in occupied):
+            if not item['active'] or any(o['starts'] < item['ends'] and o['blocked_until'] > item['starts'] for o in occupied):
                 item['state'] = 'busy'
         days.append({'day':day.isoformat(), 'state':('not_connected' if mode=='provider' else
                     'outside_window' if reason and 'window' in reason else 'closed' if reason else 'open'),
@@ -86,7 +86,7 @@ def proposal_view(db, owner, ident):
 def check_conflict(db,slot,owner,exclude=''):
     if db.execute('''SELECT 1 FROM appointments a JOIN slots t ON t.id=a.slot_id
         WHERE a.status='reserved' AND a.id<>? AND (t.resource_id=? OR a.owner=?)
-        AND t.starts<? AND COALESCE(t.blocked_until,t.ends)>?''',(exclude,slot['resource_id'],owner,slot['blocked_until'],slot['starts'])).fetchone():
+        AND t.starts<? AND t.ends>?''',(exclude,slot['resource_id'],owner,slot['ends'],slot['starts'])).fetchone():
         raise HTTPException(409,'This time conflicts with a reservation. Refresh and choose another time.')
 
 

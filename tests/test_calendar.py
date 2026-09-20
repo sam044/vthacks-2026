@@ -91,13 +91,12 @@ def test_same_time_different_resources_and_owner_overlap(clients):
     assert confirm(b,prepare(b,s2).json()).status_code==200
 
 
-def test_buffer_blocks_half_hour_but_allows_exact_next_hour(clients):
+def test_back_to_back_visits_allowed_without_buffer(clients):
     a,b=clients
     slots=inventory(a)['slots']
     first=slots[0]
     assert confirm(a,prepare(a,first).json()).status_code==200
-    # A preserved or imported slot in the buffer must be rejected, even though
-    # the visible 30-minute visit has ended. The database is the slot authority.
+    # Back-to-back visits fit, even for the same owner and resource.
     with booking.database() as db:
         row=dict(db.execute('SELECT * FROM slots WHERE id=?',(first['id'],)).fetchone())
         row['id']='buffer-boundary-check'
@@ -105,8 +104,9 @@ def test_buffer_blocks_half_hour_but_allows_exact_next_hour(clients):
             row[key]=(datetime.fromisoformat(row[key])+timedelta(minutes=30)).isoformat()
         columns=list(row)
         db.execute('INSERT INTO slots ('+','.join(columns)+') VALUES ('+','.join('?' for _ in columns)+')',tuple(row.values()))
-    assert prepare(b,row,key='buffer-check-123456').status_code==409
-    assert datetime.fromisoformat(slots[1]['starts'])==datetime.fromisoformat(first['blocked_until'])
+    assert confirm(a,prepare(a,row,key='buffer-check-123456').json()).status_code==200
+    assert prepare(b,row,key='overlap-check-123456').status_code==409
+    assert datetime.fromisoformat(slots[1]['starts'])==datetime.fromisoformat(first['starts'])+timedelta(hours=1)
     assert confirm(a,prepare(a,slots[1],key='boundary-check-123456').json()).status_code==200
 
 

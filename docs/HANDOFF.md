@@ -1,5 +1,11 @@
 # Continuation notes
 
+## Waitlist intake correction — September 20
+
+The reported Edit answers dead end was the intake path: only the calendar offered joining. Intake now returns anonymous taken-time choices and renders Join waitlist; clicking opens My waitlist. A same-browser existing appointment produces an explicit conflict explanation and View my appointments. Tabs share the same student session. The user authorized removing optional buffers: 30-minute windows and back-to-back visits now work, while actual owner/resource overlaps remain blocked in application and database transactions.
+
+Lakebase interval migration applied with the sam profile: 258 sessions, 12,508 slot IDs/times, 4,408 appointments, 14 proposals and 2 waitlist records preserved. Only buffer metadata and the interval trigger policy changed; no reseeding. SQLite equivalent is version 7. Pre-release checks: 80 backend tests, 15 frontend tests, build, real-Lakebase/live-model full refill probe (1.859 seconds cancellation plus two reads), and browser form-to-waitlist at desktop/mobile. [Implementation and operations](WAITLIST_IMPLEMENTATION.md).
+
 ## Exact-time waitlist — September 19–20
 
 Implemented on `codex/appointment-waitlist`. Taken calendar times now offer **Join waitlist**; **My waitlist** and a private Care Assistant banner show available offers. The review path retains required intake and real Databricks service-fit inference, is pinned to the requested service/time, and saves only after explicit confirmation. No holds or ranking engine; conflicting confirmation leaves the losing waiter waiting. Names and membership stay out of shared availability/events. [Design, API, migration, and operations](WAITLIST_IMPLEMENTATION.md).

@@ -31,7 +31,7 @@ def migrate_sqlite(db):
 
 
 def reconcile(db):
-    """Recompute from authoritative capacity, including buffers and owner conflicts.
+    """Recompute from authoritative capacity, using visit intervals and owner conflicts.
 
     Writers call this inside their booking transaction. Private reads reconcile
     under the same lock, recovering missed events and out-of-band inventory edits.
@@ -53,8 +53,8 @@ def reconcile(db):
         JOIN slots s ON s.id=w.slot_id WHERE w.status IN ('waiting','available')''').fetchall():
         occupied=db.execute('''SELECT 1 FROM appointments a JOIN slots t ON t.id=a.slot_id
             WHERE a.status='reserved' AND (t.resource_id=? OR a.owner=?)
-            AND t.starts<? AND COALESCE(t.blocked_until,t.ends)>? LIMIT 1''',
-            (row['resource_id'],row['owner'],row['blocked_until'] or row['ends'],row['starts'])).fetchone()
+            AND t.starts<? AND t.ends>? LIMIT 1''',
+            (row['resource_id'],row['owner'],row['ends'],row['starts'])).fetchone()
         status='waiting' if occupied else 'available'
         if status!=row['status']:
             db.execute('UPDATE waitlist SET status=? WHERE id=?',(status,row['entry_id']))
@@ -97,7 +97,7 @@ def join(body:b.ReserveRequest, request:Request, response:Response):
             return view(db,old)
         if db.execute('''SELECT 1 FROM appointments a JOIN slots t ON t.id=a.slot_id
             WHERE a.owner=? AND a.status='reserved' AND t.starts<?
-            AND COALESCE(t.blocked_until,t.ends)>?''',(owner,slot['blocked_until'],slot['starts'])).fetchone():
+            AND t.ends>?''',(owner,slot['ends'],slot['starts'])).fetchone():
             raise HTTPException(409,'You already have an appointment that conflicts with this time.')
         # Joining after a cancellation raced the click is harmless: offer it now.
         if db.execute("SELECT COUNT(*) FROM waitlist WHERE owner=?",(owner,)).fetchone()[0]>=50:

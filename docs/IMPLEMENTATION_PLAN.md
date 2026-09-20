@@ -1,5 +1,7 @@
 # HokieCare implementation plan
 
+**September 20 correction:** Intake results now offer **Join waitlist** when matching times are taken. Thirty-minute windows work without an extra buffer; actual visit overlap protection remains. Existing own bookings produce an explicit conflict explanation. See [waitlist details](WAITLIST_IMPLEMENTATION.md).
+
 **Exact-time waitlist:** [Implementation and operations](WAITLIST_IMPLEMENTATION.md) describe joining taken times, private cancellation offers, required intake, and atomic confirmation using the existing Lakebase calendar. Real provider waitlists remain unconnected. See `HANDOFF.md` for release evidence.
 
 **September 19 scheduling implementation:** Monthly service calendars, anonymous shared demo availability, owner-bound reviews, atomic rescheduling, a conversational Databricks booking flow and Lakebase storage are implemented. See [implementation and operations](CALENDAR_BOOKING_IMPLEMENTATION.md) and [final deployment evidence](HANDOFF.md). The user deferred real Schiffert completion until after the demo; other real provider adapters remain unconnected. Earlier planning-only statements below are historical.

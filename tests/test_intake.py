@@ -43,7 +43,7 @@ def model(monkeypatch,service_ids=None,outcome='match',explanation='Schiffert of
 
 
 @pytest.mark.parametrize('change',[{'booking_name':'   '},{'description':'  '},{'support':''},{'weekdays':[]},
-    {'after':'16:30','before':'17:00'},{'last_date':'2030-01-01'},{'student':''},{'acknowledged':False},
+    {'after':'16:31','before':'17:00'},{'last_date':'2030-01-01'},{'student':''},{'acknowledged':False},
     {'support':'counseling','counseling':None},{'modality':'telepathy'},{'weekdays':[0,0]}])
 def test_incomplete_or_invalid_intake_never_infers(client,monkeypatch,change):
     calls=model(monkeypatch)
@@ -152,7 +152,7 @@ def test_materialized_dataset_constraints_and_seed_replay(client):
             WHERE d.exclusion_reason IS NOT NULL AND s.active=1''').fetchone()[0]==0
         for row in db.execute('SELECT starts,ends,blocked_until FROM slots'):
             start,end,until=map(datetime.fromisoformat,tuple(row))
-            assert end-start==timedelta(minutes=30) and until-start==timedelta(hours=1)
+            assert end-start==timedelta(minutes=30) and until==end
         manifest=dataset.seed(db)
         count=db.execute('SELECT COUNT(*) FROM appointments').fetchone()[0]
         assert 0.30<count/12488<0.40
