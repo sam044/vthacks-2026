@@ -91,15 +91,20 @@ export function CareIntake({visible}:{visible:boolean}) {
       {b.saved?<><p><Check size={18}/> {b.saved.booking_name||form.booking_name} · {b.saved.center_name||b.saved.service_name}</p><p>{fullTime(b.saved.slot.starts)} Eastern · 30-minute visit</p><p>Saved in HokieCare.</p><button className="booking-primary" onClick={()=>{b.setPanel('calendar');b.setTab('agenda');}}>View my appointment</button></>:<>
         {result&&<p className="intake-answer">{result.review&&!b.review?"Your previous proposal is no longer active. Edit your answers to find another appointment.":result.answer}</p>}
         {!!result?.waitlist_options?.length&&<WaitlistChoices options={result.waitlist_options}/>}
-        {['demo_waitlist','appointment_conflict'].includes(result?.reason||'')&&<div className="waitlist-offer">
-          {demoWaitlistJoined?<p role="status"><Check size={18}/> You joined the waitlist.</p>:<button className="booking-primary" onClick={()=>setDemoWaitlistJoined(true)}>Would you like to join the waitlist?</button>}
-          <p className="booking-small">Demo only — this choice is not saved.</p>
+        {['demo_waitlist','appointment_conflict'].includes(result?.reason||'')&&<div className="waitlist-decision">
+          {demoWaitlistJoined?<p className="waitlist-decision-success" role="status"><Check size={18}/> You joined the waitlist.</p>:<>
+            <h3>Would you like to join the waitlist?</h3>
+            <div className="waitlist-decision-actions">
+              <button className="booking-primary" onClick={()=>setDemoWaitlistJoined(true)}>Yes, join waitlist</button>
+              <button className="booking-secondary" onClick={edit}>No, edit request</button>
+            </div>
+          </>}
         </div>}
         {!!result?.sources.length&&<details className="intake-sources"><summary>Why this recommendation? Sources</summary>{result.sources.map(x=><a key={x.url} href={x.url} target="_blank" rel="noreferrer">{x.name} ↗</a>)}</details>}
         {b.review?.intake&&<BookingReview onEdit={edit}/>}
         {b.canReplaceReview&&b.review?.intake&&<button disabled={busy} className="booking-secondary" onClick={()=>{if(Object.keys(errors).length){edit();return;}key.current=null;void submit();}}>{waitlistTarget?'Check this time again':'Find another appointment'}</button>}
       </>}
-      {!b.review?.intake&&<button disabled={busy} className="booking-secondary" onClick={()=>{const fresh=!!b.saved;edit();if(fresh){setForm(emptyIntake());setTouched({});setWaitlistTarget(null);}}}>{b.saved?'Start another request':'Edit answers'}</button>}
+      {!b.review?.intake&&(!['demo_waitlist','appointment_conflict'].includes(result?.reason||'')||demoWaitlistJoined)&&<button disabled={busy} className="booking-secondary" onClick={()=>{const fresh=!!b.saved;edit();if(fresh){setForm(emptyIntake());setTouched({});setWaitlistTarget(null);}}}>{b.saved?'Start another request':'Edit answers'}</button>}
     </div>:<form className="intake-form" noValidate onSubmit={e=>{e.preventDefault();void submit();}}>
       {waitlistTarget&&<p className="waitlist-offer">Reviewing your waitlisted time: {fullTime(waitlistTarget.starts)} Eastern. Complete the required answers to check service fit. This time is not held.</p>}
       <div className="intake-form-heading"><div><h2>Let’s find your next step.</h2><p>All fields marked * are required.</p></div><span>{Math.max(0,completed)} / {total} complete</span></div>
