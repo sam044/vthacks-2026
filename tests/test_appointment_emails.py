@@ -3,7 +3,9 @@ from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 import pytest
+from cryptography.fernet import Fernet
 from fastapi.testclient import TestClient
+import msal
 from hokiecare import app, appointment_emails as emails, booking as b, mailer
 
 HEADERS = {'X-HokieCare-Action': '1'}
@@ -11,9 +13,14 @@ HEADERS = {'X-HokieCare-Action': '1'}
 
 @pytest.fixture
 def env(monkeypatch, tmp_path):
+    token_file = tmp_path / 'graph-token.bin'
+    token_key = Fernet.generate_key().decode()
+    cache = msal.SerializableTokenCache()
+    token_file.write_bytes(Fernet(token_key.encode()).encrypt(cache.serialize().encode()))
     settings = {'HOKIECARE_BOOKING_DB': str(tmp_path / 'mail.sqlite3'), 'HOKIECARE_EMAIL_ENABLED': 'true',
                 'HOKIECARE_PUBLIC_ORIGIN': 'http://127.0.0.1:8000', 'HOKIECARE_COOKIE_SECURE': 'false',
-                'SMTP_HOST': 'smtp.example.test', 'SMTP_FROM': 'sender@example.test'}
+                'MS_GRAPH_CLIENT_ID': '00000000-0000-0000-0000-000000000001',
+                'MS_GRAPH_TOKEN_KEY': token_key, 'MS_GRAPH_TOKEN_CACHE': str(token_file)}
     for name, value in settings.items():
         monkeypatch.setenv(name, value)
     monkeypatch.delenv('HOKIECARE_BOOKING_STORE', raising=False)
@@ -138,7 +145,7 @@ def test_failures_are_bounded_and_redacted(env):
     seed(env)
     request(env)
     def fail(*args):
-        raise RuntimeError('Secret SMTP token and personal email')
+        raise RuntimeError('Secret Graph token and personal email')
     env.monkeypatch.setattr(mailer, 'send', fail)
     for _ in range(5):
         assert emails.deliver_due() == 0
@@ -148,23 +155,69 @@ def test_failures_are_bounded_and_redacted(env):
         assert row['attempts'] == 5 and row['state'] == 'failed' and row['error_class'] == 'RuntimeError'
 
 
-def test_smtp_requires_tls_and_authenticates_after_upgrade(monkeypatch):
-    for key, value in {'HOKIECARE_EMAIL_ENABLED': 'true', 'SMTP_HOST': 'smtp.example.test', 'SMTP_FROM': 'sender@example.test',
-                       'HOKIECARE_PUBLIC_ORIGIN': 'https://app.example.test', 'SMTP_SECURITY': 'starttls',
-                       'SMTP_USERNAME': 'test', 'SMTP_PASSWORD': 'test-only'}.items():
+def test_graph_uses_mail_send_only_and_accepted_payload(monkeypatch, tmp_path):
+    token_key = Fernet.generate_key().decode()
+    token_file = tmp_path / 'cache.bin'
+    cache = msal.SerializableTokenCache()
+    mailer.save_cache(cache, {'token_cache': token_file, 'token_key': token_key})
+    for key, value in {'HOKIECARE_EMAIL_ENABLED': 'true', 'HOKIECARE_PUBLIC_ORIGIN': 'https://app.example.test',
+                       'MS_GRAPH_CLIENT_ID': '00000000-0000-0000-0000-000000000001',
+                       'MS_GRAPH_TOKEN_KEY': token_key, 'MS_GRAPH_TOKEN_CACHE': str(token_file)}.items():
         monkeypatch.setenv(key, value)
-    calls = []
-    class SMTP:
-        def __init__(self, host, port, timeout): calls.append('connect')
-        def __enter__(self): return self
-        def __exit__(self, *args): pass
-        def ehlo(self): calls.append('ehlo')
-        def starttls(self, context): assert context.check_hostname; calls.append('tls')
-        def login(self, *args): calls.append('login')
-        def send_message(self, message): calls.append(message); return {}
-    monkeypatch.setattr(mailer.smtplib, 'SMTP', SMTP)
+    class Application:
+        def __init__(self, client_id, authority, token_cache):
+            assert authority.endswith('/consumers')
+        def get_accounts(self): return [{'username': 'sender@outlook.com'}]
+        def acquire_token_silent(self, scopes, account):
+            assert scopes == ['https://graph.microsoft.com/Mail.Send']
+            return {'access_token': 'test-access-token'}
+    captured = {}
+    def post(url, **kwargs):
+        captured.update(url=url, **kwargs)
+        return SimpleNamespace(status_code=202)
+    monkeypatch.setattr(mailer.msal, 'PublicClientApplication', Application)
+    monkeypatch.setattr(mailer.requests, 'post', post)
     mailer.send('student@example.test', 'DEMO', 'Mock appointment', 'stable-job-id')
-    assert calls[:5] == ['connect', 'ehlo', 'tls', 'ehlo', 'login']
-    assert calls[-1]['Message-ID'] == '<stable-job-id@hokiecare.notifications>'
-    monkeypatch.setenv('SMTP_SECURITY', 'none')
+    assert captured['url'] == 'https://graph.microsoft.com/v1.0/me/sendMail'
+    assert captured['headers']['Authorization'] == 'Bearer test-access-token'
+    message = captured['json']['message']
+    assert message['toRecipients'][0]['emailAddress']['address'] == 'student@example.test'
+    assert message['internetMessageHeaders'][0]['value'] == 'stable-job-id'
+    assert captured['json']['saveToSentItems'] is True
+    assert captured['timeout'] == 20
+
+
+def test_graph_cache_is_encrypted_and_invalid_configuration_is_not_ready(monkeypatch, tmp_path):
+    key = Fernet.generate_key().decode()
+    path = tmp_path / 'token.bin'
+    cache = msal.SerializableTokenCache()
+    config = {'token_cache': path, 'token_key': key}
+    mailer.save_cache(cache, config)
+    assert path.read_bytes() != cache.serialize().encode()
+    assert mailer.load_cache(config).serialize() == cache.serialize()
+    monkeypatch.setenv('HOKIECARE_EMAIL_ENABLED', 'true')
+    monkeypatch.setenv('HOKIECARE_PUBLIC_ORIGIN', 'https://app.example.test')
+    monkeypatch.setenv('MS_GRAPH_CLIENT_ID', 'client-id')
+    monkeypatch.setenv('MS_GRAPH_TOKEN_KEY', 'not-a-fernet-key')
+    monkeypatch.setenv('MS_GRAPH_TOKEN_CACHE', str(path))
     assert mailer.ready() is False
+
+
+def test_graph_failure_does_not_expose_provider_response(monkeypatch, tmp_path):
+    token_key = Fernet.generate_key().decode()
+    token_file = tmp_path / 'cache.bin'
+    mailer.save_cache(msal.SerializableTokenCache(), {'token_cache': token_file, 'token_key': token_key})
+    for key, value in {'HOKIECARE_EMAIL_ENABLED': 'true', 'HOKIECARE_PUBLIC_ORIGIN': 'https://app.example.test',
+                       'MS_GRAPH_CLIENT_ID': '00000000-0000-0000-0000-000000000001',
+                       'MS_GRAPH_TOKEN_KEY': token_key, 'MS_GRAPH_TOKEN_CACHE': str(token_file)}.items():
+        monkeypatch.setenv(key, value)
+    class Application:
+        def __init__(self, *args, **kwargs): pass
+        def get_accounts(self): return [{}]
+        def acquire_token_silent(self, scopes, account): return {'access_token': 'secret-token'}
+    monkeypatch.setattr(mailer.msal, 'PublicClientApplication', Application)
+    monkeypatch.setattr(mailer.requests, 'post', lambda *args, **kwargs:
+                        SimpleNamespace(status_code=401, text='private account details and secret-token'))
+    with pytest.raises(RuntimeError) as error:
+        mailer.send('student@example.test', 'DEMO', 'Mock appointment', 'job-id')
+    assert str(error.value) == 'Microsoft Graph send failed with HTTP 401'

@@ -6,7 +6,7 @@ Latest user direction replaces hashing integration with real emails from a mock
 schedule. Only `hokiecare.mock_email_schedule` and
 `hokiecare.appointment_email_jobs` are used; no signup/verification or email-limit
 tables. See [Claude handover](APPOINTMENT_EMAIL_HANDOFF.md) for code, local preview,
-SMTP configuration, Outlook authentication gap, and live integration status.
+personal Outlook/Microsoft Graph authorization, and live integration status.
 No live Databricks tables were created or real emails sent by this work.
 
 ## Standalone keyed hashing — September 19

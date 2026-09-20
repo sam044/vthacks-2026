@@ -37,7 +37,7 @@ class Stop(b.StrictBody):
 
 def require_email():
     if not mailer.ready():
-        raise HTTPException(503, 'Email delivery is not configured yet. Connect SMTP before requesting emails.')
+        raise HTTPException(503, 'Email delivery is not configured yet. Connect the Outlook sender before requesting emails.')
 
 
 @router.get('/settings')
@@ -109,7 +109,7 @@ def message(row):
 
 
 def deliver_due(limit=100):
-    """Re-read the stored email/time/center combo immediately before SMTP."""
+    """Re-read the stored email/time/center combo immediately before Graph."""
     require_email()
     with b.database() as db:
         db.execute('BEGIN IMMEDIATE')
@@ -135,7 +135,7 @@ def deliver_due(limit=100):
                 continue
             db.execute("UPDATE appointment_email_jobs SET state='sending',lease_until=?,claim_token=?,attempts=attempts+1 WHERE id=?",
                        (now + 300, claim, job['id']))
-        # Do not hold the booking transaction lock over SMTP.
+        # Do not hold the booking transaction lock over the Microsoft Graph call.
         with b.database() as db:
             row = db.execute('''SELECT j.*,m.email,m.health_center,m.starts_at FROM appointment_email_jobs j
                 JOIN mock_email_schedule m ON m.id=j.schedule_id AND m.email=j.recipient_email

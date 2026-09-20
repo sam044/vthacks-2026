@@ -33,7 +33,7 @@ export function AppointmentEmails() {
     <p>Enter the email used in the mock appointment schedule. We’ll look up its health center and time, send a confirmation, and remind you 24 hours before.</p>
     <p className="booking-small">The appointment data is fictional. Emails go to your real inbox. Opening a provider link does not create or change these records.</p>
     {settings && <p className="booking-small">Schedule source: {settings.storage}.</p>}
-    {settings && !settings.enabled && <p role="status">Email delivery is not configured yet. Connect SMTP credentials to enable real emails.</p>}
+    {settings && !settings.enabled && <p role="status">Email delivery is not configured yet. Connect the Outlook sender to enable real emails.</p>}
     {error && <p role="alert">{error}</p>}
     {result ? <>
       <p role="status">{result.notice}</p>

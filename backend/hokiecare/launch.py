@@ -10,7 +10,9 @@ def main():
     if os.getuid() == 0:
         # Only the app-owned files in this named mount are touched, never recursive paths.
         os.chown(root, 10001, 10001)
-        for name in ('appointments.sqlite3', 'appointments.sqlite3-wal', 'appointments.sqlite3-shm', 'appointments.sqlite3-journal'):
+        for name in ('appointments.sqlite3', 'appointments.sqlite3-wal', 'appointments.sqlite3-shm',
+                     'appointments.sqlite3-journal', 'microsoft-graph-cache.bin',
+                     'microsoft-graph-cache.bin.tmp'):
             file = root / name
             if file.exists() and not file.is_symlink():
                 os.chown(file, 10001, 10001)
