@@ -615,7 +615,7 @@ test("insurance appears only for nonstudents, clears on Yes, and never makes a r
   } finally {await h.cleanup();}
 });
 
-test("bell toggles locally and email opens once per confirmation without requests",async()=>{
+test("bell reuses the email prompt without requests and booking email still opens once per confirmation",async()=>{
   const h=await setup();
   const container=document.createElement("div");document.body.append(container);
   const root=createRoot(container);
@@ -624,12 +624,26 @@ test("bell toggles locally and email opens once per confirmation without request
   try {
     const before=h.requests.length;
     await render(undefined);
-    const bell=container.querySelector(".alerts-bell"),dialog=container.querySelector("dialog");
+    const bell=container.querySelector(".alerts-bell"),[alertsDialog,dialog]=container.querySelectorAll("dialog");
     assert.equal(bell.getAttribute("aria-pressed"),"false");
     assert.equal(dialog.hasAttribute("open"),false);
     await act(async()=>bell.click());assert.equal(bell.getAttribute("aria-pressed"),"true");
-    assert.match(container.textContent,/Sign up for Alerts on incoming outbreaks/);
-    await act(async()=>bell.click());assert.equal(bell.getAttribute("aria-pressed"),"false");
+    assert.equal(alertsDialog.hasAttribute("open"),true);
+    assert.match(alertsDialog.textContent,/OUTBREAK ALERTS/);
+    assert.match(alertsDialog.textContent,/What’s your email/);
+    await act(async()=>{
+      const input=alertsDialog.querySelector('input');
+      Object.getOwnPropertyDescriptor(Object.getPrototypeOf(input),'value').set.call(input,'demo@example.com');
+      input.dispatchEvent(new window.Event('input',{bubbles:true}));
+      alertsDialog.querySelector('form').dispatchEvent(new window.Event('submit',{bubbles:true,cancelable:true}));
+    });
+    assert.equal(alertsDialog.hasAttribute('open'),false);
+    assert.equal(bell.getAttribute('aria-pressed'),'false');
+    await act(async()=>bell.click());
+    assert.equal(alertsDialog.hasAttribute('open'),true);
+    assert.equal(alertsDialog.querySelector('input').value,'');
+    await act(async()=>alertsDialog.querySelector('.booking-secondary').click());
+    assert.equal(alertsDialog.hasAttribute('open'),false);
     await render("confirmed-a");assert.equal(dialog.hasAttribute("open"),true);
     await act(async()=>dialog.querySelector("form").dispatchEvent(new window.Event("submit",{bubbles:true,cancelable:true})));
     assert.equal(dialog.hasAttribute("open"),false);
