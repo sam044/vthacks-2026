@@ -228,7 +228,7 @@ function ProviderAccess({ center }: { center: Center }) {
                 After opening the companion window, sign in, complete screening,
                 and search there. Then return here to read times. Final booking
                 stays in the portal. Live times stay in browser memory and are
-                not saved to the demo database.
+                not saved to the HokieCare database.
               </p>
               <p>
                 Developer preview for Chrome or Edge.{" "}
@@ -384,7 +384,7 @@ export function AppointmentPanel({ active }: { active: boolean }) {
       </div>
       <div className="agenda" hidden={b.tab !== "agenda"}>
         <p className="booking-small">
-          Private sample reservations for this browser. Records remain until 30
+          Private reservations for this browser. Records remain until 30
           days after the visit. Clearing cookies loses access.
         </p>
         {error && (
@@ -423,7 +423,7 @@ export function AppointmentPanel({ active }: { active: boolean }) {
               }
             >
               <span className="booking-badge">
-                Sample · {a.status === "reserved" ? "Reserved" : "Cancelled"}
+                {a.status === "reserved" ? "Reserved" : "Cancelled"}
               </span>
               <h3>
                 {serviceLabel(
@@ -435,7 +435,7 @@ export function AppointmentPanel({ active }: { active: boolean }) {
                 {fullTime(a.starts)} – {easternTime(a.ends)} Eastern
               </p>
               <p className="booking-small">
-                {a.booking_name && <>{a.booking_name} · </>}{a.center_name} · Not booked with the provider
+                {a.booking_name && <>{a.booking_name} · </>}{a.center_name}
               </p>
               {a.status === "reserved" && (
                 <div className="booking-actions">
@@ -452,7 +452,7 @@ export function AppointmentPanel({ active }: { active: boolean }) {
                     disabled={busy || b.busy}
                     onClick={() => setCancelId(a.id)}
                   >
-                    Cancel
+                    Cancel appointment
                   </button>
                   <button
                     onClick={() => {
@@ -476,7 +476,7 @@ export function AppointmentPanel({ active }: { active: boolean }) {
               )}
               {cancelId === a.id && (
                 <div className="cancel-review">
-                  <p>Cancel this sample reservation?</p>
+                  <p>Cancel this appointment?</p>
                   <button
                     className="booking-secondary"
                     disabled={busy}
@@ -512,7 +512,7 @@ export function AppointmentPanel({ active }: { active: boolean }) {
         <details className="calendar-info">
           <summary>Manage session data</summary>
           <p>
-            This deletes only this browser’s sample records and starts an empty
+            This deletes only this browser’s records and starts an empty
             session.
           </p>
           {deleting ? (
@@ -534,7 +534,7 @@ export function AppointmentPanel({ active }: { active: boolean }) {
                     window.dispatchEvent(
                       new Event("hokiecare-booking-changed"),
                     );
-                    setNotice("Your sample records were deleted.");
+                    setNotice("Your records were deleted.");
                   })
                 }
               >
@@ -544,7 +544,7 @@ export function AppointmentPanel({ active }: { active: boolean }) {
             </div>
           ) : (
             <button onClick={() => setDeleting(true)}>
-              Delete my sample records
+              Delete my records
             </button>
           )}
         </details>

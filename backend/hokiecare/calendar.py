@@ -110,10 +110,10 @@ def prepare_review(body: ProposalRequest,request: Request,intake_key=None):
         slot=s.resolve_slot(body.slot_id,db)
         if body.appointment_id:
             previous=b.get_appointment(db,owner,body.appointment_id)
-            if previous['status']!='reserved': raise HTTPException(409,'Only active demo appointments can be moved.')
+            if previous['status']!='reserved': raise HTTPException(409,'Only active appointments can be moved.')
         check_conflict(db,slot,owner,body.appointment_id or '')
         if db.execute('SELECT COUNT(*) FROM proposals WHERE owner=?',(owner,)).fetchone()[0]>=150:
-            raise HTTPException(429,'Demo review limit reached.')
+            raise HTTPException(429,'Appointment review limit reached.')
         db.execute('''INSERT OR IGNORE INTO slots(id,center_id,starts,ends,service_id,resource_id,version)
             VALUES (?,?,?,?,?,?,?)''',tuple(slot[k] for k in ['id','center_id','starts','ends','service_id','resource_id','version']))
         ident=secrets.token_urlsafe(24)
@@ -155,7 +155,7 @@ def confirm(ident:str,request:Request,response:Response):
                 db.execute('UPDATE appointments SET slot_id=? WHERE id=? AND owner=?',(slot['id'],result,owner))
             else:
                 if db.execute('SELECT COUNT(*) FROM appointments WHERE owner=?',(owner,)).fetchone()[0]>=50:
-                    raise HTTPException(429,'Demo appointment limit reached.')
+                    raise HTTPException(429,'Appointment limit reached.')
                 db.execute('INSERT INTO appointments(id,owner,slot_id,status,request_id,created_at) VALUES (?,?,?,?,?,?)',
                     (result,owner,slot['id'],'reserved',f'proposal-{ident}',datetime.now(timezone.utc).isoformat()))
         except sqlite3.IntegrityError:

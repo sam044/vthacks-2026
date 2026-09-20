@@ -124,7 +124,7 @@ const review = {
   result_id: null,
 };
 
-async function setup({ calendar = false, failConfirmation = false } = {}) {
+async function setup({ calendar = false, failConfirmation = false, confirmationGate } = {}) {
   const { window } = parseHTML(
     '<html><body><div id="root"></div></body></html>',
   );
@@ -194,6 +194,7 @@ async function setup({ calendar = false, failConfirmation = false } = {}) {
         revision: 1,
       };
     if (path.endsWith("/confirm")) {
+      if (confirmationGate) await confirmationGate;
       if (confirmFailures-- > 0) throw new TypeError("Network interrupted");
       records = [
         { ...slot, id: "appointment-a", slot_id: slot.id, status: "reserved" },
@@ -356,4 +357,61 @@ test("manual slot selection prefills intake instead of bypassing its required fi
     assert.equal(prefilling.id,slot.id);assert.equal(app.state.review,null);assert.equal(app.state.panel,null);
     assert.equal(app.requests.filter(r=>r.path==="/api/booking/proposals").length,0);
   }finally{window.removeEventListener("hokiecare-intake-prefill",listen);await app.cleanup();}
+});
+
+test("Home invalidates a pending review and restores defaults without deleting appointments", async () => {
+  const app = await setup();
+  try {
+    await act(async () => { app.state.adoptReview({...review,intake:true}); });
+    await act(async () => { await app.state.confirm(); });
+    await act(async () => { app.state.adoptReview({...review,id:'review-b',intake:true}); app.state.setPanel('calendar'); });
+    await act(async () => window.dispatchEvent(new Event('hokiecare-home-request')));
+    assert.equal(app.state.review,null);
+    assert.equal(app.state.saved,null);
+    assert.equal(app.state.panel,null);
+    assert.equal(app.state.selection.center_id,'schiffert');
+    assert.equal(app.state.selection.service_id,undefined);
+    assert.equal(app.state.resetVersion,1);
+    assert.equal(app.state.records.length,1);
+    assert.equal(sessionStorage.getItem('hokiecare-review-id'),null);
+    assert.ok(app.requests.some(r=>r.path==='/api/booking/proposals/review-b' && r.method==='DELETE'));
+    assert.ok(!app.requests.some(r=>r.path==='/api/booking/session' && r.method==='DELETE'));
+  } finally { await app.cleanup(); }
+});
+
+test("Home waits for an in-flight confirmation, then preserves its saved appointment", async () => {
+  let finish;
+  const confirmationGate = new Promise(resolve=>{finish=resolve});
+  const app = await setup({confirmationGate});
+  try {
+    await act(async () => app.state.adoptReview({...review,intake:true}));
+    let saving;
+    await act(async () => { saving=app.state.confirm(); });
+    await act(async () => window.dispatchEvent(new Event('hokiecare-home-request')));
+    assert.equal(app.state.resetVersion,0);
+    assert.equal(app.state.review.id,review.id);
+    await act(async () => {finish();await saving;});
+    assert.equal(app.state.resetVersion,1);
+    assert.equal(app.state.review,null);
+    assert.equal(app.state.records.length,1);
+    assert.equal(app.requests.filter(r=>r.path.endsWith('/confirm')).length,1);
+  } finally { await app.cleanup(); }
+});
+
+test("Home cannot discard an uncertain save; retry resolves it before starting fresh", async () => {
+  const app = await setup({failConfirmation:true});
+  try {
+    await act(async () => app.state.adoptReview({...review,intake:true}));
+    await act(async () => app.state.confirm());
+    await act(async () => window.dispatchEvent(new Event('hokiecare-home-request')));
+    assert.equal(app.state.resetVersion,0);
+    assert.equal(app.state.review.id,review.id);
+    assert.equal(app.state.uncertainSave,true);
+    assert.match(app.state.error,/check whether your appointment saved/);
+    await act(async () => app.state.confirm());
+    assert.equal(app.state.resetVersion,1);
+    assert.equal(app.state.review,null);
+    assert.equal(app.state.records.length,1);
+    assert.equal(app.state.uncertainSave,false);
+  } finally { await app.cleanup(); }
 });

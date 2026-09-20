@@ -1,5 +1,13 @@
 # Continuation notes
 
+## Cleaner appointment wording and fresh-request Home — September 19
+
+The required checkbox now reads **Confirm appointment lookup**. Care Assistant intake/results, calendar, agenda, review controls and displayed API messages use plain appointment wording. Model replies are instructed to explain service fit without repeated dataset qualifiers; a fallback handles responses that repeat them. Internal `demo` origins, schedule metadata, booking data and exported-calendar disclosures remain unchanged. No provider integration or database migration was added.
+
+The top-left logo resets only the care request: pending reviews are invalidated, stale inference/restoration responses are discarded, panels and calendar selections return to defaults, and focus/scroll return to the first field. Saved appointments, the ownership cookie and Health Intelligence filters/briefing drafts survive. A Home click during confirmation queues the reset; uncertain saves retain the same confirmation retry until resolved. Ordinary section switching still preserves intake answers.
+
+Validation before release: 12 frontend/companion checks and the TypeScript/Vite build passed, along with 35 calendar/intake tests and the additional response-wording regression. Coverage includes simultaneous slot claims, owner overlap, a half-hour buffer conflict, exact next-hour availability, failed rescheduling, Home with a pending review, Home during confirmation and uncertain-save recovery. Browser checks verified desktop layout, Home focus/scroll, retained Health Intelligence filter/draft, and a live-model response arriving after Home without restoring the discarded request. Production release evidence is added after deployment. Original Requirements remain unchanged.
+
 ## Guided intake and populated academic calendar — September 19
 
 The Care Assistant now uses a required scrollable intake form, one Databricks-grounded booking proposal, and an explicit confirmation. The existing Lakebase project contains 262 academic date rows, 12,488 active hourly slots with 30-minute visits/buffers, and 4,394 seeded fictional reservations. All six existing appointment records were preserved. User names remain owner-only, raw request text is not stored by the application, and visitor bookings now remain until 30 days after the appointment. See [implementation, data manifest and operations](GUIDED_INTAKE.md).

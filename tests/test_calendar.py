@@ -91,6 +91,25 @@ def test_same_time_different_resources_and_owner_overlap(clients):
     assert confirm(b,prepare(b,s2).json()).status_code==200
 
 
+def test_buffer_blocks_half_hour_but_allows_exact_next_hour(clients):
+    a,b=clients
+    slots=inventory(a)['slots']
+    first=slots[0]
+    assert confirm(a,prepare(a,first).json()).status_code==200
+    # A preserved or imported slot in the buffer must be rejected, even though
+    # the visible 30-minute visit has ended. The database is the slot authority.
+    with booking.database() as db:
+        row=dict(db.execute('SELECT * FROM slots WHERE id=?',(first['id'],)).fetchone())
+        row['id']='buffer-boundary-check'
+        for key in ('starts','ends','blocked_until'):
+            row[key]=(datetime.fromisoformat(row[key])+timedelta(minutes=30)).isoformat()
+        columns=list(row)
+        db.execute('INSERT INTO slots ('+','.join(columns)+') VALUES ('+','.join('?' for _ in columns)+')',tuple(row.values()))
+    assert prepare(b,row,key='buffer-check-123456').status_code==409
+    assert datetime.fromisoformat(slots[1]['starts'])==datetime.fromisoformat(first['blocked_until'])
+    assert confirm(a,prepare(a,slots[1],key='boundary-check-123456').json()).status_code==200
+
+
 def test_legacy_slot_coexists_and_database_guards_intervals(clients):
     a,b=clients
     day=next_day()
