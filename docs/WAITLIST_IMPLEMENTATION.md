@@ -2,6 +2,16 @@
 
 Implemented September 19–20, 2026 for the existing fictional appointment calendar.
 
+## Repeatable two-student demo
+
+1. In a regular browser window, book Schiffert Medical clinic, September 22, 2026, 10:00–10:30 AM Eastern (in person, current VT student). If that time is already taken by another session, it is already ready for the waitlist demonstration.
+2. Open HokieCare in a private/incognito window or a different browser. Another regular tab and a different entered name still share the original student session.
+3. Submit the same center/date/time preferences. The result displays “this time is taken, would you like to join the waitlist?” with **Yes, join waitlist** and **No, edit request**.
+4. No returns to the filled form without enrolling. Yes saves the displayed exact time and opens My waitlist. Reload, open My calendar → My waitlist, and verify the entry remains.
+5. For another run, leave only the test waitlist entry, or close all private windows and open a fresh private session. Keep the original booking in place. **Delete my records** removes the booking and therefore removes the conflict.
+
+Requesting a time overlapping your own appointment now displays “You already have an appointment at this time.” It does not create a duplicate waitlist membership or cancel your booking. Full intake-component tests cover this distinction, Yes, No, and mixed open/taken results.
+
 ## Student flow
 
 When the intake finds suitable services but every matching time is taken, its result offers up to five exact times with **Join waitlist**. You can also select a taken calendar time to **Join waitlist**. Joining opens My waitlist and never automatically books. A conflicting appointment already owned by this browser instead produces an explicit explanation and a link to My appointments. **My waitlist**, beside **My appointments**, shows only this browser's entries. Cancellation makes eligible entries available, and the Care Assistant displays a private offer banner. **Review appointment** prefills the required intake for that exact service/time. The existing Databricks service-fit check and explicit **Confirm appointment** remain required. Confirmation saves to the agenda and fulfills the entry atomically.
