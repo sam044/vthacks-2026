@@ -14,15 +14,18 @@ export function CareIntake({visible}:{visible:boolean}) {
   const b=useBooking();
   const [form,setForm]=useState<IntakeForm>(emptyIntake),[touched,setTouched]=useState<Record<string,boolean>>({});
   const [result,setResult]=useState<Result|null>(null),[loading,setLoading]=useState(false),[error,setError]=useState('');
+  const [waitlistTarget,setWaitlistTarget]=useState<(InventorySlot & {waitlist_id:string})|null>(null);
   const key=useRef<string|null>(null),sequence=useRef(0),locked=useRef(false),heading=useRef<HTMLHeadingElement>(null);
   const errors=intakeErrors(form), counseling=needsCounseling(form);
   const total=counseling?12:11, completed=total-Object.keys(errors).length;
   const busy=loading||b.busy;
   useEffect(()=>{ if(visible && (result||b.saved)) heading.current?.focus(); },[result,b.saved,visible]);
   useEffect(()=>{
-    const reset=()=>{sequence.current++;key.current=null;locked.current=false;setLoading(false);setForm(emptyIntake());setResult(null);setError('');setTouched({});};
+    const reset=()=>{sequence.current++;key.current=null;locked.current=false;setLoading(false);setForm(emptyIntake());setResult(null);setError('');setTouched({});setWaitlistTarget(null);};
     const prefill=(event:Event)=>{
-      const slot=(event as CustomEvent<InventorySlot>).detail;
+      const slot=(event as CustomEvent<InventorySlot & {waitlist_id?:string}>).detail;
+      sequence.current++;locked.current=false;setLoading(false);
+      setWaitlistTarget(slot.waitlist_id ? {...slot,waitlist_id:slot.waitlist_id} : null);
       const local=(value:string)=>new Intl.DateTimeFormat('en-GB',{timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value));
       key.current=null;setResult(null);setError('');
       setForm(f=>({...f,center:slot.center_id,support:slot.service_id.includes('counseling')?'counseling':slot.center_id==='wellness'||slot.service_id.includes('coaching')?'wellness':'physical',
@@ -50,7 +53,7 @@ export function CareIntake({visible}:{visible:boolean}) {
     try {
       await session();
       if(attempt!==sequence.current)return;
-      const next=await api<Result>('/api/assistant/intake','POST',{...form,booking_name:form.booking_name.trim(),description:form.description.trim(),
+      const next=await api<Result>(waitlistTarget ? `/api/booking/waitlist/${waitlistTarget.waitlist_id}/review` : '/api/assistant/intake','POST',{...form,booking_name:form.booking_name.trim(),description:form.description.trim(),
         counseling:counseling?form.counseling:null,request_id:key.current});
       if(attempt!==sequence.current){if(next.review)void api(`/api/booking/proposals/${next.review.id}`,'DELETE').catch(()=>{});return;}
       setResult(next);if(next.review)b.adoptReview(next.review);
@@ -70,6 +73,7 @@ export function CareIntake({visible}:{visible:boolean}) {
   return <section className="care-intake" aria-label="Appointment request">
     <header className="intake-welcome"><Brand large/><p className="care-eyebrow">A LITTLE LESS RUNAROUND</p><h1>Less runaround. More care.</h1><p>A few answers. One next step across VT’s five care options.</p></header>
     <nav className="intake-tools" aria-label="Care tools"><button disabled={busy} onClick={()=>{b.setPanel('calendar');}}><CalendarDays size={17}/>My calendar</button><button disabled={busy} onClick={()=>b.setPanel('directory')}><Compass size={17}/>Browse care options</button></nav>
+    {b.waitlist.some(w=>w.status==='available')&&<div className="waitlist-offer" role="status"><strong>A waitlisted time is available.</strong><button className="booking-secondary" disabled={busy} onClick={()=>{b.setPanel('calendar');b.setTab('waitlist');}}>View my waitlist</button></div>}
     <div className="intake-process" aria-label="Booking steps"><span className={!hasResult?'current':''}>1 <span>Your request</span></span><ArrowRight size={14}/><span className={hasResult&&!b.saved?'current':''}>2 <span>Review a match</span></span><ArrowRight size={14}/><span className={b.saved?'current':''}>3 <span>Confirm & save</span></span></div>
     {hasResult ? <div className="intake-result" aria-live="polite">
       <h2 ref={heading} tabIndex={-1}>{b.saved?'Appointment saved':result?.outcome==='urgent_support'?'Find immediate support':result?.outcome==='no_match'?'Let’s adjust your request':'A next step, picked for you'}</h2>
@@ -77,10 +81,11 @@ export function CareIntake({visible}:{visible:boolean}) {
         {result&&<p className="intake-answer">{result.review&&!b.review?"Your previous proposal is no longer active. Edit your answers to find another appointment.":result.answer}</p>}
         {!!result?.sources.length&&<details className="intake-sources"><summary>Why this recommendation? Sources</summary>{result.sources.map(x=><a key={x.url} href={x.url} target="_blank" rel="noreferrer">{x.name} ↗</a>)}</details>}
         {b.review?.intake&&<BookingReview onEdit={edit}/>}
-        {b.canReplaceReview&&b.review?.intake&&<button disabled={busy} className="booking-secondary" onClick={()=>{if(Object.keys(errors).length){edit();return;}key.current=null;void submit();}}>Find another appointment</button>}
+        {b.canReplaceReview&&b.review?.intake&&<button disabled={busy} className="booking-secondary" onClick={()=>{if(Object.keys(errors).length){edit();return;}key.current=null;void submit();}}>{waitlistTarget?'Check this time again':'Find another appointment'}</button>}
       </>}
-      {!b.review?.intake&&<button disabled={busy} className="booking-secondary" onClick={()=>{const fresh=!!b.saved;edit();if(fresh){setForm(emptyIntake());setTouched({});}}}>{b.saved?'Start another request':'Edit answers'}</button>}
+      {!b.review?.intake&&<button disabled={busy} className="booking-secondary" onClick={()=>{const fresh=!!b.saved;edit();if(fresh){setForm(emptyIntake());setTouched({});setWaitlistTarget(null);}}}>{b.saved?'Start another request':'Edit answers'}</button>}
     </div>:<form className="intake-form" noValidate onSubmit={e=>{e.preventDefault();void submit();}}>
+      {waitlistTarget&&<p className="waitlist-offer">Reviewing your waitlisted time: {fullTime(waitlistTarget.starts)} Eastern. Complete the required answers to check service fit. This time is not held.</p>}
       <div className="intake-form-heading"><div><h2>Let’s find your next step.</h2><p>All fields marked * are required.</p></div><span>{Math.max(0,completed)} / {total} complete</span></div>
       <progress value={Math.max(0,completed)} max={total} aria-label="Required answers completed"/>
       <fieldset disabled={busy}><legend><span>01</span> Tell us what you’re looking for</legend>

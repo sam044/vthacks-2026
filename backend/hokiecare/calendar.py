@@ -79,7 +79,8 @@ def proposal_view(db, owner, ident):
             'appointment_id':row['appointment_id'],'result_id':row['result_id'],
             'service_name':s.service(slot['service_id'])['name'],'origin':'demo',
             'booking_name':row['booking_name'], 'center_name':next(c['name'] for c in b.CENTERS if c['id']==slot['center_id']),
-            'intake':bool(row['intake_key']), 'notice':'Fictional reservation only. No provider is contacted.'}
+            'intake':bool(row['intake_key']), 'waitlist_id':row['waitlist_id'],
+            'notice':'Fictional reservation only. No provider is contacted.'}
 
 
 def check_conflict(db,slot,owner,exclude=''):
@@ -94,7 +95,7 @@ def prepare(body: ProposalRequest,request: Request):
     return prepare_review(body,request)
 
 
-def prepare_review(body: ProposalRequest,request: Request,intake_key=None):
+def prepare_review(body: ProposalRequest,request: Request,intake_key=None,waitlist_id=None):
     b.require_write(request)
     with b.database() as db:
         db.execute('BEGIN IMMEDIATE'); b.cleanup(db)
@@ -108,6 +109,10 @@ def prepare_review(body: ProposalRequest,request: Request,intake_key=None):
             return proposal_view(db,owner,old['id'])
         if body.version!=s.CONFIG['version']: raise HTTPException(409,'Schedule changed. Refresh availability.')
         slot=s.resolve_slot(body.slot_id,db)
+        if waitlist_id:
+            from .waitlist import review_target
+            target=review_target(db,owner,waitlist_id)
+            if target['id']!=slot['id']: raise HTTPException(409,'Waitlist time changed.')
         if body.appointment_id:
             previous=b.get_appointment(db,owner,body.appointment_id)
             if previous['status']!='reserved': raise HTTPException(409,'Only active appointments can be moved.')
@@ -122,7 +127,7 @@ def prepare_review(body: ProposalRequest,request: Request,intake_key=None):
              'reschedule' if body.appointment_id else 'book',body.appointment_id,
              previous['slot_id'] if body.appointment_id else None))
         name=body.booking_name.strip() or (previous['booking_name'] if body.appointment_id else '')
-        db.execute('UPDATE proposals SET booking_name=?,intake_key=? WHERE id=?', (name,intake_key,ident))
+        db.execute('UPDATE proposals SET booking_name=?,intake_key=?,waitlist_id=? WHERE id=?', (name,intake_key,waitlist_id,ident))
         return proposal_view(db,owner,ident)
 
 
@@ -145,6 +150,9 @@ def confirm(ident:str,request:Request,response:Response):
         if p['expires']<time.time() or p['version']!=s.CONFIG['version']:
             raise HTTPException(409,'Review expired. Select a time and review again.')
         slot=s.resolve_slot(p['slot_id'],db)
+        if p['waitlist_id']:
+            from .waitlist import review_target
+            review_target(db,owner,p['waitlist_id'])
         check_conflict(db,slot,owner,p['appointment_id'] or '')
         result=p['appointment_id'] or secrets.token_urlsafe(16)
         try:
@@ -166,6 +174,8 @@ def confirm(ident:str,request:Request,response:Response):
             db.execute('UPDATE appointments SET booking_name=? WHERE id=?',(p['booking_name'],result))
         b.renew_cookie(db,owner,request,response,expiry)
         db.execute('UPDATE proposals SET result_id=? WHERE id=?',(result,ident))
+        from .waitlist import reconcile
+        reconcile(db)
         return b.get_appointment(db,owner,result)
 
 
@@ -180,8 +190,8 @@ def discard(ident:str,request:Request):
 
 
 @router.get('/events')
-async def events(request:Request, service_id:str, cursor:int=0):
-    s.service(service_id)
+async def events(request:Request, service_id:str | None=None, cursor:int=0):
+    if service_id: s.service(service_id)
     try: cursor=max(cursor,int(request.headers.get('last-event-id','0')))
     except ValueError: raise HTTPException(422,'Invalid event cursor') from None
     async def stream():
@@ -191,6 +201,8 @@ async def events(request:Request, service_id:str, cursor:int=0):
             if await request.is_disconnected(): break
             def read():
                 with b.database() as db:
+                    if not service_id:
+                        return [dict(r) for r in db.execute('SELECT id,service_id,day,kind FROM outbox_events WHERE id>? ORDER BY id LIMIT 100',(cursor,)).fetchall()]
                     return [dict(r) for r in db.execute('SELECT id,service_id,day,kind FROM outbox_events WHERE service_id=? AND id>? ORDER BY id LIMIT 100',(service_id,cursor)).fetchall()]
             rows=await asyncio.to_thread(read)
             if rows:

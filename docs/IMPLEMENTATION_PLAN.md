@@ -1,5 +1,7 @@
 # HokieCare implementation plan
 
+**Exact-time waitlist:** [Implementation and operations](WAITLIST_IMPLEMENTATION.md) describe joining taken times, private cancellation offers, required intake, and atomic confirmation using the existing Lakebase calendar. Real provider waitlists remain unconnected. See `HANDOFF.md` for release evidence.
+
 **September 19 scheduling implementation:** Monthly service calendars, anonymous shared demo availability, owner-bound reviews, atomic rescheduling, a conversational Databricks booking flow and Lakebase storage are implemented. See [implementation and operations](CALENDAR_BOOKING_IMPLEMENTATION.md) and [final deployment evidence](HANDOFF.md). The user deferred real Schiffert completion until after the demo; other real provider adapters remain unconnected. Earlier planning-only statements below are historical.
 
 **Latest requested scheduling milestone:** [Shared calendars and booking-agent design](BOOKING_AGENT_NEXT_SESSION_DESIGN.md) and [next-session prompt](NEXT_SESSION_PROMPT.md) specify monthly availability, Databricks transactional persistence, conversational booking tools, and provider-confirmation sync. They supersede older scheduling scope below as a plan; none of those additional capabilities is claimed implemented by this documentation update.

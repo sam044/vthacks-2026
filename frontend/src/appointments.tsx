@@ -314,6 +314,8 @@ function ProviderAccess({ center }: { center: Center }) {
   );
 }
 
+import { MyWaitlist } from './waitlist';
+
 export function AppointmentPanel({ active }: { active: boolean }) {
   const b = useBooking(),
     center = b.centers.find((c) => c.id === b.selection.center_id);
@@ -349,7 +351,12 @@ export function AppointmentPanel({ active }: { active: boolean }) {
           My appointments{" "}
           <span>{b.records.filter((a) => a.status === "reserved").length}</span>
         </button>
+        <button aria-pressed={b.tab === "waitlist"} onClick={() => b.setTab("waitlist")}>
+          My waitlist <span>{b.waitlist.filter(w => w.status === "waiting" || w.status === "available").length}</span>
+        </button>
       </div>
+      {b.waitlistError && <p className="booking-error" role="alert">{b.waitlistError} <button onClick={() => void b.refreshWaitlist()}>Refresh waitlist</button></p>}
+      <div hidden={b.tab !== "waitlist"}><MyWaitlist /></div>
       {!b.ready && !b.error && <p role="status">Loading your calendar…</p>}
       {b.error && !b.review && (
         <p role="alert" className="booking-error">

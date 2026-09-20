@@ -124,7 +124,7 @@ const review = {
   result_id: null,
 };
 
-async function setup({ calendar = false, failConfirmation = false, confirmationGate } = {}) {
+async function setup({ calendar = false, failConfirmation = false, confirmationGate, waiting = [] } = {}) {
   const { window } = parseHTML(
     '<html><body><div id="root"></div></body></html>',
   );
@@ -133,6 +133,7 @@ async function setup({ calendar = false, failConfirmation = false, confirmationG
     document: window.document,
     HTMLElement: window.HTMLElement,
     Event: window.Event,
+    CustomEvent: window.CustomEvent,
     IS_REACT_ACT_ENVIRONMENT: true,
   });
   const storage = new Map();
@@ -184,6 +185,11 @@ async function setup({ calendar = false, failConfirmation = false, confirmationG
         ],
       };
     if (path === "/api/booking/appointments") data = { appointments: records };
+    if (path === "/api/booking/waitlist") {
+      if (options.method === "POST") waiting = [{ id: "waiting-a", slot, status: "waiting", service_name: "Medical clinic" }];
+      data = { entries: waiting, revision: 1 };
+    }
+    if (path === "/api/booking/waitlist/waiting-a" && options.method === "DELETE") waiting = [];
     if (path === "/api/booking/proposals") data = review;
     if (path.startsWith("/api/booking/availability"))
       data = {
@@ -233,6 +239,7 @@ async function setup({ calendar = false, failConfirmation = false, confirmationG
     requests,
     streams,
     timers,
+    setWaiting: (next) => { waiting = next; },
     render,
     cleanup: async () => {
       await act(async () => root.unmount());
@@ -241,6 +248,47 @@ async function setup({ calendar = false, failConfirmation = false, confirmationG
     },
   };
 }
+
+test("waitlist join, event recovery, private offer prefill and leaving", async () => {
+  const app = await setup();
+  try {
+    await act(async () => { await app.state.joinWaitlist(slot); });
+    assert.equal(app.state.tab, "waitlist");
+    assert.equal(app.state.waitlist[0].status, "waiting");
+    assert.equal(app.streams.filter(s => !s.closed).length, 1);
+    const offered = { id: "waiting-a", slot, status: "available", service_name: "Medical clinic" };
+    app.setWaiting([offered]);
+    await act(async () => { window.dispatchEvent(new Event("hokiecare-booking-changed")); });
+    assert.equal(app.state.waitlist[0].status, "available");
+    let prefill;
+    window.addEventListener("hokiecare-intake-prefill", e => { prefill = e.detail; }, { once: true });
+    await act(async () => { app.state.reviewWaitlist(offered); });
+    assert.equal(prefill.waitlist_id, "waiting-a");
+    assert.equal(prefill.id, slot.id);
+    assert.equal(app.state.review, null);
+    assert.equal(app.requests.filter(r => r.path.endsWith("/confirm")).length, 0);
+    await act(async () => { await app.state.leaveWaitlist("waiting-a"); });
+    assert.deepEqual(app.state.waitlist, []);
+    assert.equal(app.streams.filter(s => !s.closed).length, 0);
+    assert.equal(app.timers.size, 0);
+  } finally { await app.cleanup(); }
+});
+
+test("waitlist updates pause with the view and resume without losing membership", async () => {
+  const entry = { id: "waiting-a", slot, status: "waiting", service_name: "Medical clinic" };
+  const app = await setup({ waiting: [entry] });
+  try {
+    assert.equal(app.streams.filter(s => !s.closed).length, 1);
+    await app.render(false);
+    assert.equal(app.streams.filter(s => !s.closed).length, 0);
+    assert.equal(app.timers.size, 0);
+    app.setWaiting([{ ...entry, status: "available" }]);
+    await app.render(true);
+    assert.equal(app.state.waitlist[0].status, "available");
+    await act(async () => { window.dispatchEvent(new Event("hokiecare-home-request")); });
+    assert.equal(app.state.waitlist[0].id, entry.id);
+  } finally { await app.cleanup(); }
+});
 
 test("one shared review, duplicate confirmation guard, and immediate agenda refresh", async () => {
   const app = await setup();
