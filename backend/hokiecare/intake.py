@@ -269,7 +269,7 @@ def submit(body:Intake,request:Request):
                 if not any(x['url']==source['source_url'] for x in sources):
                     sources.append({'name':source['name'],'url':source['source_url']})
             return dict(outcome='choices',answer=result.explanation+' Choose the time that works for you.',
-                sources=sources,review=None,slots=matches,lookup_token=sign_lookup(owner,constraints),model=model)
+                sources=sources,review=None,slots=matches,waitlist_options=waiting[:5],lookup_token=sign_lookup(owner,constraints),model=model)
         for slot in sorted(matches,key=lambda x:(x['starts'],x['service_id']))[:10]:
             try:
                 review=cal.prepare_review(cal.ProposalRequest(slot_id=slot['id'],version=slot['version'],request_id=body.request_id,booking_name=body.booking_name),request,fingerprint,body.waitlist_id)

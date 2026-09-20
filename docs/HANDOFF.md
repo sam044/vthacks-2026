@@ -1,5 +1,11 @@
 # Continuation notes
 
+## Exact waitlist save replaces cosmetic success — September 20
+
+The user requested that Yes, join waitlist actually save the exact appointment. Removed the frontend shortcut that showed a generic prompt whenever any upcoming appointment existed; it had no slot ID and only set a local success flag. Intake now exposes actual taken slot choices (also alongside open slots), and each Yes button calls the existing waitlist API with that displayed slot ID, refreshes the saved entries and opens My waitlist. The prompt retains "this time is taken, would you like to join the waitlist?" and now shows the specific service/date/time. Errors remain visible; duplicate clicks use the existing idempotent owner/slot membership. An appointment already booked by the same browser is still a conflict, not a second waitlist entry. No database migration or new storage service.
+
+Validation: 37 intake/waitlist tests, the expanded mixed-open/taken regression, 18 frontend tests and build passed. A browser using the real local API and an isolated preview database clicked Yes for Medical clinic, September 22 at 9 AM, saw the exact entry in My waitlist, reloaded and verified that it remained. The model was stubbed in that local check; production verification follows deployment. Test membership was left afterward.
+
 ## Frontend waitlist copy correction — September 20
 
 The frontend-only waitlist decision now displays exactly "this time is taken, would you like to join the waitlist?" as its sole prompt, with the existing Yes/No buttons. The old title, existing-appointment explanation and duplicate question are omitted for this cosmetic path. Backend waitlist messages and behavior are unchanged.

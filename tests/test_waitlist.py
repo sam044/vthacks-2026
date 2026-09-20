@@ -87,6 +87,9 @@ def test_taken_time_from_intake_offers_join_instead_of_edit_only(client,monkeypa
     option=data['waitlist_options'][0]
     assert set(option)=={'id','starts','ends','service_id','center_id','version','state','service_name'}
     assert option['state']=='busy' and 'Join the waitlist' in data['answer']
+    mixed=c.post('/api/assistant/intake',headers=H,json={**body,'before':'17:00'}).json()
+    assert mixed['outcome']=='choices' and mixed['slots']
+    assert target['id'] in [x['id'] for x in mixed['waitlist_options']]
     assert listing(c)==[]  # Suggestions never enroll the student automatically.
     own=a.post('/api/assistant/intake',headers=H,json=body).json()
     assert not own.get('waitlist_options')  # An existing own visit still conflicts.

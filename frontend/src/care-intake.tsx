@@ -19,18 +19,17 @@ export function CareIntake({visible}:{visible:boolean}) {
   const [form,setForm]=useState<IntakeForm>(emptyIntake),[touched,setTouched]=useState<Record<string,boolean>>({});
   const [result,setResult]=useState<Result|null>(null),[loading,setLoading]=useState(false),[error,setError]=useState('');
   const [waitlistTarget,setWaitlistTarget]=useState<(InventorySlot & {waitlist_id:string})|null>(null);
-  const [demoWaitlistJoined,setDemoWaitlistJoined]=useState(false);
   const key=useRef<string|null>(null),sequence=useRef(0),locked=useRef(false),heading=useRef<HTMLHeadingElement>(null);
   const errors=intakeErrors(form), counseling=needsCounseling(form);
   const total=counseling?11:10, completed=total-Object.keys(errors).length;
   const busy=loading||b.busy;
   useEffect(()=>{ if(visible && (result||b.saved)) heading.current?.focus(); },[result,b.saved,visible]);
   useEffect(()=>{
-    const reset=()=>{sequence.current++;key.current=null;locked.current=false;setLoading(false);setForm(emptyIntake());setInsurance('');setShown(10);selectionKey.current=null;setResult(null);setError('');setTouched({});setWaitlistTarget(null);setDemoWaitlistJoined(false);};
+    const reset=()=>{sequence.current++;key.current=null;locked.current=false;setLoading(false);setForm(emptyIntake());setInsurance('');setShown(10);selectionKey.current=null;setResult(null);setError('');setTouched({});setWaitlistTarget(null);};
     const prefill=(event:Event)=>{
       const slot=(event as CustomEvent<InventorySlot & {waitlist_id?:string}>).detail;
       sequence.current++;locked.current=false;setLoading(false);
-      setDemoWaitlistJoined(false);
+
       setWaitlistTarget(slot.waitlist_id ? {...slot,waitlist_id:slot.waitlist_id} : null);
       const local=(value:string)=>new Intl.DateTimeFormat('en-GB',{timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value));
       key.current=null;setResult(null);setError('');
@@ -49,18 +48,12 @@ export function CareIntake({visible}:{visible:boolean}) {
     if(busy)return;
     if(!b.dismissReview())return;
     b.setSaved(null); setResult(null); setError('');key.current=null;
-    setDemoWaitlistJoined(false);
+
     requestAnimationFrame(()=>document.getElementById('booking_name')?.focus());
   }
   async function submit() {
     if(locked.current||b.busy||b.uncertainSave||Object.keys(errors).length)return;
-    setDemoWaitlistJoined(false);
-    if(!waitlistTarget && b.records.some(a=>a.status==='reserved' && new Date(a.ends).getTime()>Date.now())) {
-      if(!b.dismissReview())return;
-      b.setSaved(null);setError('');
-      setResult({outcome:'no_match',reason:'demo_waitlist',answer:'',sources:[],review:null});
-      return;
-    }
+
     locked.current=true;setLoading(true);setError('');b.setSaved(null);b.dismissReview();
     const attempt=++sequence.current;
     key.current ||= crypto.randomUUID();
@@ -129,19 +122,9 @@ export function CareIntake({visible}:{visible:boolean}) {
     {b.waitlist.some(w=>w.status==='available')&&<div className="waitlist-offer" role="status"><strong>A waitlisted time is available.</strong><button className="booking-secondary" disabled={busy} onClick={()=>{b.setPanel('calendar');b.setTab('waitlist');}}>View my waitlist</button></div>}
     <div className="intake-process" aria-label="Booking steps"><span className={!hasResult?'current':''}>1 <span>Your request</span></span><ArrowRight size={14}/><span className={hasResult&&!b.saved?'current':''}>2 <span>Choose a time</span></span><ArrowRight size={14}/><span className={b.saved?'current':''}>3 <span>Confirm & save</span></span></div>
     {hasResult ? <div className="intake-result" aria-live="polite">
-      <h2 ref={heading} tabIndex={-1}>{b.saved?'Appointment saved':result?.reason==='demo_waitlist'&&!demoWaitlistJoined?'this time is taken, would you like to join the waitlist?':['demo_waitlist','appointment_conflict'].includes(result?.reason||'')?'Join the waitlist':result?.outcome==='urgent_support'?'Find immediate support':!b.review&&!result?.slots?.length&&result?.waitlist_options?.length?'Join the waitlist for your time':result?.outcome==='no_match'?'Let’s adjust your request':b.review?'Review your appointment':'Choose your appointment time'}</h2>
+      <h2 ref={heading} tabIndex={-1}>{b.saved?'Appointment saved':result?.outcome==='urgent_support'?'Find immediate support':!b.review&&!result?.slots?.length&&result?.waitlist_options?.length?'this time is taken, would you like to join the waitlist?':result?.outcome==='no_match'?'Let’s adjust your request':b.review?'Review your appointment':'Choose your appointment time'}</h2>
       {b.saved?<><p><Check size={18}/> {b.saved.booking_name||form.booking_name} · {b.saved.center_name||b.saved.service_name}</p><p>{fullTime(b.saved.slot.starts)} Eastern · 30-minute visit</p><p>Saved in HokieCare.</p><button className="booking-primary" onClick={()=>{b.setPanel('calendar');b.setTab('agenda');}}>View my appointment</button></>:<>
-        {result&&result.reason!=='demo_waitlist'&&<p className="intake-answer">{result.review&&!b.review?"Your previous proposal is no longer active. Edit your answers to find another appointment.":result.answer}</p>}
-        {!b.review&& !result?.slots?.length && !!result?.waitlist_options?.length&&<WaitlistChoices options={result.waitlist_options}/>}
-        {['demo_waitlist','appointment_conflict'].includes(result?.reason||'')&&<div className="waitlist-decision">
-          {demoWaitlistJoined?<p className="waitlist-decision-success" role="status"><Check size={18}/> You joined the waitlist.</p>:<>
-            {result?.reason!=='demo_waitlist'&&<h3>Would you like to join the waitlist?</h3>}
-            <div className="waitlist-decision-actions">
-              <button className="booking-primary" onClick={()=>setDemoWaitlistJoined(true)}>Yes, join waitlist</button>
-              <button className="booking-secondary" onClick={edit}>No, edit request</button>
-            </div>
-          </>}
-        </div>}
+        {result&&(!result.waitlist_options?.length||!!result.slots?.length)&&<p className="intake-answer">{result.review&&!b.review?"Your previous proposal is no longer active. Edit your answers to find another appointment.":result.answer}</p>}
         {!!result?.sources.length&&<details className="intake-sources"><summary>Why this recommendation? Sources</summary>{result.sources.map(x=><a key={x.url} href={x.url} target="_blank" rel="noreferrer">{x.name} ↗</a>)}</details>}
         {!b.review&&!!result?.slots?.length&&<div className="intake-time-choices" aria-label="Available appointment times">
           {result.slots.slice(0,shown).map((slot,i,slots)=><div key={slot.id}>
@@ -150,11 +133,12 @@ export function CareIntake({visible}:{visible:boolean}) {
           </div>)}
           {shown<result.slots.length&&<button className="booking-secondary" disabled={busy} onClick={()=>setShown(n=>n+10)}>Show more times</button>}
         </div>}
+        {!b.review&&!!result?.waitlist_options?.length&&<WaitlistChoices options={result.waitlist_options} onEdit={edit} showPrompt={!!result.slots?.length}/>}
         {b.review?.intake&&<BookingReview onEdit={edit}/>}
         {result?.lookup_token&&b.review?.intake&&<button className="booking-secondary" disabled={busy||b.uncertainSave} onClick={()=>void refreshTimes()}>Back to available times</button>}
         {b.canReplaceReview&&b.review?.intake&&<button disabled={busy} className="booking-secondary" onClick={()=>{if(result?.lookup_token){void refreshTimes();return;}if(Object.keys(errors).length){edit();return;}key.current=null;void submit();}}>{waitlistTarget?'Check this time again':'Find another appointment'}</button>}
       </>}
-      {!b.review?.intake&&(!['demo_waitlist','appointment_conflict'].includes(result?.reason||'')||demoWaitlistJoined)&&<button disabled={busy} className="booking-secondary" onClick={()=>{const fresh=!!b.saved;edit();if(fresh){setForm(emptyIntake());setTouched({});setWaitlistTarget(null);}}}>{b.saved?'Start another request':'Edit answers'}</button>}
+      {!b.review?.intake&&(!result?.waitlist_options?.length||!!b.saved)&&<button disabled={busy} className="booking-secondary" onClick={()=>{const fresh=!!b.saved;edit();if(fresh){setForm(emptyIntake());setTouched({});setWaitlistTarget(null);}}}>{b.saved?'Start another request':'Edit answers'}</button>}
     </div>:<form className="intake-form" noValidate onSubmit={e=>{e.preventDefault();void submit();}}>
       {waitlistTarget&&<p className="waitlist-offer">Reviewing your waitlisted time: {fullTime(waitlistTarget.starts)} Eastern. Complete the required answers to check service fit. This time is not held.</p>}
       <div className="intake-form-heading"><div><h2>Let’s find your next step.</h2><p>All fields marked * are required.</p></div><span>{Math.max(0,completed)} / {total} complete</span></div>
