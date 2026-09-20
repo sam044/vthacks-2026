@@ -46,7 +46,7 @@ def db_client():
 async def security_headers(request: Request, call_next):
     # One process-wide bound avoids trusting caller-controlled forwarding headers.
     # Query cache + concurrency bound separately limit warehouse work.
-    if request.url.path in ("/api/services", "/api/trends", "/api/ready") or request.url.path.startswith(("/api/booking", "/api/assistant")):
+    if request.url.path in ("/api/services", "/api/trends", "/api/forecast", "/api/ready") or request.url.path.startswith(("/api/booking", "/api/assistant")):
         now = time.monotonic()
         with rate_lock:
             while requests_window and requests_window[0] < now - 60:
@@ -146,6 +146,57 @@ def trends(facility: Literal['Emergency Department', 'Urgent Care'] = 'Emergency
             "metric": "Percentage of visits diagnosed with COVID-19, influenza, or RSV",
             "latest": latest, "change_percentage_points": difference, "stale": stale,
             "limitations": "District surveillance is not VT student data or a forecast. Suppressed counts remain unavailable. Historical values may be revised."}
+
+
+FORECAST_VIEW = 'workspace.hokiecare.gold_new_river_forecast_latest'
+FORECAST_EVAL = 'workspace.hokiecare.gold_new_river_forecast_eval'
+forecast_retry_at = 0.0  # avoid re-querying a table that does not exist yet on every page view
+
+
+def forecast_from_databricks(facility):
+    """Latest forecast and its baseline scorecard, written by notebooks/new_river_forecast.py."""
+    rows, meta = query_data('forecast', f'SELECT * FROM {FORECAST_VIEW} ORDER BY facility, horizon_weeks LIMIT 100')
+    evals, _ = query_data('forecast_eval', f'''SELECT * FROM {FORECAST_EVAL}
+        WHERE generated_at = (SELECT MAX(generated_at) FROM {FORECAST_EVAL}) LIMIT 100''')
+    rows = [r for r in rows if r['facility'] == facility]
+    evals = [r for r in evals if r['facility'] == facility]
+    if not rows or not evals:
+        raise LookupError('forecast tables are empty')
+    first = rows[0]
+    def num(v):  # Delta can hold NaN for 'not applicable' (baselines have no interval); JSON cannot
+        return None if v is None or float(v) != float(v) else float(v)
+    forecast = [{'forecast_week': str(r['forecast_week']), 'horizon_weeks': int(r['horizon_weeks']),
+                 **{k: num(r[k]) for k in ('forecast_pct', 'lower_95', 'upper_95')}} for r in rows]
+    evaluation = [{k: (v if k == 'method' else num(v)) for k, v in r.items()
+                   if k in ('method', 'mae_1to8wk', 'rmse_1to8wk', 'mape_1to8wk', 'mae_1wk', 'interval_coverage_95')}
+                  for r in evals]
+    return {'forecast': forecast, 'evaluation': evaluation, 'model': first['model_spec'],
+            'trained_through': str(first['trained_through']), 'data': {**meta, 'source': 'Delta view ' + FORECAST_VIEW,
+            'mlflow_run_id': first['mlflow_run_id']}}
+
+
+@app.get('/api/forecast')
+def forecast(facility: Literal['Emergency Department', 'Urgent Care'] = 'Emergency Department'):
+    """8-week outlook of the combined respiratory percentage, with 95% bounds and the baseline comparison."""
+    global forecast_retry_at
+    result = None
+    if time.monotonic() >= forecast_retry_at:
+        try:
+            result = forecast_from_databricks(facility)
+        except (HTTPException, LookupError):
+            forecast_retry_at = time.monotonic() + CACHE_SECONDS  # tables not written yet: use the snapshot for a while
+    if result is None:
+        from .forecast_snapshot import SNAPSHOT
+        item = SNAPSHOT['facilities'][facility]
+        result = {'forecast': item['forecast'], 'model': item['model'], 'trained_through': item['trained_through'],
+                  'evaluation': [{k: r.get(k) for k in ('method', 'mae_1to8wk', 'rmse_1to8wk', 'mape_1to8wk', 'mae_1wk',
+                                                        'interval_coverage_95')} for r in item['evaluation']],
+                  'data': {'mode': 'snapshot', 'source': SNAPSHOT['source'], 'generated_at': SNAPSHOT['generated_at']}}
+    return {**result, 'facility': facility, 'geography': 'New River Health District, Virginia',
+            'metric': 'Percentage of visits diagnosed with COVID-19, influenza, or RSV',
+            'holdout_weeks': 30, 'horizon_weeks': 8,
+            'limitations': 'A statistical projection from district-level history, not VT student data and not medical advice. '
+                           'Intervals are wide; use the direction and the range, not a single number.'}
 
 
 static = Path(os.environ.get('HOKIECARE_STATIC_DIR', str(Path(__file__).resolve().parents[2] / 'frontend/dist')))

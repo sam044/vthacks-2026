@@ -22,7 +22,9 @@ import {
   Accessibility,
 } from "lucide-react";
 import {
+  Area,
   CartesianGrid,
+  ComposedChart,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -364,6 +366,185 @@ function Briefing({ data }: { data: Trends }) {
   );
 }
 
+type ForecastRow = {
+  forecast_week: string;
+  horizon_weeks: number;
+  forecast_pct: number | null;
+  lower_95: number | null;
+  upper_95: number | null;
+};
+type EvalRow = {
+  method: string;
+  mae_1to8wk: number | null;
+  rmse_1to8wk: number | null;
+  mae_1wk: number | null;
+  interval_coverage_95?: number | null;
+};
+type Forecast = {
+  forecast: ForecastRow[];
+  evaluation: EvalRow[];
+  model: string;
+  trained_through: string;
+  facility: string;
+  holdout_weeks: number;
+  horizon_weeks: number;
+  limitations: string;
+  data: { mode: string; source?: string; generated_at?: string };
+};
+const methodLabel: Record<string, string> = {
+  naive_last_week: "Same as last week",
+  seasonal_naive_last_year: "Same week last year",
+  sarima: "SARIMA forecast model",
+};
+
+// Plain-language verdict, computed from the held-out scorecard (never hard-coded).
+function verdict(evaluation: EvalRow[]) {
+  const model = evaluation.find((e) => e.method === "sarima");
+  const baselines = evaluation.filter((e) => e.method !== "sarima");
+  if (!model || model.mae_1to8wk === null || baselines.length === 0) return null;
+  const beaten = baselines.filter(
+    (b) => b.mae_1to8wk !== null && model.mae_1to8wk! < b.mae_1to8wk,
+  );
+  const level =
+    beaten.length === baselines.length ? "good" : beaten.length ? "mixed" : "weak";
+  const names = beaten.map((b) => `“${methodLabel[b.method] ?? b.method}”`).join(" and ");
+  const text = {
+    good: "The model beat both simple baselines on weeks it never saw.",
+    mixed: `The model beat only ${names}, not every baseline. Treat this outlook as a rough guide.`,
+    weak: "The model did not beat the simple baselines. Treat this outlook with caution.",
+  }[level];
+  return { level, text };
+}
+
+function ForecastPanel({ facility, points }: { facility: string; points: Point[] }) {
+  const query = useApi<Forecast>(`/api/forecast?facility=${encodeURIComponent(facility)}`);
+  const f = query.data;
+  if (query.loading) return <Loading label="Building the 8-week outlook…" />;
+  if (query.error || !f) return <Failure message={query.error || "Forecast unavailable."} retry={query.retry} />;
+
+  const recent = points.filter((p) => p.combined_pct !== null).slice(-26);
+  const latest = recent[recent.length - 1];
+  const last = f.forecast[f.forecast.length - 1];
+  const peak = f.forecast.reduce((a, b) => ((b.forecast_pct ?? 0) > (a.forecast_pct ?? 0) ? b : a));
+  const delta = latest && last.forecast_pct !== null ? last.forecast_pct - (latest.combined_pct ?? 0) : null;
+  const direction = delta === null ? "Unavailable" : delta > 0.5 ? "Rising" : delta < -0.5 ? "Easing" : "Steady";
+  const v = verdict(f.evaluation);
+  const bestMae = Math.min(...f.evaluation.map((e) => e.mae_1to8wk ?? Infinity));
+
+  // Observed weeks and forecast weeks share one x-axis; the last observed point also starts the forecast line.
+  const series = [
+    ...recent.map((p, i) => ({
+      week: p.week,
+      observed: p.combined_pct,
+      forecast: i === recent.length - 1 ? p.combined_pct : null,
+      band: null as number[] | null,
+    })),
+    ...f.forecast.map((r) => ({
+      week: r.forecast_week,
+      observed: null as number | null,
+      forecast: r.forecast_pct,
+      band: [r.lower_95 ?? 0, r.upper_95 ?? 0] as number[] | null,
+    })),
+  ];
+  const short = (x: string) =>
+    new Date(x + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+  return (
+    <section className="forecast-card" aria-labelledby="forecast-title">
+      <div className="forecast-heading">
+        <div>
+          <p className="eyebrow">LOOKING AHEAD</p>
+          <h2 id="forecast-title">Next {f.horizon_weeks} weeks · {facility}</h2>
+          <p>
+            A statistical projection built from {facility.toLowerCase()} history since January 2020,
+            tested on the last {f.holdout_weeks} weeks it was not allowed to see.
+          </p>
+        </div>
+        <span className={`draft-badge forecast-badge ${f.data.mode}`}>
+          {f.data.mode === "snapshot" ? "Precomputed snapshot" : "Live from Delta"}
+        </span>
+      </div>
+      <div className="forecast-stats">
+        <div>
+          <span>Expected in {f.horizon_weeks} weeks</span>
+          <strong>{last.forecast_pct?.toFixed(1)}%</strong>
+          <small>95% range {last.lower_95?.toFixed(1)}–{last.upper_95?.toFixed(1)}% · week ending {short(last.forecast_week)}</small>
+        </div>
+        <div>
+          <span>Direction vs latest week</span>
+          <strong>{direction}</strong>
+          <small>Latest observed {latest?.combined_pct?.toFixed(1)}% · steady means within ±0.5 pp</small>
+        </div>
+        <div>
+          <span>Highest expected week</span>
+          <strong>{peak.forecast_pct?.toFixed(1)}%</strong>
+          <small>Week ending {short(peak.forecast_week)}</small>
+        </div>
+      </div>
+      <div
+        className="chart"
+        role="img"
+        aria-label={`Observed weekly percentages followed by an ${f.horizon_weeks}-week forecast with a 95 percent range.`}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={series} margin={{ top: 12, right: 16, left: -16, bottom: 10 }}>
+            <CartesianGrid vertical={false} stroke="#e8e4df" strokeDasharray="3 3" />
+            <XAxis dataKey="week" tickFormatter={short} minTickGap={40} axisLine={false} tickLine={false} tick={{ fill: "#77756e", fontSize: 11 }} />
+            <YAxis domain={[0, "auto"]} tickFormatter={(x) => `${x}%`} axisLine={false} tickLine={false} tick={{ fill: "#77756e", fontSize: 11 }} />
+            <Tooltip
+              labelFormatter={(x) => formatDate(String(x))}
+              formatter={(x) => (Array.isArray(x) ? `${Number(x[0]).toFixed(1)}–${Number(x[1]).toFixed(1)}%` : `${Number(x).toFixed(1)}%`)}
+              contentStyle={{ borderRadius: 12, border: "1px solid #e4dfd9" }}
+            />
+            <Area type="linear" dataKey="band" name="95% range" stroke="none" fill="#64253c" fillOpacity={0.13} isAnimationActive={false} />
+            <Line type="linear" dataKey="observed" name="Observed" stroke="#64253c" strokeWidth={3} dot={false} isAnimationActive={false} />
+            <Line type="linear" dataKey="forecast" name="Forecast" stroke="#d47b3f" strokeWidth={3} strokeDasharray="6 4" dot={{ r: 3 }} isAnimationActive={false} />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="chart-legend">
+        <span><i style={{ background: "#64253c" }} />Observed (last {recent.length} weeks)</span>
+        <span><i style={{ background: "#d47b3f" }} />Forecast</span>
+        <span><i style={{ background: "#64253c", opacity: 0.2 }} />95% range</span>
+      </div>
+      {v && (
+        <div className={`verdict ${v.level}`} role="status">
+          <strong>{v.level === "good" ? "Beats the baselines" : v.level === "mixed" ? "Mixed result" : "Does not beat the baselines"}</strong>
+          <span>{v.text}</span>
+        </div>
+      )}
+      <div className="table-scroll">
+        <table className="scorecard">
+          <caption>How wrong each method was on the last {f.holdout_weeks} weeks (percentage points; lower is better)</caption>
+          <thead>
+            <tr>
+              <th scope="col">Method</th>
+              <th scope="col">Average miss, 1–8 weeks ahead (MAE)</th>
+              <th scope="col">Typical large miss (RMSE)</th>
+              <th scope="col">Average miss, 1 week ahead</th>
+            </tr>
+          </thead>
+          <tbody>
+            {f.evaluation.map((e) => (
+              <tr key={e.method} className={e.method === "sarima" ? "model-row" : ""}>
+                <th scope="row">{methodLabel[e.method] ?? e.method}</th>
+                <td className={e.mae_1to8wk === bestMae ? "best" : ""}>{e.mae_1to8wk?.toFixed(2)}</td>
+                <td>{e.rmse_1to8wk?.toFixed(2)}</td>
+                <td>{e.mae_1wk?.toFixed(2)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="chart-note">
+        <Info size={15} />
+        {f.limitations} Percent error (MAPE) is left out here because weekly percentages near zero make it misleading; it is in the notebook.
+        Trained through {formatDate(f.trained_through)} · {f.model}.
+      </p>
+    </section>
+  );
+}
+
 function HealthIntelligence() {
   const [facility, setFacility] = useState("Emergency Department");
   const [weeks, setWeeks] = useState(52);
@@ -614,6 +795,7 @@ function HealthIntelligence() {
               </div>
             </details>
           </div>
+          <ForecastPanel key={facility} facility={facility} points={d.points} />
           <Evidence data={d.data} snapshot={d.latest.snapshot_id} />
           <Briefing key={`${facility}-${d.latest.week}`} data={d} />
         </>

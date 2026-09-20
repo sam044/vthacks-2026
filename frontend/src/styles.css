@@ -1155,3 +1155,32 @@ caption {
 .chart {
   overflow: hidden;
 }
+
+/* ---- 8-week forecast panel ---- */
+.forecast-card { margin: 22px 0; padding: 25px; background: #fffefa; border: 1px solid var(--border); border-radius: 11px; }
+.forecast-heading { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+.forecast-heading h2 { font-size: 22px; color: var(--maroon); font-weight: 500; margin: 4px 0 8px; }
+.forecast-heading p:not(.eyebrow) { font-size: 12px; color: var(--muted); max-width: 62ch; }
+.forecast-badge.live { background: #e8f1ee; color: #2f5f52; }
+.forecast-stats { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--border); border-radius: 11px; margin: 18px 0 4px; }
+.forecast-stats > div { padding: 20px 22px; display: flex; flex-direction: column; gap: 8px; }
+.forecast-stats > div + div { border-left: 1px solid var(--border); }
+.forecast-stats span { font-size: 11px; color: var(--muted); }
+.forecast-stats strong { font-size: 30px; color: var(--maroon); font-weight: 500; letter-spacing: -1px; }
+.forecast-stats small { font-size: 10px; color: #8a8073; }
+.verdict { display: flex; flex-direction: column; gap: 4px; margin: 16px 0; padding: 14px 16px; border-radius: 10px; border-left: 4px solid; font-size: 12px; }
+.verdict strong { font-size: 13px; }
+.verdict.good { background: #edf5f1; border-color: #54897c; }
+.verdict.mixed { background: #fbf3e6; border-color: #d47b3f; }
+.verdict.weak { background: #f8ebee; border-color: #64253c; }
+.scorecard { width: 100%; border-collapse: collapse; font-size: 12px; }
+.scorecard caption { text-align: left; font-size: 11px; color: var(--muted); padding-bottom: 8px; }
+.scorecard th, .scorecard td { padding: 10px 12px; border-top: 1px solid var(--border); text-align: left; }
+.scorecard thead th { font-size: 10px; color: var(--muted); font-weight: 600; }
+.scorecard tr.model-row { background: #faf6f3; }
+.scorecard td.best { color: #2f5f52; font-weight: 700; }
+@media (max-width: 760px) {
+  .forecast-stats { grid-template-columns: 1fr; }
+  .forecast-stats > div + div { border-left: 0; border-top: 1px solid var(--border); }
+  .forecast-heading { flex-direction: column; }
+}
