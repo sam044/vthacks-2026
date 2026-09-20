@@ -2,7 +2,7 @@
 
 ## Frontend-only waitlist prompt — September 20
 
-At the user's request, submitting another completed intake when My appointments already has an upcoming reserved appointment now immediately shows Would you like to join the waitlist? This is a frontend demonstration: it skips the intake API for that request, clicking only changes local React state to You joined the waitlist, and the UI labels the choice as not saved. Editing, Home, another request, or reloading resets it. Existing backend waitlist and booking data are unchanged; this prompt has no real enrollment, matching, persistence or notification behavior.
+At the user's request, submitting another completed intake when My appointments already has an upcoming reserved appointment now immediately shows Would you like to join the waitlist? This is a frontend demonstration: it skips the intake API for that request, clicking only changes local React state to You joined the waitlist, and the choice remains frontend-only. The prompt presents a separate question with Yes, join waitlist and No, edit request buttons. No returns to the form with answers preserved; the user requested removal of the demo/not-saved caption. Editing, Home, another request, or reloading resets it. Existing backend waitlist and booking data are unchanged; this prompt has no real enrollment, matching, persistence or notification behavior.
 
 
 ## Waitlist intake correction — September 20
