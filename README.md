@@ -152,6 +152,40 @@ flowchart TD
 
 The production Docker image serves the built frontend and API from one origin as a non-root process. Databricks credentials stay server-side, with a dedicated OAuth service principal for hosting. Developer authentication is separate from deployment authentication.
 
+## The math behind HokieCare
+
+Three simple equations explain how we evaluate Health Intelligence and protect appointment scheduling. These correspond to the implemented [forecasting code](notebooks/new_river_forecast.py) and [Lakebase overlap checks](backend/hokiecare/lakebase_visit_intervals_migration.sql).
+
+### 1. Measuring forecast error: Mean Absolute Error
+
+$$
+\mathrm{MAE} = \frac{1}{N}\sum_{i=1}^{N}\left|y_i-\hat{y}_i\right|
+$$
+
+Here, $y_i$ is an observed respiratory-visit percentage, $\hat{y}_i$ is its prediction, and $N$ is the number of evaluated predictions. We take each prediction's absolute error and average those errors, so overestimates and underestimates cannot cancel each other out. **Lower MAE means smaller average errors.** Because our target is a percentage, MAE is measured in **percentage points**: predicting 4% when the observation is 3% produces an absolute error of 1 percentage point.
+
+HokieCare uses this metric to compare SARIMA with both simple baselines over the held-out weeks. The pooled one- through eight-week evaluation includes 212 predictions per method per facility, rather than 212 distinct weeks. For Emergency Department forecasts, SARIMA scored **0.880 percentage points**, while the seasonal baseline scored **0.608**. That comparison tells us the simpler method was more accurate in this evaluation; a more complex model is not automatically better.
+
+### 2. Setting a meaningful benchmark: the seasonal baseline
+
+$$
+\hat{y}_{t+h} = y_{t+h-52}, \qquad h=1,\ldots,8
+$$
+
+Here, $t$ is the last observed week and $h$ is how many weeks ahead we predict. The baseline uses the observed value **52 weeks before the target week**. For example, the prediction four weeks ahead uses the observation at $t+4-52=t-48$.
+
+This gives our eight-week outlook a simple seasonal benchmark: does SARIMA improve on repeating last year's pattern? We also compare against a persistence baseline, which repeats the latest observed value for every horizon. These are evaluation benchmarks, not the SARIMA model's own equation. All baseline inputs come from history available at the forecast origin.
+
+### 3. Preventing conflicting reservations: interval overlap
+
+$$
+\operatorname{overlap}(A,B) = (s_A < e_B)\land(s_B < e_A)
+$$
+
+Here, $s_A$ and $e_A$ are appointment A's start and end times, and $s_B$ and $e_B$ are appointment B's. The $\land$ symbol means **both conditions must hold**: each appointment starts before the other ends.
+
+Our database checks this condition for reserved appointments that share the same scheduling resource or owner. A 9:00–9:30 appointment conflicts with a 9:15–9:45 appointment, but it can sit directly before a 9:30–10:00 appointment. The strict inequalities allow those back-to-back visits. Combined with transactional concurrency controls, the check prevents overlapping reservations even when users attempt to book at the same time.
+
 ## Privacy and engineering safeguards
 
 - Shared calendars and availability events expose busy/free state without publishing booking names or waitlist membership. Private records are bound to their owning browser session.
