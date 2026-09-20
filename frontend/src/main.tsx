@@ -34,6 +34,7 @@ import "./styles.css";
 import { useApi } from "./use-public-data";
 import { CareWorkspace } from "./care-workspace";
 import { Brand } from "./brand";
+import { AlertsBell } from "./cosmetic-controls";
 import "./care-workspace.css";
 
 type Meta = {
@@ -665,6 +666,7 @@ function AppShell() {
               <Activity size={17} />
               Health Intelligence
             </button>
+            <AlertsBell />
           </nav>
         </div>
       </header>

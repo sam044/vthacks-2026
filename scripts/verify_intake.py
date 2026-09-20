@@ -15,15 +15,20 @@ def verify(url):
         today=datetime.now(ZoneInfo('America/New_York')).date()
         body=dict(request_id=str(uuid.uuid4()),booking_name='Intake Verification Alias',support='physical',
           description='I would like a routine medical appointment for a sore throat.',center='schiffert',modality='in-person',
-          first_date=str(today+timedelta(days=1)),last_date=str(today+timedelta(days=14)),weekdays=[0,1,2,3,4],
+          first_date=str(today+timedelta(days=1)),last_date=str(today+timedelta(days=14)),
           after='09:00',before='17:00',student='yes',counseling=None,acknowledged=True)
         assert a.post('/api/assistant/intake',json={**body,'booking_name':' '}).status_code==422
         r=a.post('/api/assistant/intake',json=body);r.raise_for_status();result=r.json()
-        assert result['outcome']=='proposal',result
-        review=result['review'];slot=review['slot']
+        assert result['outcome']=='choices' and result['review'] is None,result
+        assert len(result['slots'])>1
+        choice=result['slots'][1]
+        selection=dict(lookup_token=result['lookup_token'],slot_id=choice['id'],version=choice['version'],request_id=str(uuid.uuid4()),booking_name=body['booking_name'])
+        r=a.post('/api/assistant/intake/select',json=selection);r.raise_for_status()
+        review=r.json()['review'];slot=review['slot']
+        assert slot['id']==choice['id']
         assert review['intake'] and review['booking_name']==body['booking_name']
         assert a.get('/api/booking/appointments').json()['appointments']==[]
-        repeat=a.post('/api/assistant/intake',json=body);repeat.raise_for_status()
+        repeat=a.post('/api/assistant/intake/select',json=selection);repeat.raise_for_status()
         assert repeat.json()['review']['id']==review['id']
         assert b.post('/api/booking/proposals/'+review['id']+'/confirm').status_code==404
         saved=a.post('/api/booking/proposals/'+review['id']+'/confirm');saved.raise_for_status()
@@ -43,7 +48,7 @@ def verify(url):
         a.post('/api/booking/appointments/'+appointment['id']+'/cancel').raise_for_status()
         refreshed=b.get('/api/booking/availability',params=params).json()
         assert next(x for x in refreshed['slots'] if x['id']==slot['id'])['state']=='available'
-        print('PASS: required validation, live Databricks model, automatic review, private name, explicit confirmation, idempotency, retention, same-browser restoration, shared calendar, cancellation.')
+        print('PASS: required validation, live Databricks model, available choices, explicit time selection, private name, explicit confirmation, idempotency, retention, same-browser restoration, shared calendar, cancellation.')
         print('Model:',result.get('model'),'Storage:',shared.json()['storage'])
     finally:
         for u in users:

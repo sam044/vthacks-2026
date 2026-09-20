@@ -1,4 +1,5 @@
-"""One validated intake -> grounded service selection -> one unconfirmed review."""
+"""Grounded intake -> available choices -> explicitly selected booking review."""
+import base64
 from datetime import date, datetime, timezone
 import hashlib
 import hmac
@@ -6,6 +7,7 @@ import json
 import logging
 import os
 import re
+import secrets
 import time
 import traceback
 from typing import Literal
@@ -15,6 +17,9 @@ from . import booking as b, scheduling as s, calendar as cal, conversation as c,
 
 router = APIRouter(prefix='/api/assistant/intake')
 SOURCE = {'cook':'cook','schiffert':'schiffert','timelycare':'timely-scheduled','wellness':'wellness','carilion':'carilion'}
+# The deployment runs one worker. Restarting expires lookups, not saved reviews.
+LOOKUP_KEY = secrets.token_bytes(32)
+LOOKUP_TTL = 900
 
 
 class Intake(b.StrictBody):
@@ -27,7 +32,7 @@ class Intake(b.StrictBody):
     modality: Literal['in-person','virtual','either']
     first_date: date
     last_date: date
-    weekdays: list[int] = Field(min_length=1,max_length=7)
+    weekdays: list[int] = Field(default_factory=lambda:list(range(7)),min_length=1,max_length=7)
     after: str = Field(pattern=r'^([01][0-9]|2[0-3]):[0-5][0-9]$')
     before: str = Field(pattern=r'^([01][0-9]|2[0-3]):[0-5][0-9]$')
     student: Literal['yes','no']
@@ -93,6 +98,97 @@ def no_match(reason,answer,sources=None):
     return dict(outcome='no_match',reason=reason,answer=answer,sources=sources or [],review=None)
 
 
+def inventory(owner, constraints, target=None):
+    matches, waiting, own_conflict = [], [], False
+    with b.database() as db:
+        for ident in constraints['service_ids']:
+            rows=db.execute('''SELECT s.*,EXISTS(
+                SELECT 1 FROM appointments a JOIN slots t ON t.id=a.slot_id
+                WHERE a.status='reserved' AND t.resource_id=s.resource_id
+                AND t.starts<s.ends AND t.ends>s.starts) AS occupied,
+                EXISTS(SELECT 1 FROM appointments a JOIN slots t ON t.id=a.slot_id
+                WHERE a.status='reserved' AND a.owner=?
+                AND t.starts<s.ends AND t.ends>s.starts) AS own_conflict
+              FROM slots s WHERE s.service_id=? AND s.active=1 AND s.version=?
+              AND s.local_date>=? AND s.local_date<=? AND s.starts>?
+              ORDER BY s.starts''',(owner,ident,s.CONFIG['version'],constraints['first_date'],
+                  constraints['last_date'],datetime.now(timezone.utc).isoformat())).fetchall()
+            for row in rows:
+                if target and row['id']!=target['id']: continue
+                start=datetime.fromisoformat(row['starts']).astimezone(s.TZ)
+                until=datetime.fromisoformat(row['ends']).astimezone(s.TZ)
+                if (start.weekday() not in constraints['weekdays'] or
+                    start.strftime('%H:%M')<constraints['after'] or until.strftime('%H:%M')>constraints['before']): continue
+                if row['own_conflict']:
+                    own_conflict=True
+                    continue
+                slot={k:row[k] for k in ('id','starts','ends','service_id','center_id','version')}
+                slot.update(state='busy' if row['occupied'] else 'available',service_name=s.service(ident)['name'])
+                (waiting if row['occupied'] else matches).append(slot)
+    return sorted(matches,key=lambda x:(x['starts'],x['service_id'])), sorted(waiting,key=lambda x:(x['starts'],x['service_id'])), own_conflict
+
+
+def sign_lookup(owner, constraints):
+    payload=base64.urlsafe_b64encode(json.dumps(dict(constraints,owner=owner,
+        expires=time.time()+LOOKUP_TTL,version=s.CONFIG['version']),separators=(',',':')).encode()).decode()
+    signature=hmac.new(LOOKUP_KEY,payload.encode(),hashlib.sha256).hexdigest()
+    return payload+'.'+signature
+
+
+class LookupRequest(b.StrictBody):
+    lookup_token: str = Field(min_length=1,max_length=8192)
+
+
+class SelectionRequest(LookupRequest):
+    slot_id: str = Field(min_length=1,max_length=200)
+    version: int
+    request_id: str = Field(min_length=16,max_length=64,pattern=r'^[a-zA-Z0-9-]+$')
+    booking_name: str = Field(min_length=1,max_length=80)
+
+
+def verify_lookup(token,request):
+    b.require_write(request)
+    with b.database() as db: owner=b.session_id(request,db)
+    try:
+        payload,signature=token.rsplit('.',1)
+        expected=hmac.new(LOOKUP_KEY,payload.encode(),hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(signature,expected): raise ValueError()
+        claims=json.loads(base64.urlsafe_b64decode(payload))
+        if claims['owner']!=owner: raise ValueError()
+        if claims['expires']<=time.time() or claims['version']!=s.CONFIG['version']: raise ValueError()
+    except (ValueError,KeyError,TypeError):
+        raise HTTPException(409,'Your search expired or changed. Find available times again.') from None
+    return owner,claims
+
+
+@router.post('/choices')
+def refresh_choices(body:LookupRequest,request:Request):
+    owner,claims=verify_lookup(body.lookup_token,request)
+    matches,waiting,conflict=inventory(owner,claims)
+    return dict(slots=matches,waitlist_options=waiting[:5],own_conflict=conflict)
+
+
+@router.post('/select')
+def select_time(body:SelectionRequest,request:Request):
+    owner,claims=verify_lookup(body.lookup_token,request)
+    name=body.booking_name.strip()
+    if not name: raise HTTPException(422,'Enter a name or alias.')
+    fingerprint=hmac.new(LOOKUP_KEY,(body.lookup_token+'\n'+name).encode(),hashlib.sha256).hexdigest()
+    # A lost response must retrieve the same review, including after confirmation.
+    with b.database() as db:
+        old=db.execute('SELECT * FROM proposals WHERE owner=? AND request_id=?',(owner,body.request_id)).fetchone()
+        if old:
+            if old['intake_key']!=fingerprint or old['slot_id']!=body.slot_id or old['version']!=body.version:
+                raise HTTPException(409,'Request key already belongs to another selection.')
+            return dict(review=cal.proposal_view(db,owner,old['id']))
+    matches,_,_=inventory(owner,claims)
+    if not any(x['id']==body.slot_id and x['version']==body.version for x in matches):
+        raise HTTPException(409,'That time is no longer available. Choose another available time.')
+    review=cal.prepare_review(cal.ProposalRequest(slot_id=body.slot_id,version=body.version,
+        request_id=body.request_id,booking_name=name),request,fingerprint)
+    return dict(review=review)
+
+
 @router.post('')
 def submit(body:Intake,request:Request):
     b.require_write(request)
@@ -145,7 +241,7 @@ def submit(body:Intake,request:Request):
           'For explicit immediate danger or emergency requests choose urgent_support with no service IDs. '
           'Explain the service match briefly using directory facts. Do not give dates, times, telephone numbers, URLs, or claim a reservation. '
           'Do not claim provider eligibility is verified: student status only qualifies the user for this SAMPLE intake. '
-          'The backend chooses a real stored SAMPLE slot, and the user must confirm it. These are fictional appointments. '
+          'The backend lists stored SAMPLE slots, and the user chooses a time and confirms it. These are fictional appointments. '
           'Sample modality is a scheduling constraint, not a claim that a provider only offers that modality. '
           'In the user-facing explanation, explain only the service fit. Do not repeat sample, fictional, demo, or provider-contact disclaimers. '
           'Never claim an external provider has received or confirmed an appointment. Saving happens only in HokieCare. '
@@ -163,32 +259,17 @@ def submit(body:Intake,request:Request):
             return dict(outcome='urgent_support',reason='urgent_support',answer='This request needs immediate support rather than a routine appointment. For an emergency, call 911. Use the urgent-help links for immediate support.',sources=sources,review=None)
         if result.outcome!='match' or not result.service_ids:
             return no_match('service_fit',result.explanation+' Edit your answers or browse the sourced care options.',sources)
-        matches=[]
-        waiting=[]
-        own_conflict=False
-        with b.database() as db:
-            for ident in dict.fromkeys(result.service_ids):
-                slots=db.execute('''SELECT s.*,EXISTS(
-                    SELECT 1 FROM appointments a JOIN slots t ON t.id=a.slot_id
-                    WHERE a.status='reserved' AND t.resource_id=s.resource_id
-                    AND t.starts<s.ends AND t.ends>s.starts) AS occupied,
-                    EXISTS(SELECT 1 FROM appointments a JOIN slots t ON t.id=a.slot_id
-                    WHERE a.status='reserved' AND a.owner=?
-                    AND t.starts<s.ends AND t.ends>s.starts) AS own_conflict
-                  FROM slots s WHERE s.service_id=? AND s.active=1 AND s.version=?
-                  AND s.local_date>=? AND s.local_date<=? AND s.starts>?
-                  ORDER BY s.starts''',(owner,ident,s.CONFIG['version'],str(body.first_date),str(body.last_date),datetime.now(timezone.utc).isoformat())).fetchall()
-                for row in slots:
-                    if target and row['id']!=target['id']: continue
-                    start=datetime.fromisoformat(row['starts']).astimezone(s.TZ)
-                    until=datetime.fromisoformat(row['ends']).astimezone(s.TZ)
-                    if start.weekday() in body.weekdays and body.after<=start.strftime('%H:%M') and until.strftime('%H:%M')<=body.before:
-                        if row['own_conflict']:
-                            own_conflict=True
-                            continue
-                        public_slot={k:row[k] for k in ('id','starts','ends','service_id','center_id','version')}
-                        public_slot['state']='busy' if row['occupied'] else 'available'
-                        (waiting if row['occupied'] else matches).append(public_slot)
+        constraints={k:v for k,v in body.model_dump(mode='json').items()
+                     if k in ('first_date','last_date','weekdays','after','before')}
+        constraints['service_ids']=list(dict.fromkeys(result.service_ids))
+        matches,waiting,own_conflict=inventory(owner,constraints,target)
+        if matches and not target:
+            for slot in matches:
+                source=source_map[SOURCE[slot['center_id']]]
+                if not any(x['url']==source['source_url'] for x in sources):
+                    sources.append({'name':source['name'],'url':source['source_url']})
+            return dict(outcome='choices',answer=result.explanation+' Choose the time that works for you.',
+                sources=sources,review=None,slots=matches,lookup_token=sign_lookup(owner,constraints),model=model)
         for slot in sorted(matches,key=lambda x:(x['starts'],x['service_id']))[:10]:
             try:
                 review=cal.prepare_review(cal.ProposalRequest(slot_id=slot['id'],version=slot['version'],request_id=body.request_id,booking_name=body.booking_name),request,fingerprint,body.waitlist_id)
@@ -204,7 +285,7 @@ def submit(body:Intake,request:Request):
                         waitlist_options=[{**slot,'service_name':s.service(slot['service_id'])['name']} for slot in options])
         if own_conflict and not target:
             return no_match('appointment_conflict','You already have an appointment during the matching times. View your appointments to cancel or reschedule it, or choose a different time. Tabs in this browser share the same student session.',sources)
-        return no_match('availability',('Your waitlisted time is unavailable or outside these preferences. Your waitlist entry is preserved.' if target else 'No suitable opening fits your dates, weekdays, and time window. Edit your answers to search again.'),sources)
+        return no_match('availability',('Your waitlisted time is unavailable or outside these preferences. Your waitlist entry is preserved.' if target else 'No suitable opening fits your dates and time window. Edit your answers to search again.'),sources)
     except HTTPException:
         raise
     except Exception as error:
