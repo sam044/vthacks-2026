@@ -31,25 +31,28 @@ export function CareIntake({visible}:{visible:boolean}) {
       requestAnimationFrame(()=>document.getElementById('booking_name')?.focus());
     };
     window.addEventListener('hokiecare-session-cleared',reset);
+    window.addEventListener('hokiecare-request-reset',reset);
     window.addEventListener('hokiecare-intake-prefill',prefill);
-    return()=>{window.removeEventListener('hokiecare-session-cleared',reset);window.removeEventListener('hokiecare-intake-prefill',prefill);};
+    return()=>{window.removeEventListener('hokiecare-session-cleared',reset);window.removeEventListener('hokiecare-request-reset',reset);window.removeEventListener('hokiecare-intake-prefill',prefill);};
   },[]);
   function update<K extends keyof IntakeForm>(name:K,value:IntakeForm[K]) {key.current=null;setForm(f=>({...f,[name]:value}));}
   function edit() {
     if(busy)return;
-    b.dismissReview(); b.setSaved(null); setResult(null); setError('');key.current=null;
+    if(!b.dismissReview())return;
+    b.setSaved(null); setResult(null); setError('');key.current=null;
     requestAnimationFrame(()=>document.getElementById('booking_name')?.focus());
   }
   async function submit() {
-    if(locked.current||b.busy||Object.keys(errors).length)return;
+    if(locked.current||b.busy||b.uncertainSave||Object.keys(errors).length)return;
     locked.current=true;setLoading(true);setError('');b.setSaved(null);b.dismissReview();
     const attempt=++sequence.current;
     key.current ||= crypto.randomUUID();
     try {
       await session();
+      if(attempt!==sequence.current)return;
       const next=await api<Result>('/api/assistant/intake','POST',{...form,booking_name:form.booking_name.trim(),description:form.description.trim(),
         counseling:counseling?form.counseling:null,request_id:key.current});
-      if(attempt!==sequence.current){if(next.review)void api(`/api/booking/proposals/${next.review.id}`,'DELETE');return;}
+      if(attempt!==sequence.current){if(next.review)void api(`/api/booking/proposals/${next.review.id}`,'DELETE').catch(()=>{});return;}
       setResult(next);if(next.review)b.adoptReview(next.review);
     }catch(e){if(attempt===sequence.current)setError((e as Error).message);}
     finally{if(attempt===sequence.current){locked.current=false;setLoading(false);}}
@@ -69,8 +72,8 @@ export function CareIntake({visible}:{visible:boolean}) {
     <nav className="intake-tools" aria-label="Care tools"><button disabled={busy} onClick={()=>{b.setPanel('calendar');}}><CalendarDays size={17}/>My calendar</button><button disabled={busy} onClick={()=>b.setPanel('directory')}><Compass size={17}/>Browse care options</button></nav>
     <div className="intake-process" aria-label="Booking steps"><span className={!hasResult?'current':''}>1 <span>Your request</span></span><ArrowRight size={14}/><span className={hasResult&&!b.saved?'current':''}>2 <span>Review a match</span></span><ArrowRight size={14}/><span className={b.saved?'current':''}>3 <span>Confirm & save</span></span></div>
     {hasResult ? <div className="intake-result" aria-live="polite">
-      <h2 ref={heading} tabIndex={-1}>{b.saved?'Your sample appointment is saved':result?.outcome==='urgent_support'?'Find immediate support':result?.outcome==='no_match'?'Let’s adjust your request':'A next step, picked for you'}</h2>
-      {b.saved?<><p><Check size={18}/> {b.saved.booking_name||form.booking_name} · {b.saved.center_name||b.saved.service_name}</p><p>{fullTime(b.saved.slot.starts)} Eastern · 30-minute visit</p><p>Saved in HokieCare. No provider was contacted.</p><button className="booking-primary" onClick={()=>{b.setPanel('calendar');b.setTab('agenda');}}>View my appointment</button></>:<>
+      <h2 ref={heading} tabIndex={-1}>{b.saved?'Appointment saved':result?.outcome==='urgent_support'?'Find immediate support':result?.outcome==='no_match'?'Let’s adjust your request':'A next step, picked for you'}</h2>
+      {b.saved?<><p><Check size={18}/> {b.saved.booking_name||form.booking_name} · {b.saved.center_name||b.saved.service_name}</p><p>{fullTime(b.saved.slot.starts)} Eastern · 30-minute visit</p><p>Saved in HokieCare.</p><button className="booking-primary" onClick={()=>{b.setPanel('calendar');b.setTab('agenda');}}>View my appointment</button></>:<>
         {result&&<p className="intake-answer">{result.review&&!b.review?"Your previous proposal is no longer active. Edit your answers to find another appointment.":result.answer}</p>}
         {!!result?.sources.length&&<details className="intake-sources"><summary>Why this recommendation? Sources</summary>{result.sources.map(x=><a key={x.url} href={x.url} target="_blank" rel="noreferrer">{x.name} ↗</a>)}</details>}
         {b.review?.intake&&<BookingReview onEdit={edit}/>}
@@ -100,12 +103,12 @@ export function CareIntake({visible}:{visible:boolean}) {
         <div className="intake-grid">{field('after','Available from (Eastern)',<input {...attributes('after')} type="time" value={form.after} onChange={e=>update('after',e.target.value)}/>)}
         {field('before','Available until (Eastern)',<input {...attributes('before')} type="time" value={form.before} onChange={e=>{update('before',e.target.value);setTouched(t=>({...t,hours:true}));}}/>)}</div>
         {touched.hours&&errors.hours&&<span className="field-error">{errors.hours}</span>}
-        <p className="intake-hint">Fall and spring 2026–27 only. Weekends, academic breaks, and summer are excluded from this sample calendar.</p>
+        <p className="intake-hint">Fall and spring 2026–27 only. Weekends, academic breaks, and summer are excluded from this calendar.</p>
       </fieldset>
-      <label className="intake-consent"><input type="checkbox" checked={form.acknowledged} disabled={busy} onChange={e=>update('acknowledged',e.target.checked)}/><span>I understand these are fictional appointments. Confirming saves a sample reservation in HokieCare; no provider is contacted. *</span></label>
+      <label className="intake-consent"><input type="checkbox" checked={form.acknowledged} disabled={busy} onChange={e=>update('acknowledged',e.target.checked)}/><span>Confirm appointment lookup</span></label>
       <div className="intake-submit"><p>{Object.keys(errors).length?`${Object.keys(errors).length} required answer${Object.keys(errors).length===1?'':'s'} remaining`:'Ready to find your appointment'}</p><button className="booking-primary" disabled={busy||!!Object.keys(errors).length} type="submit">{loading?<><LoaderCircle size={17} className="intake-spinner"/>Finding your appointment…</>:<>Find my appointment <ArrowRight size={17}/></>}</button></div>
     </form>}
-    {loading&&<p role="status" className="intake-status">Checking service fit and available sample times. Your appointment will only be saved after you confirm.</p>}
+    {loading&&<p role="status" className="intake-status">Checking service fit and available times. Your appointment will only be saved after you confirm.</p>}
     {error&&<div className="booking-error" role="alert">{error}{hasResult&&<button disabled={busy} onClick={()=>void submit()}>Retry</button>}</div>}
     <footer className="intake-footer"><p>Your name is private to this browser. Saved appointments remain until 30 days after the visit; clearing cookies loses access.</p><p>Need immediate support? <a href="https://ucc.vt.edu/emergency.html" target="_blank" rel="noreferrer">Urgent-help options ↗</a> · For an emergency, call 911.</p></footer>
   </section>;

@@ -44,9 +44,9 @@ def day_reason(s, day, now=None):
         return 'Schedule rules not reviewed for this date'
     for e in CONFIG['exceptions']:
         if (s['campus'] or s['id'] in e.get('services', [])) and e['from'] <= day.isoformat() < e['to']:
-            return e['label']
+            return e['label'].replace('sample schedule', 'schedule').replace('demo schedule', 'schedule')
     if not s['weekly'].get(str(day.weekday())):
-        return 'Closed in demo schedule'
+        return 'Closed in this schedule'
     return None
 
 

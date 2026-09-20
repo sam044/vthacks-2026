@@ -114,7 +114,7 @@ export const fullTime = (instant: string) =>
     dateStyle: "full",
     timeStyle: "short",
   }).format(new Date(instant));
-export const serviceLabel = (name: string) => name.replace(/\s+demo$/i, "");
+export const serviceLabel = (name: string) => name.replace(/\s+demo practice\s*\//i, " / ").replace(/\s+demo\b/gi, "").replace(/\s+/g, " ").trim();
 
 export async function prepareReview(
   slot: InventorySlot,

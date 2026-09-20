@@ -30,12 +30,12 @@ def form(**overrides):
         after='09:00',before='17:00',student='yes',counseling=None,acknowledged=True,**{}) | overrides
 
 
-def model(monkeypatch,service_ids=None,outcome='match'):
+def model(monkeypatch,service_ids=None,outcome='match',explanation='Schiffert offers campus medical appointment services.'):
     calls=[]
     def invoke(*args,**kwargs):
         calls.append(kwargs['body'])
         payload=dict(outcome=outcome,service_ids=service_ids if service_ids is not None else ['schiffert-medical'],
-                     source_ids=['schiffert'],explanation='Schiffert offers campus medical appointment services.')
+                     source_ids=['schiffert'],explanation=explanation)
         return {'choices':[{'message':{'tool_calls':[{'function':{'name':'intake_routing','arguments':json.dumps(payload)}}]}}]}
     monkeypatch.setattr(api,'services',lambda:{'services':json.loads(Path('data/contracts/services.json').read_text())})
     monkeypatch.setattr(api,'db_client',lambda:SimpleNamespace(api_client=SimpleNamespace(do=invoke)))
@@ -92,6 +92,16 @@ def test_earliest_candidate_tiebreak_and_decline(client,monkeypatch):
     assert client.delete('/api/booking/proposals/'+ident,headers=H).status_code==200
     assert client.post('/api/booking/proposals/'+ident+'/confirm',headers=H).status_code in (404,409)
     assert not client.get('/api/booking/appointments').json()['appointments']
+
+
+def test_intake_reply_omits_repeated_dataset_qualifiers(client,monkeypatch):
+    model(monkeypatch,explanation='Schiffert matches this fictional sample appointment request in the demo.')
+    response=client.post('/api/assistant/intake',headers=H,json=form())
+    assert response.status_code==200,response.text
+    result=response.json()
+    assert result['outcome']=='proposal'
+    assert all(word not in result['answer'].lower() for word in ('sample','fictional','demo'))
+    assert result['review']['origin']=='demo'  # presentation does not relabel underlying records
 
 
 @pytest.mark.parametrize('changes',[{'student':'no'},{'center':'cook','support':'physical','counseling':'none'},

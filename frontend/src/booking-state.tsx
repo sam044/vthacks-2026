@@ -21,26 +21,33 @@ import {
   type Navigation,
 } from "./api";
 
+const initialSelection = (): Navigation => ({
+  view: "appointments", category: "all", center_id: "schiffert",
+  mode: "demo", day: easternDate(),
+});
+
 function useBookingState(active: boolean) {
   const [panel, setPanel] = useState<"calendar" | "directory" | null>(null);
   const [tab, setTab] = useState<"calendar" | "agenda">("calendar");
-  const [selection, setSelection] = useState<Navigation>({
-    view: "appointments",
-    category: "all",
-    center_id: "schiffert",
-    mode: "demo",
-    day: easternDate(),
-  });
+  const [selection, setSelection] = useState<Navigation>(initialSelection);
   const [centers, setCenters] = useState<Center[]>([]),
     [services, setServices] = useState<Service[]>([]);
   const [records, setRecords] = useState<Appointment[]>([]),
     [ready, setReady] = useState(false),
     [error, setError] = useState("");
-  const [review, setReview] = useState<Review | null>(null),
+  const [review, setReviewState] = useState<Review | null>(null),
     [saved, setSaved] = useState<Review | null>(null);
   const [rescheduling, setRescheduling] = useState<Appointment | null>(null),
     [busy, setBusy] = useState(false);
   const [canReplaceReview, setCanReplaceReview] = useState(false);
+  const [resetVersion, setResetVersion] = useState(0);
+  const [uncertainSave, setUncertainSave] = useState(false);
+  const currentReview = useRef<Review | null>(null),
+    resetQueued = useRef(false), uncertain = useRef(false);
+  const setReview = useCallback((next: Review | null) => {
+    currentReview.current = next;
+    setReviewState(next);
+  }, []);
   const revision = useRef(0),
     locked = useRef(false),
     loaded = useRef(false),
@@ -53,6 +60,8 @@ function useBookingState(active: boolean) {
     if (request === refreshGeneration.current) setRecords(result.appointments);
   }, []);
   const initialize = useCallback(async () => {
+    const attempt = revision.current;
+    const restoredId = sessionStorage.getItem("hokiecare-review-id");
     try {
       await session();
       const catalog = await api<{ centers: Center[]; services: Service[] }>(
@@ -65,10 +74,18 @@ function useBookingState(active: boolean) {
       setError("");
       if (!loaded.current) {
         loaded.current = true;
-        const id = sessionStorage.getItem("hokiecare-review-id");
+        const id = restoredId;
         if (id) {
           try {
+            if (attempt !== revision.current) {
+              void api(`/api/booking/proposals/${id}`, "DELETE").catch(() => {});
+              return;
+            }
             const restored = await api<Review>(`/api/booking/proposals/${id}`);
+            if (attempt !== revision.current) {
+              void api(`/api/booking/proposals/${id}`, "DELETE").catch(() => {});
+              return;
+            }
             setReview(restored);
             setSelection((s) => ({
               ...s,
@@ -79,14 +96,14 @@ function useBookingState(active: boolean) {
             }));
             setPanel(restored.intake ? null : "calendar");
           } catch {
-            sessionStorage.removeItem("hokiecare-review-id");
+            if (attempt === revision.current) sessionStorage.removeItem("hokiecare-review-id");
           }
         }
       }
     } catch (e) {
       setError((e as Error).message);
     }
-  }, [refresh]);
+  }, [refresh, setReview]);
   useEffect(() => {
     void initialize();
   }, [initialize]);
@@ -99,26 +116,56 @@ function useBookingState(active: boolean) {
       window.removeEventListener("hokiecare-booking-changed", changed);
   }, [active, panel, ready, refresh]);
   const dismissReview = useCallback(() => {
-    if (locked.current) return;
+    if (locked.current || uncertain.current) return false;
     revision.current++;
-    if(review) void api(`/api/booking/proposals/${review.id}`, "DELETE").catch(() => setError("Could not dismiss the old review. It will expire automatically."));
+    const previous = currentReview.current;
+    if(previous) void api(`/api/booking/proposals/${previous.id}`, "DELETE").catch(() => setError("Could not dismiss the old review. It will expire automatically."));
     setReview(null);
     setError("");
     sessionStorage.removeItem("hokiecare-review-id");
     sessionStorage.removeItem("hokiecare-pending-review");
-  }, [review]);
+    return true;
+  }, [setReview]);
+  const resetRequest = useCallback(() => {
+    if (!dismissReview()) return;
+    resetQueued.current = false;
+    setSaved(null); setRescheduling(null); setCanReplaceReview(false);
+    setPanel(null); setTab("calendar"); setSelection(initialSelection());
+    setResetVersion(v => v + 1);
+    window.dispatchEvent(new Event("hokiecare-request-reset"));
+  }, [dismissReview]);
+  useEffect(() => {
+    const cleared = () => {
+      uncertain.current = false; setUncertainSave(false);
+      resetRequest();
+    };
+    window.addEventListener("hokiecare-session-cleared", cleared);
+    return () => window.removeEventListener("hokiecare-session-cleared", cleared);
+  }, [resetRequest]);
+  useEffect(() => {
+    const home = () => {
+      resetQueued.current = true;
+      if (locked.current) return;
+      if (uncertain.current) {
+        setError("We still need to check whether your appointment saved. Retry this confirmation before starting a new request.");
+        setPanel(currentReview.current?.intake ? null : "calendar");
+        return;
+      }
+      resetRequest();
+    };
+    window.addEventListener("hokiecare-home-request", home);
+    return () => window.removeEventListener("hokiecare-home-request", home);
+  }, [resetRequest]);
   const changeSelection = useCallback(
     (next: Partial<Navigation>) => {
-      if (locked.current) return;
-      dismissReview();
+      if (!dismissReview()) return;
       setSelection((s) => ({ ...s, ...next }));
     },
     [dismissReview],
   );
   const navigate = useCallback(
     (action: Navigation) => {
-      if (locked.current) return;
-      dismissReview();
+      if (!dismissReview()) return;
       setRescheduling(null);
       setSelection((s) => ({
         ...s,
@@ -133,7 +180,7 @@ function useBookingState(active: boolean) {
     [dismissReview],
   );
   async function selectSlot(slot: InventorySlot, appointmentId?: string) {
-    if (locked.current) return;
+    if (locked.current || uncertain.current) return;
     if (!appointmentId) {
       dismissReview();setSaved(null);setPanel(null);
       window.dispatchEvent(new CustomEvent("hokiecare-intake-prefill", {detail:slot}));
@@ -162,6 +209,7 @@ function useBookingState(active: boolean) {
     } finally {
       locked.current = false;
       setBusy(false);
+      if (resetQueued.current) resetRequest();
     }
   }
   function adoptReview(next: Review) {
@@ -177,6 +225,7 @@ function useBookingState(active: boolean) {
     setError("");
     try {
       await api(`/api/booking/proposals/${review.id}/confirm`, "POST");
+      uncertain.current = false; setUncertainSave(false);
       setSaved(review);
       setReview(null);
       setRescheduling(null);
@@ -185,14 +234,19 @@ function useBookingState(active: boolean) {
       sessionStorage.removeItem("hokiecare-pending-review");
       window.dispatchEvent(new Event("hokiecare-booking-changed"));
     } catch (e) {
-      setCanReplaceReview(e instanceof ApiError && (e.status === 409 || e.status === 404));
+      const replaceable = e instanceof ApiError && (e.status === 409 || e.status === 404);
+      uncertain.current = !(e instanceof ApiError && e.status < 500);
+      setUncertainSave(uncertain.current);
+      setCanReplaceReview(replaceable);
       setError((e as Error).message);
     } finally {
       locked.current = false;
       setBusy(false);
+      if (resetQueued.current && !uncertain.current) resetRequest();
     }
   }
   function beginReschedule(a: Appointment) {
+    if (locked.current || uncertain.current) return;
     changeSelection({
       center_id: a.center_id,
       service_id: a.service_id,
@@ -204,6 +258,8 @@ function useBookingState(active: boolean) {
   }
   return {
     active,
+    resetVersion,
+    uncertainSave,
     panel,
     setPanel,
     tab,

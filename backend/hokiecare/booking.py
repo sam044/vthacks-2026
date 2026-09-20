@@ -24,9 +24,9 @@ CENTERS = [
          booking_url='https://hokies.healthcenter.vt.edu/Home',
          note='Requires VT sign-in, Duo, and screening. The companion can read displayed times and select one. Finish and verify booking in the official portal.'),
     dict(id='cook', name='Cook Counseling Center', kind='demo', category='mental-health',
-         description='Try our complete appointment workflow with fictional Cook times.',
+         description='Explore counseling appointments through HokieCare.',
          source_url='https://ucc.vt.edu/appointment.html', booking_url=None,
-         note='Demo only. These reservations are not sent to Cook. Official scheduling is by phone.'),
+         note='Official Cook scheduling is by phone.'),
     dict(id='timelycare', name='TimelyCare', kind='external', category='mental-health',
          description='Human scheduled counseling and separate on-demand TalkNow support.',
          source_url='https://ucc.vt.edu/timelycare.html', booking_url='https://ucc.vt.edu/timelycare.html',
@@ -113,10 +113,10 @@ def require_write(request: Request):
 def session_id(request: Request, db):
     token = request.cookies.get(COOKIE, '')
     if not token or len(token) > 128:
-        raise HTTPException(401, 'Start a demo session to manage appointments.')
+        raise HTTPException(401, 'Start a session to manage appointments.')
     hashed = hashlib.sha256(token.encode()).hexdigest()
     if not db.execute("SELECT 1 FROM sessions WHERE id=? AND expires>? AND kind='visitor'", (hashed, time.time())).fetchone():
-        raise HTTPException(401, 'Your demo session expired. Start a new session.')
+        raise HTTPException(401, 'Your session expired. Start a new session.')
     return hashed
 
 
@@ -174,7 +174,7 @@ def start_session(request: Request, response: Response):
             pass
         # The global API limiter also bounds anonymous session creation.
         if db.execute("SELECT COUNT(*) FROM sessions WHERE kind='visitor'").fetchone()[0] >= 2000:
-            raise HTTPException(503, 'The demo is full. Please try again later.')
+            raise HTTPException(503, 'Appointment capacity has been reached. Please try again later.')
         token = secrets.token_urlsafe(32)
         db.execute('INSERT INTO sessions(id,expires) VALUES (?,?)', (hashlib.sha256(token.encode()).hexdigest(), time.time()+LIFETIME))
     response.set_cookie(COOKIE, token, max_age=LIFETIME, httponly=True, samesite='strict',
@@ -203,7 +203,7 @@ def publish_demo_times(body: DayRequest, request: Request):
     require_write(request)
     from .scheduling import day_reason, service
     if day_reason(service('cook-counseling'),body.day):
-        raise HTTPException(422,'Choose an open date in the academic-year sample calendar.')
+        raise HTTPException(422,'Choose an open date in the academic-year calendar.')
     with database() as db: session_id(request,db)
     return slots(body.day)
 
@@ -228,18 +228,18 @@ def reserve(body: ReserveRequest, request: Request, response: Response):
         from .calendar import validate_stored_slot
         validate_stored_slot(slot)
         if db.execute("SELECT COUNT(*) FROM appointments WHERE owner=?", (owner,)).fetchone()[0] >= 50:
-            raise HTTPException(429, 'This session has reached its demo appointment limit.')
+            raise HTTPException(429, 'This session has reached its appointment limit.')
         conflict = db.execute('''SELECT 1 FROM appointments a JOIN slots s ON a.slot_id=s.id
             WHERE a.owner=? AND a.status='reserved' AND s.starts<? AND COALESCE(s.blocked_until,s.ends)>?''',
             (owner, slot['blocked_until'], slot['starts'])).fetchone()
         if conflict:
-            raise HTTPException(409, 'You already have a demo appointment at this time.')
+            raise HTTPException(409, 'You already have an appointment at this time.')
         ident = secrets.token_urlsafe(16)
         try:
             db.execute('INSERT INTO appointments(id,owner,slot_id,status,request_id,created_at) VALUES (?,?,?,?,?,?)',
                        (ident, owner, body.slot_id, 'reserved', body.request_id, datetime.now(timezone.utc).isoformat()))
         except sqlite3.IntegrityError:
-            raise HTTPException(409, 'Another demo user reserved this time. Choose another slot.') from None
+            raise HTTPException(409, 'Another reservation took this time. Choose another slot.') from None
         expiry=(datetime.fromisoformat(slot['ends'])+timedelta(days=30)).timestamp()
         db.execute('UPDATE appointments SET retain_until=? WHERE id=?',(expiry,ident))
         renew_cookie(db,owner,request,response,expiry)

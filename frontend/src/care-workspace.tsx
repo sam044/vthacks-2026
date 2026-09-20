@@ -22,6 +22,15 @@ function WorkspaceBody({
   const [calendarVisited, setCalendarVisited] = useState(false),
     [directoryVisited, setDirectoryVisited] = useState(false);
   useEffect(() => {
+    if (!b.resetVersion) return;
+    setCalendarVisited(false); setDirectoryVisited(false);
+    const frame = requestAnimationFrame(() => {
+      document.getElementById("booking_name")?.focus({preventScroll:true});
+      window.scrollTo({top:0,behavior:"instant"});
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [b.resetVersion]);
+  useEffect(() => {
     const media = window.matchMedia("(max-width: 959px)");
     const changed = () => setCompact(media.matches);
     media.addEventListener("change", changed);

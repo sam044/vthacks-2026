@@ -30,7 +30,7 @@ export const shiftMonth = (month: string, amount: number) => {
 };
 
 export function BookingReview({onEdit}:{onEdit?:()=>void} = {}) {
-  const { review, confirm, dismissReview, busy, error } = useBooking();
+  const { review, confirm, dismissReview, busy, error, uncertainSave } = useBooking();
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     heading.current?.focus();
@@ -39,7 +39,7 @@ export function BookingReview({onEdit}:{onEdit?:()=>void} = {}) {
   return (
     <section className="booking-review" aria-label="Review appointment">
       <span className="booking-badge">
-        Sample appointment · not a provider booking
+        Appointment details
       </span>
       <h3 ref={heading} tabIndex={-1}>
         {review.operation === "reschedule"
@@ -52,13 +52,12 @@ export function BookingReview({onEdit}:{onEdit?:()=>void} = {}) {
         {fullTime(review.slot.starts)} – {easternTime(review.slot.ends)} Eastern
       </p>
       <p>
-        These are fictional times. Confirming saves a sample reservation in
-        HokieCare; no provider is contacted.
+        Confirm to save this appointment in HokieCare.
       </p>
       <details>
         <summary>Review details</summary>
         <p>
-          {review.notice} Reviews last two minutes. Availability is checked
+          Reviews last two minutes. Availability is checked
           again when you confirm.
         </p>
       </details>
@@ -75,11 +74,11 @@ export function BookingReview({onEdit}:{onEdit?:()=>void} = {}) {
           disabled={busy}
           onClick={() => void confirm()}
         >
-          {busy ? "Saving…" : "Confirm sample appointment"}
+          {busy ? "Saving…" : "Confirm appointment"}
         </button>
         <button
           className="booking-secondary"
-          disabled={busy}
+          disabled={busy || uncertainSave}
           onClick={onEdit || dismissReview}
         >
           {onEdit ? "Edit answers" : "Back to times"}
@@ -251,12 +250,12 @@ export function SharedCalendar({ active }: { active: boolean }) {
           aria-pressed={mode === "demo"}
           onClick={() => changeSelection({ mode: "demo" })}
         >
-          Sample calendar
+          Appointment calendar
         </button>
       </div>
       <p className="booking-context">
         {mode === "demo"
-          ? "Sample data · fictional times, not connected to providers."
+          ? "Your HokieCare appointment calendar."
           : "Provider availability is not connected. Use the official booking route above."}
       </p>
       {rescheduling && (
@@ -313,7 +312,7 @@ export function SharedCalendar({ active }: { active: boolean }) {
           const label =
             d.state === "not_connected"
               ? "Availability unknown"
-              : d.reason || d.available + " available sample start times";
+              : d.reason || d.available + " available start times";
           return (
             <button
               disabled={b.busy}
@@ -434,13 +433,13 @@ export function SharedCalendar({ active }: { active: boolean }) {
         <details className="calendar-info">
           <summary>Schedule and connection details</summary>
           <p className="booking-small">
-            Sample hours:{" "}
+            Scheduling hours:{" "}
             {service?.weekly[
               String((new Date(day + "T12:00:00Z").getUTCDay() + 6) % 7)
             ]
               ?.map((x) => x.join("–"))
               .join(", ") || "Closed"}
-            . {service?.hours_note} Each 30-minute visit includes a 30-minute buffer; starts are one hour apart.
+            . Each 30-minute visit includes a 30-minute buffer; starts are one hour apart.
           </p>
           <p className="booking-small">
             {live
@@ -449,12 +448,11 @@ export function SharedCalendar({ active }: { active: boolean }) {
             ·{" "}
             {data?.storage === "lakebase"
               ? "Saved in Databricks Lakebase"
-              : "Sample storage"}
+              : "Local storage"}
             {data && " · Refreshed " + easternTime(data.fetched_at)}
           </p>
           <p className="booking-small">
-            Academic breaks affect sample schedules only, not verified clinic
-            closures.
+            This calendar follows the academic-year scheduling policy. Check official sources for provider hours.
           </p>
         </details>
       )}

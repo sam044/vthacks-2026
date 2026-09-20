@@ -640,6 +640,7 @@ function AppShell() {
             onClick={(e) => {
               e.preventDefault();
               setView("care");
+              window.dispatchEvent(new Event("hokiecare-home-request"));
             }}
           >
             <Brand />
