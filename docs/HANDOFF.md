@@ -1,5 +1,9 @@
 # Continuation notes
 
+## Frontend waitlist copy correction — September 20
+
+The frontend-only waitlist decision now displays exactly "this time is taken, would you like to join the waitlist?" as its sole prompt, with the existing Yes/No buttons. The old title, existing-appointment explanation and duplicate question are omitted for this cosmetic path. Backend waitlist messages and behavior are unchanged.
+
 ## UI polish and user-chosen appointment times — September 20
 
 Normal intake now returns grounded service matches and chronologically sorted available times, without creating a proposal. The page shows ten choices initially, grouped by Eastern date, with Show more and Edit answers. Selecting a time creates the existing explicit-confirmation review; selection and confirmation recheck inventory. Conflicts refresh choices without substituting a time. Exact-time waitlist reviews and the frontend-only existing-appointment waitlist prompt retain their behavior.

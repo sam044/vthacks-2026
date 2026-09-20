@@ -58,7 +58,7 @@ export function CareIntake({visible}:{visible:boolean}) {
     if(!waitlistTarget && b.records.some(a=>a.status==='reserved' && new Date(a.ends).getTime()>Date.now())) {
       if(!b.dismissReview())return;
       b.setSaved(null);setError('');
-      setResult({outcome:'no_match',reason:'demo_waitlist',answer:'You already have an appointment in My appointments.',sources:[],review:null});
+      setResult({outcome:'no_match',reason:'demo_waitlist',answer:'',sources:[],review:null});
       return;
     }
     locked.current=true;setLoading(true);setError('');b.setSaved(null);b.dismissReview();
@@ -129,13 +129,13 @@ export function CareIntake({visible}:{visible:boolean}) {
     {b.waitlist.some(w=>w.status==='available')&&<div className="waitlist-offer" role="status"><strong>A waitlisted time is available.</strong><button className="booking-secondary" disabled={busy} onClick={()=>{b.setPanel('calendar');b.setTab('waitlist');}}>View my waitlist</button></div>}
     <div className="intake-process" aria-label="Booking steps"><span className={!hasResult?'current':''}>1 <span>Your request</span></span><ArrowRight size={14}/><span className={hasResult&&!b.saved?'current':''}>2 <span>Choose a time</span></span><ArrowRight size={14}/><span className={b.saved?'current':''}>3 <span>Confirm & save</span></span></div>
     {hasResult ? <div className="intake-result" aria-live="polite">
-      <h2 ref={heading} tabIndex={-1}>{b.saved?'Appointment saved':['demo_waitlist','appointment_conflict'].includes(result?.reason||'')?'Join the waitlist':result?.outcome==='urgent_support'?'Find immediate support':!b.review&&!result?.slots?.length&&result?.waitlist_options?.length?'Join the waitlist for your time':result?.outcome==='no_match'?'Let’s adjust your request':b.review?'Review your appointment':'Choose your appointment time'}</h2>
+      <h2 ref={heading} tabIndex={-1}>{b.saved?'Appointment saved':result?.reason==='demo_waitlist'&&!demoWaitlistJoined?'this time is taken, would you like to join the waitlist?':['demo_waitlist','appointment_conflict'].includes(result?.reason||'')?'Join the waitlist':result?.outcome==='urgent_support'?'Find immediate support':!b.review&&!result?.slots?.length&&result?.waitlist_options?.length?'Join the waitlist for your time':result?.outcome==='no_match'?'Let’s adjust your request':b.review?'Review your appointment':'Choose your appointment time'}</h2>
       {b.saved?<><p><Check size={18}/> {b.saved.booking_name||form.booking_name} · {b.saved.center_name||b.saved.service_name}</p><p>{fullTime(b.saved.slot.starts)} Eastern · 30-minute visit</p><p>Saved in HokieCare.</p><button className="booking-primary" onClick={()=>{b.setPanel('calendar');b.setTab('agenda');}}>View my appointment</button></>:<>
-        {result&&<p className="intake-answer">{result.review&&!b.review?"Your previous proposal is no longer active. Edit your answers to find another appointment.":result.answer}</p>}
+        {result&&result.reason!=='demo_waitlist'&&<p className="intake-answer">{result.review&&!b.review?"Your previous proposal is no longer active. Edit your answers to find another appointment.":result.answer}</p>}
         {!b.review&& !result?.slots?.length && !!result?.waitlist_options?.length&&<WaitlistChoices options={result.waitlist_options}/>}
         {['demo_waitlist','appointment_conflict'].includes(result?.reason||'')&&<div className="waitlist-decision">
           {demoWaitlistJoined?<p className="waitlist-decision-success" role="status"><Check size={18}/> You joined the waitlist.</p>:<>
-            <h3>Would you like to join the waitlist?</h3>
+            {result?.reason!=='demo_waitlist'&&<h3>Would you like to join the waitlist?</h3>}
             <div className="waitlist-decision-actions">
               <button className="booking-primary" onClick={()=>setDemoWaitlistJoined(true)}>Yes, join waitlist</button>
               <button className="booking-secondary" onClick={edit}>No, edit request</button>
