@@ -73,10 +73,10 @@ export function CareIntake({visible}:{visible:boolean}) {
     }catch(e){if(attempt===sequence.current)setError((e as Error).message);}
     finally{if(attempt===sequence.current){locked.current=false;setLoading(false);}}
   }
-  async function refreshTimes() {
+  async function refreshTimes(notice='') {
     if(!result?.lookup_token || busy || b.uncertainSave)return;
     if(!b.dismissReview())return;
-    setLoading(true);setError('');
+    setLoading(true);setError(notice);
     const attempt=++sequence.current;
     try {
       const next=await api<Pick<Result,'slots'|'waitlist_options'>>('/api/assistant/intake/choices','POST',{lookup_token:result.lookup_token});
@@ -86,6 +86,10 @@ export function CareIntake({visible}:{visible:boolean}) {
     }catch(e){if(attempt===sequence.current)setError((e as Error).message);}
     finally{if(attempt===sequence.current)setLoading(false);}
   }
+  useEffect(()=>{
+    if(b.canReplaceReview&&b.review?.intake&&result?.lookup_token&&!busy)
+      void refreshTimes('Your previous time could not be confirmed. Choose from the refreshed available times.');
+  },[b.canReplaceReview,b.review?.id,busy,result?.lookup_token]);
   async function selectTime(slot:InventorySlot) {
     if(locked.current||busy||b.uncertainSave||!result?.lookup_token)return;
     locked.current=true;setLoading(true);setError('');
