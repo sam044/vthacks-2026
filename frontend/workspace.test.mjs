@@ -482,10 +482,15 @@ test("taken-time intake result joins explicitly and opens My waitlist", async ()
   const app=await setup({choices:true});
   try {
     const button=document.querySelector("button");
-    assert.equal(button.textContent,"Join waitlist");
+    assert.equal(button.textContent,"Yes, join waitlist");
+    assert.match(document.body.textContent,/this time is taken, would you like to join the waitlist\?/);
     assert.equal(app.requests.filter(r=>r.path==="/api/booking/waitlist"&&r.method==="POST").length,0);
     await act(async()=>{button.click();});
     assert.equal(app.requests.filter(r=>r.path==="/api/booking/waitlist"&&r.method==="POST").length,1);
+    const savedRequest=app.requests.find(r=>r.path==="/api/booking/waitlist"&&r.method==="POST");
+    assert.equal(JSON.parse(savedRequest.body).slot_id,slot.id);
+    assert.equal(app.state.waitlist[0].slot.id,slot.id);
+    assert.equal(app.state.waitlist[0].slot.starts,slot.starts);
     assert.equal(app.state.tab,"waitlist");assert.equal(app.state.panel,"calendar");
     assert.equal(document.querySelector("button").textContent,"View my waitlist");
     await act(async()=>{document.querySelector("button").click();});
