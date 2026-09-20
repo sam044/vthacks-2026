@@ -6,7 +6,12 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { execFileSync } from "node:child_process";
 import { parseHTML } from "linkedom";
 import React, { act } from "react";
-import { createRoot } from "react-dom/client";
+// Initialize DOM event support before React DOM probes it. This lets form tests
+// exercise real input/change events instead of invoking component handlers.
+const bootstrapDOM = parseHTML('<html><body></body></html>');
+Object.assign(globalThis, { window: bootstrapDOM.window, document: bootstrapDOM.document });
+document.oninput = null;
+const { createRoot } = await import("react-dom/client");
 
 // Compile the real hooks/components in an ignored cache; no test-only code enters the app.
 const project = dirname(fileURLToPath(import.meta.url));
@@ -131,7 +136,7 @@ const review = {
   result_id: null,
 };
 
-async function setup({ intakeView = false, choices = false, calendar = false, failConfirmation = false, confirmationGate, waiting = [] } = {}) {
+async function setup({ intakeView = false, intakeResult, choices = false, calendar = false, failConfirmation = false, confirmationGate, waiting = [] } = {}) {
   const { window } = parseHTML(
     '<html><body><div id="root"></div></body></html>',
   );
@@ -180,6 +185,7 @@ async function setup({ intakeView = false, choices = false, calendar = false, fa
   globalThis.fetch = async (path, options = {}) => {
     requests.push({ path, method: options.method, body: options.body });
     let data = {};
+    if (path === "/api/assistant/intake") data = intakeResult;
     if (path === "/api/booking/catalog")
       data = {
         centers: [{ id: "cook", name: "Cook" }],
@@ -196,7 +202,7 @@ async function setup({ intakeView = false, choices = false, calendar = false, fa
       };
     if (path === "/api/booking/appointments") data = { appointments: records };
     if (path === "/api/booking/waitlist") {
-      if (options.method === "POST") waiting = [{ id: "waiting-a", slot, status: "waiting", service_name: "Medical clinic" }];
+      if (options.method === "POST") waiting = [{ id: "waiting-a", slot: intakeResult?.waitlist_options?.find(s => s.id === JSON.parse(options.body).slot_id) ?? slot, status: "waiting", service_name: "Medical clinic" }];
       data = { entries: waiting, revision: 1 };
     }
     if (path === "/api/booking/waitlist/waiting-a" && options.method === "DELETE") waiting = [];
@@ -497,6 +503,94 @@ test("taken-time intake result joins explicitly and opens My waitlist", async ()
     assert.equal(app.requests.filter(r=>r.path==="/api/booking/waitlist"&&r.method==="POST").length,1);
   } finally {await app.cleanup();}
 });
+
+const takenSchiffert = {
+  ...slot, id: "schiffert-sept22-10", center_id: "schiffert", service_id: "schiffert-medical",
+  starts: "2026-09-22T14:00:00Z", ends: "2026-09-22T14:30:00Z",
+  state: "busy", service_name: "Medical clinic",
+};
+const takenResult = {
+  outcome: "no_match", reason: "availability", review: null, sources: [],
+  answer: "Matching times are currently taken.", waitlist_options: [takenSchiffert],
+};
+
+async function submitConflictIntake() {
+  for (const [id, value] of Object.entries({
+    booking_name: "Waitlist Test", description: "I would like a routine medical appointment.",
+    support: "physical", center: "schiffert", modality: "in-person", student: "yes",
+    first_date: "2026-09-22", last_date: "2026-09-22", after: "10:00", before: "10:30",
+  })) {
+    await act(async () => {
+      const element = document.getElementById(id);
+      // Linkedom omits the browser's default input.type === "text".
+      if (element.tagName === "INPUT" && !element.type) element.type = "text";
+      if (element.tagName === "SELECT") {
+        Object.defineProperty(element, "value", { configurable: true, value });
+      } else {
+        const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(element), "value")?.set;
+        if (setter) setter.call(element, value); else element.value = value;
+      }
+      element.dispatchEvent(new window.Event(element.tagName === "SELECT" ? "change" : "input", { bubbles: true }));
+    });
+  }
+  await act(async () => {
+    const checkbox = document.querySelector('input[type="checkbox"]');
+    Object.defineProperty(checkbox, "checked", { configurable: true, writable: true, value: true });
+    checkbox.dispatchEvent(new window.Event("click", { bubbles: true }));
+  });
+  assert.equal(document.querySelector('button[type="submit"]').disabled, false, document.body.textContent);
+  await act(async () => document.querySelector(".intake-form").dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true })));
+}
+
+for (const scenario of ["yes", "no", "own", "mixed"]) {
+  test(`full intake conflict flow: ${scenario}`, async () => {
+    const RealDate = globalThis.Date;
+    globalThis.Date = class extends RealDate {
+      constructor(...args) { super(...(args.length ? args : ["2026-09-20T16:00:00Z"])); }
+      static now() { return new RealDate("2026-09-20T16:00:00Z").getTime(); }
+    };
+    const intakeResult = scenario === "own"
+      ? { outcome: "no_match", reason: "appointment_conflict", sources: [], review: null,
+          answer: "You already have an appointment during the matching times. Tabs in this browser share the same student session." }
+      : scenario === "mixed"
+        ? { ...takenResult, outcome: "choices", slots: [{ ...takenSchiffert, id: "open-slot", state: "available" }] }
+        : takenResult;
+    const app = await setup({ intakeView: true, intakeResult });
+    try {
+      await submitConflictIntake();
+      const sent = app.requests.find(r => r.path === "/api/assistant/intake");
+      assert.ok(sent);
+      assert.equal(JSON.parse(sent.body).after, "10:00");
+      assert.equal(JSON.parse(sent.body).before, "10:30");
+      assert.ok(!document.body.textContent.includes("Let’s adjust your request"));
+      const joins = () => app.requests.filter(r => r.path === "/api/booking/waitlist" && r.method === "POST");
+      assert.equal(joins().length, 0);
+      if (scenario === "own") {
+        assert.equal(document.querySelector(".intake-result h2").textContent, "You already have an appointment at this time.");
+        assert.ok(!document.body.textContent.includes("Yes, join waitlist"));
+        return;
+      }
+      assert.match(document.body.textContent, /this time is taken, would you like to join the waitlist\?/);
+      assert.match(document.body.textContent, /Medical clinic/);
+      const button = text => [...document.querySelectorAll("button")].find(b => b.textContent === text);
+      assert.ok(button("Yes, join waitlist"));
+      assert.ok(button("No, edit request"));
+      if (scenario === "yes") {
+        await act(async () => button("Yes, join waitlist").click());
+        assert.equal(joins().length, 1);
+        assert.equal(JSON.parse(joins()[0].body).slot_id, takenSchiffert.id);
+        assert.equal(app.state.waitlist[0].slot.starts, takenSchiffert.starts);
+        assert.equal(app.state.tab, "waitlist");
+      } else if (scenario === "no") {
+        await act(async () => button("No, edit request").click());
+        assert.ok(document.querySelector(".intake-form"));
+        assert.equal(document.getElementById("after").value, "10:00");
+        assert.equal(document.getElementById("before").value, "10:30");
+        assert.equal(joins().length, 0);
+      }
+    } finally { await app.cleanup(); globalThis.Date = RealDate; }
+  });
+}
 
 
 test("insurance appears only for nonstudents, clears on Yes, and never makes a request",async()=>{

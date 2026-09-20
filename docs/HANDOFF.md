@@ -1,5 +1,11 @@
 # Continuation notes
 
+## Waitlist demo and own-appointment heading — September 20
+
+The reported Schiffert September 22, 10:00–10:30 AM case used the same browser session as the first booking. Existing ownership checks correctly withheld a duplicate waitlist entry but displayed the generic “Let’s adjust your request” heading. The heading now says “You already have an appointment at this time.” The existing exact-time Yes/No waitlist remains connected for times occupied by other sessions. No API or database change. See the repeatable two-student demo in `WAITLIST_IMPLEMENTATION.md`; changing the entered name or opening another regular tab does not create another student.
+
+Local verification: 37 intake/waitlist backend tests, 22 frontend tests and production build passed. Four new full intake-component tests submit the actual form through DOM events and cover Yes saving the exact slot, No preserving inputs without enrollment, own conflict, and mixed open/taken results. Browser verification used the real local API/SQLite with stubbed model routing, two cookie-isolated hosts, and the exact September 22 10:00–10:30 AM request: first booking confirmed, own-conflict heading correct, second session Yes/No shown, No left My waitlist at zero, Yes saved the exact time, reload preserved membership. Hosted release verification is pending.
+
 ## Exact waitlist save replaces cosmetic success — September 20
 
 The user requested that Yes, join waitlist actually save the exact appointment. Removed the frontend shortcut that showed a generic prompt whenever any upcoming appointment existed; it had no slot ID and only set a local success flag. Intake now exposes actual taken slot choices (also alongside open slots), and each Yes button calls the existing waitlist API with that displayed slot ID, refreshes the saved entries and opens My waitlist. The prompt retains "this time is taken, would you like to join the waitlist?" and now shows the specific service/date/time. Errors remain visible; duplicate clicks use the existing idempotent owner/slot membership. An appointment already booked by the same browser is still a conflict, not a second waitlist entry. No database migration or new storage service.
