@@ -33,6 +33,7 @@ import {
 } from "recharts";
 import "./styles.css";
 import { AppointmentHub, CareAssistant, type Navigation } from "./appointments";
+import { StopAppointmentEmails } from "./appointment-emails";
 
 type Meta = {
   mode: "live" | "cached";
@@ -784,6 +785,7 @@ function App() {
         </div>
       </header>
       <main id="main">
+        <StopAppointmentEmails />
         {view === "care" ? (
           <FindCare initialCategory={destination.category} />
         ) : view === "appointments" ? (

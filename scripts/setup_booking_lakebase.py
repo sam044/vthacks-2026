@@ -30,6 +30,7 @@ def main():
     started=time.monotonic()
     with connect(w,w.current_user.me().user_name) as conn:
         conn.execute((ROOT/'backend/hokiecare/lakebase_schema.sql').read_text())
+        conn.execute((ROOT/'backend/hokiecare/email_schema.sql').read_text())
         conn.execute(sql.SQL('GRANT USAGE ON SCHEMA hokiecare TO {}').format(sql.Identifier(principal)))
         conn.execute(sql.SQL('GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA hokiecare TO {}').format(sql.Identifier(principal)))
         conn.execute(sql.SQL('GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA hokiecare TO {}').format(sql.Identifier(principal)))

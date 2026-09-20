@@ -5,6 +5,7 @@ import os
 from contextlib import contextmanager
 from functools import lru_cache
 import time
+from pathlib import Path
 
 _migration_lock = threading.Lock()
 
@@ -28,7 +29,12 @@ CREATE INDEX IF NOT EXISTS slot_intervals ON slots(resource_id,starts,ends);
 def migrate_sqlite(db):
     with _migration_lock:
         version = db.execute('PRAGMA user_version').fetchone()[0]
-        if version >= 4:
+        if version >= 5:
+            return
+        if version == 4:
+            db.execute('BEGIN IMMEDIATE')
+            migrate_email_tables(db)
+            db.commit()
             return
         # DDL is transactional; legacy IDs/times and sessions remain intact.
         db.execute('PRAGMA foreign_keys=OFF')
@@ -77,9 +83,16 @@ def migrate_sqlite(db):
             END''')
         if 'original_slot_id' not in {r['name'] for r in db.execute('PRAGMA table_info(proposals)')}:
             db.execute('ALTER TABLE proposals ADD COLUMN original_slot_id TEXT')
-        db.execute('PRAGMA user_version=4')
+        migrate_email_tables(db)
         db.commit()
         db.execute('PRAGMA foreign_keys=ON')
+
+
+def migrate_email_tables(db):
+    for statement in Path(__file__).with_name('email_schema.sql').read_text().split(';'):
+        if statement.strip():
+            db.execute(statement)
+    db.execute('PRAGMA user_version=5')
 
 
 class Record(dict):

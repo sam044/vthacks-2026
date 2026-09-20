@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import "./appointments.css";
 import { SharedCalendar } from "./calendar";
+import { AppointmentEmails } from "./appointment-emails";
 
 type Center = {
   id: string;
@@ -464,6 +465,7 @@ export function AppointmentHub({
                 Continue to {center.name} <ArrowUpRight size={16} />
               </a>
             )}
+            <AppointmentEmails />
             <SharedCalendar destination={destination?.center_id===centerId ? destination : undefined} centerId={centerId} records={records} onSaved={() => void refresh()}
               reschedule={rescheduling} onStopReschedule={() => setRescheduling(null)} />
           </div>
@@ -472,7 +474,7 @@ export function AppointmentHub({
             <h2>Your demo agenda</h2>
             <p className="booking-small">
               Private to this browser’s demo session. Records expire after 24
-              hours. No name or health details are collected.
+              hours. This agenda is separate from the mock email schedule.
             </p>
             {!records.length ? (
               <div className="agenda-empty">

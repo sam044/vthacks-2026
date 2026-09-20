@@ -1,6 +1,14 @@
 .booking-page {
   padding: 48px 0 72px;
 }
+.appointment-emails { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; }
+.appointment-emails summary { cursor: pointer; font-weight: 650; color: var(--maroon); }
+.appointment-emails form { display: grid; gap: 10px; margin: 16px 0; }
+.appointment-emails label { font-size: 13px; font-weight: 600; }
+.appointment-emails input:not([type="checkbox"]) { width: 100%; min-width: 0; border: 1px solid var(--border); border-radius: 8px; padding: 10px; background: white; }
+.appointment-emails .email-consent { display: flex; align-items: flex-start; gap: 8px; font-weight: 400; line-height: 1.5; }
+.email-consent input { margin-top: 4px; }
+.email-stop { max-width: 680px; margin: 24px auto; }
 .booking-heading {
   max-width: 700px;
   margin-bottom: 30px;
