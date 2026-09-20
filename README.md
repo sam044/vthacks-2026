@@ -1,8 +1,13 @@
 # HokieCare
 
-**One request. One personal care navigator. One clear path to care.**
+**Find care today. Understand the health trends ahead.**
 
-HokieCare brings campus care discovery, appointment coordination, and regional health intelligence into one application. Students describe the support they want and when they are available, compare relevant options, and explicitly confirm their chosen appointment. Healthcare professionals can explore sourced respiratory trends and prepare an editable briefing.
+HokieCare has two central parts: **Care Assistant**, which helps students navigate services and coordinate appointments, and **Health Intelligence**, which turns regional public-health history into an eight-week respiratory outlook. Together, they connect the immediate task of finding care with a forward-looking view of respiratory activity in the surrounding community.
+
+| Product pillar | What it does | Who it helps |
+| --- | --- | --- |
+| **1. Care Assistant — find and coordinate care** | Match a student's needs and schedule to relevant services, compare times, confirm a reservation, and manage cancellations or exact-time waitlists. | Students navigating campus and nearby care options. |
+| **2. Health Intelligence — understand what may come next** | Explore real respiratory trends and an **eight-week forecast**, with uncertainty bands and baseline comparisons, then prepare a sourced briefing. | Healthcare professionals and campus planners exploring regional conditions that may inform preparedness discussions. |
 
 Built at **VTHacks 14** for the **Deloitte × Databricks** student experience and **Impiricus** healthcare-professional engagement challenges.
 
@@ -32,9 +37,15 @@ Students encounter different entry points and service rules. [Cook publishes a p
 
 Our design addresses that navigation burden with one guided request, sourced explanations, comparable calendar choices, and an exact-time waitlist. The five-center appointment experience covers **Schiffert, Cook, TimelyCare, Carilion, and Hokie Wellness**. It demonstrates how coordination could work across those providers; their scheduling systems are not connected to our app.
 
-## What we built
+### The need for a forward-looking health picture
 
-### Care Assistant and appointment coordination
+Coordinating individual appointments addresses one part of access. Providers and campus planners also need a clear way to understand how respiratory activity is changing around them. Historical charts establish what has happened; an outlook makes the possible direction and uncertainty of the coming weeks visible.
+
+That is the purpose of HokieCare's second pillar, **Health Intelligence**. We use 350 weeks of real New River district observations to forecast the percentage of Emergency Department and Urgent Care visits associated with COVID-19, influenza, or RSV over the next eight weeks. The intended use is to support informed preparedness conversations. The regional percentage is not a count of future campus appointments, and the prototype does not make staffing decisions or issue outbreak alerts.
+
+## Two core product experiences
+
+### 1. Care Assistant: find and coordinate care
 
 1. **Describe the request.** Guided intake collects a name or alias, support needs, preferred center and modality, student eligibility, and a date/time window.
 2. **Find relevant services.** A Databricks-hosted language model interprets the request using sourced service context. Backend rules validate service fit, preferences, eligibility constraints, and dates.
@@ -45,14 +56,31 @@ Our design addresses that navigation burden with one guided request, sourced exp
 
 The backend also retains the conversational assistant API for grounded answers and booking actions. The current landing experience uses guided intake. TalkNow is an on-demand resource, not a reservable calendar service.
 
-### Health Intelligence for healthcare professionals
+### 2. Health Intelligence: eight-week respiratory forecasting
 
-- Explore **350 weeks of New River district respiratory surveillance**, with Emergency Department and Urgent Care series, disease filters, charts, and an accessible table.
-- Inspect source links, reporting dates, and data freshness alongside the results.
-- Edit and export a sourced briefing/resource card. This uses a deterministic template; it is not an AI-generated clinical recommendation or an automatically sent message.
-- View an **eight-week respiratory outlook** with 95% intervals and comparisons against simple forecasting baselines.
+The **Next 8 weeks** panel is the centerpiece of Health Intelligence. It brings a forward-looking regional respiratory outlook into the same product students use to navigate care.
 
-The forecast experiment uses SARIMA on regional respiratory-visit percentages. It does **not** predict individual illness, VT appointment demand, or no-shows. Its 30-week holdout evaluation was mixed: the seasonal baseline performed better for Emergency Department forecasts, and last week's value was best at the one-week horizon for both facilities. The API includes a precomputed snapshot generated from real data; the added Databricks notebook's MLflow logging and forecast-table writes remain unverified. See [forecast methods, results, and limitations](docs/FORECAST_SUMMARY.md).
+1. **Explore the regional history.** Switch between Emergency Department and Urgent Care observations, review 350 weeks of trends, and inspect disease-specific charts and an accessible table.
+2. **Look eight weeks ahead.** Summary tiles and a forecast chart show the projected combined respiratory-visit percentage and a **95% uncertainty band**.
+3. **Inspect the evidence.** A computed outlook summary and baseline scorecard put the projection in context. Source dates and the data-mode badge distinguish a precomputed snapshot from a Databricks-served forecast.
+4. **Prepare a briefing.** Review the evidence alongside relevant campus resources, then edit and export a sourced resource card. The card uses a deterministic template and is not automatically sent.
+
+#### How the forecast works
+
+The forecasting code fits **seasonal ARIMA (SARIMA)** models separately to the two facility series. It chooses among three fixed model candidates using only the first 320 training weeks, then evaluates one- through eight-week predictions across a **30-week holdout**, yielding 212 predictions per method per facility. Two simple baselines — last week's value and the same week last year — make the results interpretable. The selected model specification is refit on all 350 weeks to generate the eight-week outlook.
+
+The feature is implemented through **`GET /api/forecast`**, a React/Recharts outlook panel, and a reproducible forecast notebook. The API attempts to read the Databricks forecast views and falls back to a **clearly labeled precomputed snapshot** generated locally from the real New River data. The notebook includes MLflow logging and Delta publication code; that Databricks execution has not yet been verified. The forecast feature is implemented, while automated publication and refresh remain a deployment milestone.
+
+#### What the evaluation shows
+
+| Facility | SARIMA MAE, 1–8 weeks | Same-week-last-year MAE | Interpretation |
+| --- | --- | --- | --- |
+| Emergency Department | 0.880 percentage points | **0.608 percentage points** | The seasonal baseline performed better. |
+| Urgent Care | **1.836 percentage points** | 1.864 percentage points | SARIMA's advantage was small; it should not be treated as a decisive improvement. |
+
+Last week's value performed best at the one-week horizon for both facilities. The holdout excludes a winter peak, and prediction intervals are wide. We show these results so users can judge the outlook's uncertainty. Forecasts describe **regional respiratory-visit percentages**, not individual illness, VT appointment demand, or no-shows. See [full methods, results, and limitations](docs/FORECAST_SUMMARY.md).
+
+The two pillars complement each other: Care Assistant demonstrates how a person can reach an appropriate service, while Health Intelligence helps users explore the regional conditions around that care journey. Forecasts do not automatically change bookings or determine an individual's care.
 
 ### Official-provider handoff research
 
@@ -83,16 +111,22 @@ flowchart TD
     VDH[Public VDH surveillance] --> Import
     Import --> Volume[Unity Catalog source snapshots]
     Volume --> Delta[Delta tables and gold SQL views]
-    Browser[React and TypeScript web app] --> API[FastAPI on Railway]
+    Care[Care Assistant: matching and appointments] --> API[FastAPI on Railway]
+    Health[Health Intelligence: trends and eight-week outlook] --> API
     API --> SQL[Databricks SQL Statement Execution]
     SQL --> Delta
     API --> Model[Databricks hosted Qwen model]
     API --> Rules[Validated matching and booking rules]
     Rules --> Lakebase[Lakebase Postgres: simulated scheduling state]
     Lakebase --> Events[Availability events and SSE]
-    Events --> Browser
-    Snapshot[Precomputed SARIMA forecast snapshot] --> API
-    Notebook[Forecast notebook: Databricks execution pending] -.-> Delta
+    Events --> Care
+    History[Real New River historical snapshot] --> SARIMA[SARIMA and baseline evaluation]
+    SARIMA --> Snapshot[Eight-week forecast and 95% intervals]
+    Snapshot --> ForecastAPI[Forecast API: labeled snapshot fallback]
+    API --> ForecastAPI
+    ForecastAPI --> Health
+    Notebook[Forecast notebook: Databricks publication pending] -.-> Delta
+    ForecastAPI -.-> Delta
 ```
 
 ### Three implemented Databricks responsibilities
@@ -112,7 +146,7 @@ flowchart TD
 | Analytics and provenance | Databricks Unity Catalog, managed Volumes, Delta tables, SQL warehouse, Databricks Python SDK |
 | Language model | Qwen3-Next-80B-A3B-Instruct through Databricks Model Serving |
 | Scheduling persistence | Databricks Lakebase Postgres, Psycopg connection pooling; SQLite for local/test workflows |
-| Forecast experiment | Python, statsmodels SARIMA, baseline comparisons; notebook prepared for MLflow and Delta output |
+| Health Intelligence forecasting | Python, statsmodels SARIMA, eight-week forecasts, uncertainty intervals, rolling evaluation, Recharts; notebook prepared for MLflow and Delta output |
 | Simulation | Reproducible Python/Faker calendar and fictional-reservation generation |
 | Deployment and checks | Docker, Railway, GitHub Actions, pytest, Node test runner, TypeScript build checks |
 
@@ -134,7 +168,7 @@ The production Docker image serves the built frontend and API from one origin as
 2. **Replace simulated inventory with provider-backed availability.** Confirm booking, cancellation, rescheduling, and waitlist behavior against each provider's real system. A real appointment must have provider-issued confirmation.
 3. **Add institutional identity and appropriate data controls.** Implement durable authentication, consent, access permissions, retention, auditing, and the privacy/security review required by the participating institutions.
 4. **Pilot and measure.** Evaluate navigation completion, scheduling success, time to care, and canceled-slot reuse with authorized operational data and participating users.
-5. **Validate predictive and notification features.** Run and monitor the forecast pipeline, assess usefulness across seasons, and design opt-in alerts with clinical and operational partners. No-show prediction, exam-week demand prediction, and automatic campus alerts are future concepts, not delivered capabilities.
+5. **Operationalize Health Intelligence.** Build on the implemented eight-week outlook by verifying Databricks forecast publication, scheduling data/model refreshes, monitoring quality, and evaluating additional seasons with clinical and operational partners. Opt-in notifications, no-show prediction, exam-week demand prediction, and automatic campus alerts remain future work.
 
 The intended value is less effort for students to reach appropriate services and better visibility for providers. We have demonstrated the coordination workflow; we have not established measured improvements in real campus access, staffing utilization, or health outcomes. The architecture could later be adapted to other universities with their own provider agreements and service rules.
 
