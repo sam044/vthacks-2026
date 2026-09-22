@@ -2,6 +2,8 @@
 
 **Find care today. Understand the health trends ahead.**
 
+Devpost link ~ https://devpost.com/software/hokiecare
+
 HokieCare has two central parts: **Care Assistant**, which helps students navigate services and coordinate appointments, and **Health Intelligence**, which turns regional public-health history into an eight-week respiratory outlook. Together, they connect the immediate task of finding care with a forward-looking view of respiratory activity in the surrounding community.
 
 | Product pillar | What it does | Who it helps |
