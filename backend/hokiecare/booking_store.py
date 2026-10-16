@@ -152,13 +152,33 @@ def connection_pool():
                     row_factory=record_factory))
 
 
+class StorageUnavailable(Exception):
+    """Lakebase failed mid-request. reason is set when the connection itself was lost."""
+    def __init__(self,reason=None):
+        super().__init__(reason)
+        self.reason=reason
+
+
+class LakebaseUnavailable(Exception):
+    """No connection could be opened, so nothing in this request reached Lakebase."""
+
+
 @contextmanager
 def lakebase_database():
+    from contextlib import ExitStack
     from fastapi import HTTPException
     import psycopg
     from psycopg_pool import PoolTimeout
+    stack=ExitStack()
     try:
-        with connection_pool().connection() as conn:
+        conn=stack.enter_context(connection_pool().connection())
+    except Exception as error:
+        # Pool timeouts, expired OAuth credentials, a missing endpoint or unset PG* variables.
+        raise LakebaseUnavailable(type(error).__name__) from None
+    with stack:
+        try:
             yield PostgresConnection(conn)
-    except (psycopg.OperationalError,PoolTimeout):
-        raise HTTPException(503,'Appointment storage is temporarily unavailable. Retry the same review to check its result.') from None
+        except (psycopg.OperationalError,PoolTimeout) as error:
+            # A dropped connection rolls the transaction back; timeouts are ordinary contention.
+            lost=not isinstance(error,(psycopg.errors.QueryCanceled,psycopg.errors.LockNotAvailable))
+            raise StorageUnavailable(type(error).__name__ if lost else None) from None

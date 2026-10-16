@@ -1,5 +1,6 @@
 """Public data, bounded navigation assistance, and synthetic appointment records."""
 from collections import deque
+from contextlib import asynccontextmanager
 from copy import deepcopy
 from datetime import date, datetime, timezone
 from functools import lru_cache
@@ -23,7 +24,40 @@ from .conversation import router as conversation_router
 from .intake import router as intake_router
 from .waitlist import router as waitlist_router
 
-app = FastAPI(title="HokieCare", version="0.1.0", docs_url=None, openapi_url="/api/openapi.json", redoc_url=None)
+def probe_booking_storage():
+    """Decide Lakebase vs. fallback before the first visitor waits on a connection timeout."""
+    from .booking import database
+    try:
+        with database() as db:
+            db.execute('SELECT 1')
+    except Exception as error:
+        logging.getLogger("hokiecare").warning("Booking storage probe failed: %s", type(error).__name__)
+
+
+def warm_databricks():
+    """Cache the directory and check the model, so the first visitor never waits on a failing dependency."""
+    try:
+        query_data('services', 'SELECT * FROM workspace.hokiecare.gold_service_directory ORDER BY id LIMIT 100')
+    except HTTPException:
+        pass
+    try:
+        db_client().serving_endpoints.get(os.environ.get('DATABRICKS_CHAT_ENDPOINT', 'databricks-qwen3-next-80b-a3b-instruct'))
+    except Exception as error:
+        logger.warning("Model endpoint check failed: %s", type(error).__name__)
+        trip('model')
+
+
+@asynccontextmanager
+async def lifespan(_app):
+    if os.environ.get('HOKIECARE_BOOKING_STORE') == 'lakebase':
+        threading.Thread(target=probe_booking_storage, daemon=True).start()
+    if os.environ.get('DATABRICKS_HOST'):
+        threading.Thread(target=warm_databricks, daemon=True).start()
+    yield
+
+
+app = FastAPI(title="HokieCare", version="0.1.0", docs_url=None, openapi_url="/api/openapi.json", redoc_url=None,
+              lifespan=lifespan)
 app.include_router(booking_router)
 app.include_router(assistant_router)
 app.include_router(calendar_router)
@@ -37,6 +71,37 @@ cache_lock = threading.Lock()
 query_slots = threading.BoundedSemaphore(3)
 rate_lock = threading.Lock()
 requests_window = deque()
+# After a Databricks failure, visitors get the offline fallback at once instead of
+# waiting through SDK timeouts again. A background check decides when to return.
+outages = {}
+OUTAGE_SECONDS = 120
+
+
+def trip(name):
+    outages[name] = time.monotonic() + OUTAGE_SECONDS
+
+
+def recheck(name):
+    try:
+        if name == 'sql':
+            execute(db_client(), 'SELECT 1', timeout=30)
+        else:
+            db_client().serving_endpoints.get(os.environ.get('DATABRICKS_CHAT_ENDPOINT', 'databricks-qwen3-next-80b-a3b-instruct'))
+        outages.pop(name, None)
+        logger.warning("Databricks %s recovered", name)
+    except Exception:
+        trip(name)
+
+
+def tripped(name):
+    with cache_lock:
+        until = outages.get(name)
+        if until is None:
+            return False
+        if until <= time.monotonic():
+            outages[name] = time.monotonic() + OUTAGE_SECONDS
+            threading.Thread(target=recheck, args=(name,), daemon=True).start()
+    return True
 
 
 @lru_cache(maxsize=1)
@@ -48,7 +113,7 @@ def db_client():
 async def security_headers(request: Request, call_next):
     # One process-wide bound avoids trusting caller-controlled forwarding headers.
     # Query cache + concurrency bound separately limit warehouse work.
-    if request.url.path in ("/api/services", "/api/trends", "/api/forecast", "/api/ready") or request.url.path.startswith(("/api/booking", "/api/assistant")):
+    if request.url.path in ("/api/services", "/api/trends", "/api/forecast", "/api/ready", "/api/status") or request.url.path.startswith(("/api/booking", "/api/assistant")):
         now = time.monotonic()
         with rate_lock:
             while requests_window and requests_window[0] < now - 60:
@@ -72,6 +137,8 @@ def query_data(key, sql):
         item = cache.get(key)
         if item and time.monotonic() - item[0] < CACHE_SECONDS:
             return deepcopy(item[1]), {**item[2], "mode": "cached", "cache_age_seconds": int(time.monotonic() - item[0])}
+    if tripped('sql'):
+        raise HTTPException(503, "The data source is temporarily unavailable. Please try again.", headers={"Retry-After": "15"})
     if not query_slots.acquire(blocking=False):
         raise HTTPException(503, "Databricks is busy. Please try again shortly.", headers={"Retry-After": "10"})
     try:
@@ -88,12 +155,15 @@ def query_data(key, sql):
             cache[key] = (time.monotonic(), deepcopy(rows), meta)
         return rows, meta
     except TimeoutError:
+        logger.warning("Data query timed out")
+        trip('sql')
         raise HTTPException(503, "The data warehouse is taking longer than expected. Please retry shortly.", headers={"Retry-After": "15"}) from None
     except HTTPException:
         raise
     except Exception as error:
         # Log only the error class, not SDK configuration, SQL, credentials, or request text.
         logger.warning("Data query failed: %s", type(error).__name__)
+        trip('sql')
         raise HTTPException(503, "The data source is temporarily unavailable. Please try again.", headers={"Retry-After": "15"}) from None
     finally:
         query_slots.release()
@@ -104,6 +174,33 @@ def health():
     """Process health: deliberately independent of warehouse cold starts."""
     return {"status": "ok", "service": "hokiecare", "version": "0.1.0",
             "commit": os.environ.get('RAILWAY_GIT_COMMIT_SHA', 'local')}
+
+
+status_cache = {}
+
+
+@app.get('/api/status')
+def status():
+    """Which dependency is failing, by error class only (never messages, hosts or credentials)."""
+    from .booking import fallback, storage
+    with cache_lock:
+        if status_cache and time.monotonic() - status_cache['at'] < 60:
+            return {**status_cache['result'], 'booking_storage': storage(), 'booking_fallback_reason': fallback['reason']}
+    def check(task):
+        try:
+            task()
+            return 'ok'
+        except Exception as error:
+            return type(error).__name__
+    def warehouse():
+        execute(db_client(), 'SELECT 1', timeout=30)
+    result = {'databricks_auth': check(lambda: db_client().current_user.me()),
+              'sql_warehouse': check(warehouse),
+              'chat_endpoint': os.environ.get('DATABRICKS_CHAT_ENDPOINT', 'databricks-qwen3-next-80b-a3b-instruct'),
+              'checked_at': datetime.now(timezone.utc).isoformat()}
+    with cache_lock:
+        status_cache.update(at=time.monotonic(), result=result)
+    return {**result, 'booking_storage': storage(), 'booking_fallback_reason': fallback['reason']}
 
 
 @app.get('/api/ready')

@@ -2,6 +2,7 @@
 from contextlib import contextmanager
 from datetime import date, datetime, time as daytime, timedelta, timezone
 import hashlib
+import logging
 import os
 from pathlib import Path
 import secrets
@@ -61,13 +62,47 @@ def database_path():
     return Path(os.environ.get('HOKIECARE_BOOKING_DB', 'runtime/appointments.sqlite3'))
 
 
+# Set when Lakebase cannot be reached; the process then keeps one consistent store
+# (the local SQLite volume) until it restarts, instead of alternating between them.
+fallback = {'reason': None, 'since': None}
+
+
+def use_fallback(reason):
+    if not fallback['reason']:
+        fallback.update(reason=reason, since=datetime.now(timezone.utc).isoformat())
+        logging.getLogger('hokiecare').warning('Lakebase unavailable (%s); using local SQLite storage', reason)
+
+
+def storage():
+    if os.environ.get('HOKIECARE_BOOKING_STORE') != 'lakebase':
+        return 'sqlite'
+    return 'sqlite-fallback' if fallback['reason'] else 'lakebase'
+
+
 @contextmanager
 def database():
-    if os.environ.get('HOKIECARE_BOOKING_STORE') == 'lakebase':
-        from .booking_store import lakebase_database
-        with lakebase_database() as db:
-            yield db
-        return
+    if storage() == 'lakebase':
+        from .booking_store import lakebase_database, LakebaseUnavailable, StorageUnavailable
+        try:
+            context = lakebase_database()
+            db = context.__enter__()
+        except LakebaseUnavailable as error:
+            use_fallback(str(error))
+        else:
+            try:
+                try:
+                    yield db
+                except BaseException as error:
+                    if not context.__exit__(type(error), error, error.__traceback__):
+                        raise
+                else:
+                    context.__exit__(None, None, None)
+            except StorageUnavailable as error:
+                # Nothing was committed; later requests use the fallback store.
+                if error.reason:
+                    use_fallback(error.reason)
+                raise HTTPException(503, 'Appointment storage is temporarily unavailable. Retry the same review to check its result.') from None
+            return
     path = database_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     db = sqlite3.connect(path, timeout=10)
@@ -158,7 +193,7 @@ def catalog():
     return {'centers': CENTERS, 'timezone': 'America/New_York',
             'services': public_services(), 'schedule_version': CONFIG['version'],
             'booking_window': {'first_date': CONFIG['effective_from'], 'last_date': last_day.isoformat()},
-            'storage': os.environ.get('HOKIECARE_BOOKING_STORE', 'sqlite'),
+            'storage': storage(),
             'companion': {'provider': 'schiffert', 'automation_verified': False,
                           'availability_verified': True, 'status': 'availability_verified_final_submission_unverified'}}
 
