@@ -267,7 +267,7 @@ def submit(body:Intake,request:Request):
         limits.requests.append((now,owner))
     if not limits.admission.acquire(blocking=False): raise HTTPException(503,'The assistant is busy. Retry with your saved answers.')
     try:
-        from .app import services,db_client
+        from .app import services,db_client,trip,tripped
         records=services()['services']
         # The existing Carilion center catalog is sourced separately from the six gold directory cards.
         carilion=next(x for x in b.CENTERS if x['id']=='carilion')
@@ -276,8 +276,10 @@ def submit(body:Intake,request:Request):
         source_map={x['id']:x for x in records}
         model=os.environ.get('DATABRICKS_CHAT_ENDPOINT','databricks-qwen3-next-80b-a3b-instruct')
         try:
+            if tripped('model'): raise TimeoutError('recent failure')
             result=model_routing(body,allowed,records,source_map,model,db_client)
         except Exception as error:
+            if not isinstance(error,ValueError): trip('model')
             # Inference is unavailable or returned an invalid choice. The deterministic
             # filter already enforced every hard constraint, so route on those rules alone.
             logging.getLogger(__name__).warning('Model routing unavailable, using rules: %s',type(error).__name__)

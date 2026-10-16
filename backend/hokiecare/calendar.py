@@ -62,7 +62,7 @@ def availability(service_id: str, start: date = Query(alias='from'), end: date =
             'source':mode,'coverage':'complete_demo' if mode=='demo' else 'none',
             'fetched_at':now.isoformat(),'expires_at':(now+timedelta(seconds=15)).isoformat(),
             'revision':revision,'version':s.CONFIG['version'],
-            'storage': __import__('os').environ.get('HOKIECARE_BOOKING_STORE','sqlite')}
+            'storage': b.storage()}
 
 
 class ProposalRequest(b.ReserveRequest):
