@@ -40,9 +40,9 @@ import { AlertsBell } from "./cosmetic-controls";
 import "./care-workspace.css";
 
 type Meta = {
-  mode: "live" | "cached";
+  mode: "live" | "cached" | "snapshot";
   queried_at: string;
-  statement_id: string;
+  statement_id: string | null;
   cache_age_seconds: number;
   provider: string;
 };
@@ -105,14 +105,18 @@ function Evidence({ data, snapshot }: { data: Meta; snapshot?: string }) {
         <Database size={14} />
         {data.mode === "live"
           ? "Queried from Databricks"
-          : "Databricks result · cached up to 5 min"}
+          : data.mode === "snapshot"
+            ? "Bundled snapshot · Databricks unavailable"
+            : "Databricks result · cached up to 5 min"}
         <span>View provenance</span>
       </summary>
       <div>
         <p>Query completed: {new Date(data.queried_at).toLocaleString()}</p>
-        <p>
-          Statement: <code>{data.statement_id}</code>
-        </p>
+        {data.statement_id && (
+          <p>
+            Statement: <code>{data.statement_id}</code>
+          </p>
+        )}
         {snapshot && (
           <p>
             Source snapshot: <code>{snapshot}</code>

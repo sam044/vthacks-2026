@@ -12,6 +12,7 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt && useradd --uid 10001 --create-home hokiecare
 ENV HOME=/home/hokiecare
 COPY backend/hokiecare ./hokiecare
+COPY data/contracts/services.json ./hokiecare/services.json
 COPY --from=frontend /web/dist ./static
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD python -c "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ.get('PORT','8000')+'/api/health',timeout=4)"

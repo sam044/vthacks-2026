@@ -6,6 +6,9 @@
 !backend/hokiecare/*.py
 !backend/hokiecare/schedules.json
 !backend/hokiecare/lakebase_schema.sql
+!data/
+!data/contracts/
+!data/contracts/services.json
 !frontend/
 !frontend/package.json
 !frontend/package-lock.json

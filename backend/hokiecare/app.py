@@ -3,6 +3,8 @@ from collections import deque
 from copy import deepcopy
 from datetime import date, datetime, timezone
 from functools import lru_cache
+import hashlib
+import json
 import logging
 import os
 from pathlib import Path
@@ -112,11 +114,30 @@ def ready():
     return {"status": "ready", "data": meta}
 
 
+@lru_cache(maxsize=1)
+def bundled_directory():
+    """The same curated records imported into gold_service_directory, used when Databricks is unreachable."""
+    for path in (Path(__file__).with_name('services.json'), Path(__file__).resolve().parents[2] / 'data/contracts/services.json'):
+        if path.is_file():
+            records = json.loads(path.read_text(encoding='utf-8'))
+            snapshot = hashlib.sha256(json.dumps(records, sort_keys=True).encode()).hexdigest()
+            return [{**r, 'snapshot_id': snapshot} for r in records]
+    return None
+
+
 @app.get('/api/services')
 def services(category: Literal['all', 'mental-health', 'physical-health', 'wellbeing', 'accessibility'] = 'all',
              modality: Literal['all', 'in-person', 'virtual'] = 'all'):
     # Fixed bounded SQL; request filters are applied to six public records, never interpolated.
-    rows, meta = query_data('services', 'SELECT * FROM workspace.hokiecare.gold_service_directory ORDER BY id LIMIT 100')
+    try:
+        rows, meta = query_data('services', 'SELECT * FROM workspace.hokiecare.gold_service_directory ORDER BY id LIMIT 100')
+    except HTTPException as error:
+        rows = bundled_directory()
+        if error.status_code == 429 or rows is None:
+            raise
+        rows = deepcopy(rows)
+        meta = {'mode': 'snapshot', 'provider': 'Bundled directory snapshot', 'statement_id': None,
+                'queried_at': datetime.now(timezone.utc).isoformat(), 'cache_age_seconds': 0}
     rows = [r for r in rows if (category == 'all' or r['category'] == category)
             and (modality == 'all' or r['modality'] == modality)]
     return {"services": rows, "data": meta, "availability": "Published service information; no live appointment availability."}

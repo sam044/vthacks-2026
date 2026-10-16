@@ -129,7 +129,10 @@ def test_no_slots_or_untrusted_service_never_proposes(client,monkeypatch):
     body=form(after='18:00',before='20:00')
     assert client.post('/api/assistant/intake',headers=H,json=body).json()['reason']=='availability'
     model(monkeypatch,['made-up-clinic'])
-    assert client.post('/api/assistant/intake',headers=H,json=form()).status_code==503
+    # An invalid model choice falls back to the deterministic filter, never the invented service.
+    routed=client.post('/api/assistant/intake',headers=H,json=form()).json()
+    assert routed['model']=='rules' and routed['outcome']=='choices'
+    assert {x['service_id'] for x in routed['slots']}<=set(intake.allowed_services(intake.Intake(**form())))
     with b.database() as db: assert db.execute('SELECT COUNT(*) FROM proposals').fetchone()[0]==0
 
 
@@ -150,7 +153,10 @@ def test_urgent_result_and_inference_failure_do_not_book(client,monkeypatch):
     result=client.post('/api/assistant/intake',headers=H,json=form()).json()
     assert result['outcome']=='urgent_support' and result['review'] is None
     monkeypatch.setattr(api,'db_client',lambda:(_ for _ in ()).throw(TimeoutError()))
-    assert client.post('/api/assistant/intake',headers=H,json=form()).status_code==503
+    fallback=client.post('/api/assistant/intake',headers=H,json=form()).json()
+    assert fallback['model']=='rules' and fallback['outcome']=='choices' and fallback['review'] is None
+    urgent=client.post('/api/assistant/intake',headers=H,json=form(description='This is an emergency, I need help now')).json()
+    assert urgent['outcome']=='urgent_support' and urgent['review'] is None
     assert not client.get('/api/booking/appointments').json()['appointments']
 
 

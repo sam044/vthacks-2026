@@ -202,7 +202,7 @@ export function SharedCalendar({ active }: { active: boolean }) {
     day: "numeric",
   });
   const firstWeekday = new Date(month + "-01T12:00:00Z").getUTCDay();
-  const maxMonth = "2027-05", maxDay = "2027-05-12";
+  const maxDay = b.lastDate, maxMonth = maxDay.slice(0, 7);
   const selectDay = (value: string) => changeSelection({ day: value });
   return (
     <section className="shared-calendar" aria-label="Service calendar">

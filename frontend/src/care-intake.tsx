@@ -3,7 +3,7 @@ import { ArrowRight, CalendarDays, Check, Compass, LoaderCircle } from 'lucide-r
 import { Brand } from './brand';
 import { BookingReview } from './calendar';
 import { useBooking } from './booking-state';
-import { api, ApiError, session, easternDate, fullTime, easternTime, type Review, type InventorySlot } from './api';
+import { api, ApiError, session, easternDate, fullTime, easternTime, serviceLabel, type Review, type InventorySlot } from './api';
 import { emptyIntake, intakeErrors, intakePayload, needsCounseling, type IntakeForm } from './intake-validation';
 import './care-intake.css';
 import { ConfirmationEmail } from './cosmetic-controls';
@@ -20,7 +20,7 @@ export function CareIntake({visible}:{visible:boolean}) {
   const [result,setResult]=useState<Result|null>(null),[loading,setLoading]=useState(false),[error,setError]=useState('');
   const [waitlistTarget,setWaitlistTarget]=useState<(InventorySlot & {waitlist_id:string})|null>(null);
   const key=useRef<string|null>(null),sequence=useRef(0),locked=useRef(false),heading=useRef<HTMLHeadingElement>(null);
-  const errors=intakeErrors(form), counseling=needsCounseling(form);
+  const errors=intakeErrors(form,b.lastDate), counseling=needsCounseling(form);
   const total=counseling?11:10, completed=total-Object.keys(errors).length;
   const busy=loading||b.busy;
   useEffect(()=>{ if(visible && (result||b.saved)) heading.current?.focus(); },[result,b.saved,visible]);
@@ -129,7 +129,7 @@ export function CareIntake({visible}:{visible:boolean}) {
         {!b.review&&!!result?.slots?.length&&<div className="intake-time-choices" aria-label="Available appointment times">
           {result.slots.slice(0,shown).map((slot,i,slots)=><div key={slot.id}>
             {(i===0||easternDate(slots[i-1].starts)!==easternDate(slot.starts))&&<h3>{new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'long',month:'long',day:'numeric'}).format(new Date(slot.starts))}</h3>}
-            <button className="intake-time-choice" disabled={busy} onClick={()=>void selectTime(slot)}><span><strong>{easternTime(slot.starts)} – {easternTime(slot.ends)} Eastern</strong><small>{slot.service_name}</small></span><ArrowRight size={18}/></button>
+            <button className="intake-time-choice" disabled={busy} onClick={()=>void selectTime(slot)}><span><strong>{easternTime(slot.starts)} – {easternTime(slot.ends)} Eastern</strong><small>{serviceLabel(slot.service_name)}</small></span><ArrowRight size={18}/></button>
           </div>)}
           {shown<result.slots.length&&<button className="booking-secondary" disabled={busy} onClick={()=>setShown(n=>n+10)}>Show more times</button>}
         </div>}
@@ -158,8 +158,8 @@ export function CareIntake({visible}:{visible:boolean}) {
         {counseling&&<p className="intake-hint">Cook individual therapy and TimelyCare scheduled therapy cannot run concurrently.</p>}
       </fieldset>
       <fieldset disabled={busy}><legend><span>03</span> Make room in your week</legend><p className="intake-hint">We’ll show matching times so you can choose. Allow 30 minutes for your visit; no extra buffer is required. All times Eastern.</p>
-        <div className="intake-grid">{field('first_date','Earliest date',<input {...attributes('first_date')} type="date" min={easternDate()} max="2027-05-12" value={form.first_date} onChange={e=>update('first_date',e.target.value)}/>)}
-        {field('last_date','Latest date',<input {...attributes('last_date')} type="date" min={form.first_date||easternDate()} max="2027-05-12" value={form.last_date} onChange={e=>update('last_date',e.target.value)}/>)}</div>
+        <div className="intake-grid">{field('first_date','Earliest date',<input {...attributes('first_date')} type="date" min={easternDate()} max={b.lastDate} value={form.first_date} onChange={e=>update('first_date',e.target.value)}/>)}
+        {field('last_date','Latest date',<input {...attributes('last_date')} type="date" min={form.first_date||easternDate()} max={b.lastDate} value={form.last_date} onChange={e=>update('last_date',e.target.value)}/>)}</div>
         <div className="intake-grid">{field('after','Available from (Eastern)',<input {...attributes('after')} type="time" value={form.after} onChange={e=>update('after',e.target.value)}/>)}
         {field('before','Available until (Eastern)',<input {...attributes('before')} type="time" value={form.before} onChange={e=>{update('before',e.target.value);setTouched(t=>({...t,hours:true}));}}/>)}</div>
         {touched.hours&&errors.hours&&<span className="field-error">{errors.hours}</span>}
