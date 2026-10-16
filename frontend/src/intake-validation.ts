@@ -15,15 +15,18 @@ export function intakePayload(f:IntakeForm, request_id:string) {
     first_date:f.first_date,last_date:f.last_date,after:f.after,before:f.before,
     counseling:needsCounseling(f)?f.counseling:null,acknowledged:f.acknowledged};
 }
-export function intakeErrors(f:IntakeForm): Record<string,string> {
+// Fallback only; the live limit comes from the booking catalog's booking_window.
+export const DEFAULT_LAST_DATE = '2027-05-12';
+const dateLabel = (day:string) => new Date(day+'T12:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'long',day:'numeric',year:'numeric'});
+export function intakeErrors(f:IntakeForm, lastDate=DEFAULT_LAST_DATE): Record<string,string> {
   const e:Record<string,string>={};
   if (!f.booking_name.trim() || f.booking_name.trim().length>80) e.booking_name='Enter a name or alias, up to 80 characters.';
   if (!['physical','counseling','wellness','unsure'].includes(f.support)) e.support='Choose a kind of support.';
-  if (f.description.trim().length<3 || f.description.trim().length>600) e.description='Briefly describe the help you want (3â€“600 characters).';
+  if (f.description.trim().length<3 || f.description.trim().length>600) e.description='Briefly describe the help you want (3–600 characters).';
   if (!['auto','cook','schiffert','timelycare','carilion','wellness'].includes(f.center)) e.center='Choose a center or let us choose.';
   if (!['in-person','virtual','either'].includes(f.modality)) e.modality='Choose your visit preference.';
-  if (!f.first_date || f.first_date<easternDate() || f.first_date>'2027-05-12') e.first_date='Choose a date from today through May 12, 2027.';
-  if (!f.last_date || f.last_date<f.first_date || f.last_date>'2027-05-12') e.last_date='Choose an end date on or after your first date, through May 12, 2027.';
+  if (!f.first_date || f.first_date<easternDate() || f.first_date>lastDate) e.first_date=`Choose a date from today through ${dateLabel(lastDate)}.`;
+  if (!f.last_date || f.last_date<f.first_date || f.last_date>lastDate) e.last_date=`Choose an end date on or after your first date, through ${dateLabel(lastDate)}.`;
   const minutes=(t:string)=>Number(t.slice(0,2))*60+Number(t.slice(3));
   if (!f.after || !f.before || minutes(f.before)-minutes(f.after)<30) e.hours='Allow at least 30 minutes for your visit.';
   if (!['yes','no'].includes(f.student)) e.student='Choose your student status.';

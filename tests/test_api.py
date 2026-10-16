@@ -66,7 +66,11 @@ def test_expired_cache_does_not_hide_outage(client, monkeypatch):
     import time
     api.cache['services'] = (time.monotonic() - api.CACHE_SECONDS - 1, [{'name': 'stale'}], {})
     monkeypatch.setattr(api, 'execute', lambda *a: (_ for _ in ()).throw(RuntimeError('credentials')))
-    assert client.get('/api/services').status_code == 503
+    result = client.get('/api/services')
+    # A labeled bundled snapshot replaces the outage, never the expired cached rows.
+    assert result.status_code == 200 and result.json()['data']['mode'] == 'snapshot'
+    assert len(result.json()['services']) == 6 and 'stale' not in result.text
+    assert client.get('/api/ready').status_code == 503
 
 
 def test_rate_limit_is_bounded(client):

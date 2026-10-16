@@ -403,11 +403,14 @@ test("calendar streams and polling stop when hidden, resume with the selected da
 });
 
 const {emptyIntake,intakeErrors,intakePayload,needsCounseling}=await import(pathToFileURL(join(compiled,"intake-validation.mjs")).href);
+// Relative Eastern dates keep this check valid as the calendar advances.
+const soon=(days)=>new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(Date.now()+days*86400000));
 test("intake requires every answer and a 30-minute window before submission",()=>{
   const empty=emptyIntake();assert.equal(Object.keys(intakeErrors(empty)).length,10);
   const valid={...empty,booking_name:"Student",support:"physical",description:"Routine visit",center:"auto",modality:"in-person",
-    first_date:"2026-10-01",last_date:"2026-10-02",after:"09:00",before:"17:00",student:"yes",acknowledged:true};
+    first_date:soon(1),last_date:soon(2),after:"09:00",before:"17:00",student:"yes",acknowledged:true};
   assert.deepEqual(intakeErrors(valid),{});
+  assert.ok(intakeErrors(valid,soon(1)).last_date);
   assert.ok(intakeErrors({...valid,booking_name:"   "}).booking_name);
   assert.deepEqual(intakeErrors({...valid,after:"16:30"}),{});
   assert.ok(intakeErrors({...valid,after:"16:31"}).hours);

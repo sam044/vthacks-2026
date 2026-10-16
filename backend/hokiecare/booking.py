@@ -154,8 +154,10 @@ def get_appointment(db, owner, ident):
 @router.get('/catalog')
 def catalog():
     from .scheduling import public_services, CONFIG
+    last_day = date.fromisoformat(CONFIG['effective_to']) - timedelta(days=1)
     return {'centers': CENTERS, 'timezone': 'America/New_York',
             'services': public_services(), 'schedule_version': CONFIG['version'],
+            'booking_window': {'first_date': CONFIG['effective_from'], 'last_date': last_day.isoformat()},
             'storage': os.environ.get('HOKIECARE_BOOKING_STORE', 'sqlite'),
             'companion': {'provider': 'schiffert', 'automation_verified': False,
                           'availability_verified': True, 'status': 'availability_verified_final_submission_unverified'}}

@@ -21,6 +21,7 @@ import {
   type Navigation,
   type WaitlistEntry,
 } from "./api";
+import { DEFAULT_LAST_DATE } from "./intake-validation";
 
 const initialSelection = (): Navigation => ({
   view: "appointments", category: "all", center_id: "schiffert",
@@ -46,7 +47,8 @@ function useBookingState(active: boolean) {
   }, []);
   const [selection, setSelection] = useState<Navigation>(initialSelection);
   const [centers, setCenters] = useState<Center[]>([]),
-    [services, setServices] = useState<Service[]>([]);
+    [services, setServices] = useState<Service[]>([]),
+    [lastDate, setLastDate] = useState(DEFAULT_LAST_DATE);
   const [records, setRecords] = useState<Appointment[]>([]),
     [ready, setReady] = useState(false),
     [error, setError] = useState("");
@@ -79,11 +81,12 @@ function useBookingState(active: boolean) {
     const restoredId = sessionStorage.getItem("hokiecare-review-id");
     try {
       await session();
-      const catalog = await api<{ centers: Center[]; services: Service[] }>(
+      const catalog = await api<{ centers: Center[]; services: Service[]; booking_window?: { last_date: string } }>(
         "/api/booking/catalog",
       );
       setCenters(catalog.centers);
       setServices(catalog.services);
+      if (catalog.booking_window?.last_date) setLastDate(catalog.booking_window.last_date);
       await refresh();
       await refreshWaitlist();
       setReady(true);
@@ -340,6 +343,7 @@ function useBookingState(active: boolean) {
     navigate,
     centers,
     services,
+    lastDate,
     records,
     ready,
     error,
